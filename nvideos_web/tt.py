@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from nvideos_web.db.context import DatabaseContext
 
 @dataclass
 class Abcd:
@@ -10,5 +11,7 @@ class Abc(Abcd):
         self.name = pname
 
 aa = Abc("pimptech")
-
 print(aa.name)
+
+DatabaseContext.initConn()
+DatabaseContext.getConn()

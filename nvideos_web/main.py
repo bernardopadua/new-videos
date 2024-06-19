@@ -1,53 +1,61 @@
 # FLASK
 from flask import Flask, url_for, session
 
+# DATABASE
+from nvideos_web.db.context import NewVideosDBContext
+
 # NVIDEOS
-from user_details.view import ud
+from nvideos_web.user_details.view import ud
 
 # CONFIG
-from config import load_dotenv
+from nvideos_web.config import load_dotenv
 
-from abc import abstractmethod
-from typing import Protocol
-from dataclasses import dataclass
-
+NewVideosDBContext.initPool()
 app = Flask(__name__)
-app.config.from_file(".env", load_dotenv)
+app.config.from_file(".env.flask", load_dotenv)
 
 app.register_blueprint(ud)
 
-
-class Ur(Protocol):
-    @abstractmethod
-    def add_user(self, name: str) -> None:
-        raise NotImplemented
-
-    @abstractmethod
-    def get_id(self, username: int) -> int:
-        raise NotImplemented
-
-class UserR(Ur):
-    def __init__(self) -> None:
-        self._countId = 0
-
-        self.users = {}
-
-    def add_user(self, name:str):
-        self._countId += 1
-        self.users[name] = self._countId
-
-def addUser(user: Ur, name: str):
-    user.add_user(name)
-
-a = UserR()
-addUser(a, "pimptech")
-
-exit()
-
 @app.route("/abc/")
 def abc():
-    session["user"] = {"a": 22}
-    return "Hello"
+    import threading, time
+
+    ini = time.monotonic()
+    tconn = None
+
+    results = []
+    with NewVideosDBContext.getConn() as conn:
+        cur = conn.cursor()
+        tconn = conn.__repr__
+
+        cur.execute("SELECT * FROM nvideos_user;")
+        results = cur.fetchall()
+
+    end = time.monotonic() - ini
+
+    script = """
+        setTimeout(()=>{
+            location.reload()
+        });
+    """
+    #script = None
+
+    return f"""
+        <h1>Abc</h1>
+            Thread::{threading.get_ident()}<br>
+            Time::{end}<br>
+            Conn::{tconn}
+        <br>
+            {results}
+        <br>
+
+        <a href='{url_for("index")}'>
+            Index
+        </a>
+        <script>
+            {script}
+        </script>
+    """
 
 @app.route("/")
 def index():
@@ -61,6 +69,3 @@ def index():
             User Det
         </a>
     """
-
-if __name__ == "__main__":
-    app.run("0.0.0.0", 8080, True, False)

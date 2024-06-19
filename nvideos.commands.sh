@@ -4,7 +4,7 @@ absolute_path=$(pwd)
 export NVIDEOS_PATH="${absolute_path}"
 
 wnvideos_runlocal(){
-    python3 "${NVIDEOS_PATH}/nvideos_web/main.py"
+    python3 -m nvideos_web
 }
 wnvideos_export_env_vars(){
     set -o allexport

@@ -4,12 +4,12 @@ class ModelBase(ABC):
 
     @abstractmethod
     def create(self):
-        raise NotImplemented()
+        raise NotImplementedError()
     
     @abstractmethod
     def update(self):
-        raise NotImplemented()
+        raise NotImplementedError()
     
     @abstractmethod
     def delete(self):
-        raise NotImplemented()
+        raise NotImplementedError()
