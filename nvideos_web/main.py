@@ -7,83 +7,42 @@ from user_details.view import ud
 # CONFIG
 from config import load_dotenv
 
+from abc import abstractmethod
 from typing import Protocol
 from dataclasses import dataclass
 
 app = Flask(__name__)
 app.config.from_file(".env", load_dotenv)
 
-@dataclass
-class IB:
-    id:int 
-    name: str
-
-@dataclass
-class IBB:
-    idd:int 
-    name: str
-
-
-class Ab(Protocol):
-    def test(self):
-        pass
-
-@dataclass(frozen=True)
-class imutObj:
-    real: int
-
-class Abc(Ab):
-    def __init__(self, id:int) -> None:
-        super().__init__()
-        self.nid = id
-        self.idd: imutObj = imutObj(id)
-        self._al = []
-
-    # def __hash__(self) -> int:
-    #     #return hash(self.idd.real)
-    #     return hash(self.nid)
-
-    # def __eq__(self, value: object) -> bool:
-    #     if self.__class__ == value.__class__:
-    #         return self.nid == value.nid
-    #     if type(value) == int:
-    #         return self.nid == value
-    #     return (
-    #         self.__class__ == value.__class__ and
-    #         #self.idd.real == value.idd.real
-    #         self.nid == value.nid
-    #    )
-
-    def ooo(self, t: IB):
-        self._al.append(t)
-    
-    def oo(self, t: IB):
-        return t in self._al
-
-a = IB(id=1, name="abc")
-y = IB(id=2, name="abc")
-b = IBB(idd=1, name="abc2")
-
-c = Abc(1)
-d = Abc(1)
-
-ii = set()
-ii.add(c)
-ii.add(1)
-
-# ii = {}
-# ii[c] = 123
-
-def aab(number):
-    print(number)
-
-c.ooo(a)
-c.ooo(b)
-
 app.register_blueprint(ud)
 
 
+class Ur(Protocol):
+    @abstractmethod
+    def add_user(self, name: str) -> None:
+        raise NotImplemented
 
+    @abstractmethod
+    def get_id(self, username: int) -> int:
+        raise NotImplemented
+
+class UserR(Ur):
+    def __init__(self) -> None:
+        self._countId = 0
+
+        self.users = {}
+
+    def add_user(self, name:str):
+        self._countId += 1
+        self.users[name] = self._countId
+
+def addUser(user: Ur, name: str):
+    user.add_user(name)
+
+a = UserR()
+addUser(a, "pimptech")
+
+exit()
 
 @app.route("/abc/")
 def abc():
