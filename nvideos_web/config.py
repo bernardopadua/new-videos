@@ -10,7 +10,7 @@ class DBPoolInfo:
     OPEN: bool
     TIMEOUT: int
 
-def get_connection_pool_info() -> DBPoolInfo:
+def getConnectionPoolInfo() -> DBPoolInfo:
     return DBPoolInfo(
         int(environ["POSTGRES_POOL_MINSIZE"]),
         int(environ["POSTGRES_POOL_MAXSIZE"]),
@@ -18,7 +18,7 @@ def get_connection_pool_info() -> DBPoolInfo:
         int(environ["POSTGRES_POOL_TIMEOUT"])
     )
 
-def get_url_database() -> str:
+def getUrlDataBase() -> str:
     postUser = environ["POSTGRES_USER"]
     postPassword = environ["POSTGRES_PASSWORD"]
     postDb = environ["POSTGRES_DB"]
@@ -31,7 +31,7 @@ def get_url_database() -> str:
 
     return urlConn
 
-def load_dotenv(filename: TextIOWrapper) -> dict:
+def loadDotEnv(filename: TextIOWrapper) -> dict:
     configRet = {}
     line = filename.readline()
     while line:

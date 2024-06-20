@@ -1,22 +1,25 @@
 # FLASK
-from flask import Flask, url_for, session
+from flask import url_for, Blueprint
 
-# DATABASE
+# DB
 from nvideos_web.db.context import NewVideosDBContext
 
-# NVIDEOS
-from nvideos_web.user_details.view import ud
+homeBp = Blueprint("home", "home")
 
-# CONFIG
-from nvideos_web.config import load_dotenv
+@homeBp.route("/")
+def index():
+    return f"""
+        <h1>Index</h1>
+        <a href='{url_for("home.abc")}'>
+            Abc
+        </a>
+        <br>
+        <a href='{url_for("user_details.userIndex")}'>
+            User Det
+        </a>
+    """
 
-NewVideosDBContext.initPool()
-app = Flask(__name__)
-app.config.from_file(".env.flask", load_dotenv)
-
-app.register_blueprint(ud)
-
-@app.route("/abc/")
+@homeBp.route("/abc/")
 def abc():
     import threading, time
 
@@ -55,17 +58,4 @@ def abc():
         <script>
             {script}
         </script>
-    """
-
-@app.route("/")
-def index():
-    return f"""
-        <h1>Index</h1>
-        <a href='{url_for("abc")}'>
-            Abc
-        </a>
-        <br>
-        <a href='{url_for("user_details.userIndex")}'>
-            User Det
-        </a>
     """

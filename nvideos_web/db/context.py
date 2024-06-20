@@ -2,7 +2,7 @@ from psycopg_pool import ConnectionPool
 from psycopg import Connection, connect
 from psycopg.rows import dict_row
 
-from nvideos_web.config import get_url_database, get_connection_pool_info
+from nvideos_web.config import getUrlDataBase, getConnectionPoolInfo
 
 class NewVideosDBContext:
     connPool: ConnectionPool = None
@@ -11,8 +11,8 @@ class NewVideosDBContext:
     @classmethod
     def initPool(cls) -> None:
         if cls.connPool is None:
-            url = get_url_database()
-            poolInfo = get_connection_pool_info()
+            url = getUrlDataBase()
+            poolInfo = getConnectionPoolInfo()
             cls.connPool = ConnectionPool(
                 url, 
                 open=poolInfo.OPEN, 
@@ -27,7 +27,7 @@ class NewVideosDBContext:
     @classmethod
     def initConn(cls) -> None:
         if cls.dbConn is None:
-            url = get_url_database()
+            url = getUrlDataBase()
             cls.dbConn = connect(url, row_factory=dict_row)
 
     @classmethod
