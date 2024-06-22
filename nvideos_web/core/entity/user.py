@@ -1,8 +1,10 @@
 from datetime import datetime
 from dataclasses import dataclass
 
+from nvideos_web.core.entity.entity_base import BaseFieldsMixin
+
 @dataclass
-class UserData:
+class User(BaseFieldsMixin):
     id: int
     name: str
     surname: str
@@ -10,6 +12,6 @@ class UserData:
     birth_date: datetime
 
 class User:
-    def __init__(self) -> None:
-        self.__
+    def __init__(self, data: User) -> None:
+        self.d = data
         pass
