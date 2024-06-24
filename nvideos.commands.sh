@@ -8,7 +8,7 @@ wnvideos.runlocal(){
 }
 wnvideos.export_env_vars(){
     set -o allexport
-    source "${NVIDEOS_PATH}/nvideos_web/.env"
+    source "${NVIDEOS_PATH}/.env.webserver"
     set +o allexport
 }
 wnvideos.start_postgres(){
