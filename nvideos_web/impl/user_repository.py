@@ -59,9 +59,11 @@ class PgUserRepository(UserRepository):
                 %(user_is_active)s
             )
         """
-        for m in _queries._re_placeholder.finditer(sql):
-            print(m)
+        params = _queries._re_placeholder.finditer(sql)
+        # for m in _queries._re_placeholder.finditer(sql):
+        #     print(m)
 
+        pass
         #params = 
 
     def update(self, userData: User, newUserData: User) -> User:
