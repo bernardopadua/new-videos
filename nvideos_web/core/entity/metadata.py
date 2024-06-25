@@ -13,4 +13,6 @@ def setUpField(column: str, **kwargs):
     return field(metadata=result, **kwargs)
 
 @dataclass
-class
+class MappingModel:
+    def to_json(self):
+        pass

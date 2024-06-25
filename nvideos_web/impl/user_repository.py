@@ -44,6 +44,7 @@ class PgUserRepository(UserRepository):
         self._db = dbContext
 
     def create(self, userData: NewUserInput) -> User:
+        from psycopg import _queries
         sql = """
             insert into nvideos_user
             (
@@ -58,6 +59,9 @@ class PgUserRepository(UserRepository):
                 %(user_is_active)s
             )
         """
+        for m in _queries._re_placeholder.finditer(sql):
+            print(m)
+
         #params = 
 
     def update(self, userData: User, newUserData: User) -> User:
