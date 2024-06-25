@@ -59,6 +59,7 @@ class UserService:
         passwordHash = PasswordHasher().hashPassword(
             userPassword
         )
+
         nInput = NewUserInput(
             userName=userName,
             userSurname=userSurname,
