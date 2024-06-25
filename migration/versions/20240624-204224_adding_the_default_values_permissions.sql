@@ -1,0 +1,2 @@
+insert into user_permission (user_permission, permission_description) values (E'\x0', 'User with system access. Is used by the system and has access to every part of the system. A Superuser.');
+insert into user_permission (user_permission, permission_description) values (E'\x1', 'Normal user access.');
