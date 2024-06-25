@@ -59,7 +59,9 @@ class PgUserRepository(UserRepository):
                 %(user_is_active)s
             )
         """
-        params = _queries._re_placeholder.finditer(sql)
+        params = _queries._re_placeholder.finditer(
+            bytes(sql.encode('ascii'))
+        )
         # for m in _queries._re_placeholder.finditer(sql):
         #     print(m)
 

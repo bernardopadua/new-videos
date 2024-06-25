@@ -15,7 +15,7 @@ class UserService:
         self._usuRep = PgUserRepository(dbContext=NewVideosDBContext)
 
     def createNewUser(self, userInput: NewUserInput) -> User:
-        self._usuRep.create()
+        self._usuRep.create(userData=userInput)
         pass
 
     def perfShow(self, seconds: int):
