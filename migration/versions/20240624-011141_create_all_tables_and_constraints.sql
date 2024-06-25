@@ -4,6 +4,7 @@ create table nvideo_user (
 	user_surname varchar(150) not null,
 	user_email varchar(150) not null,
 	user_password varchar(300) not null,
+	user_birth_date date,
 	user_avatar_url varchar(400),
 	user_permission char(1) not null, -- edit videos (that I dont own), edit comments, delete and etc...
 	user_is_active bool not null,

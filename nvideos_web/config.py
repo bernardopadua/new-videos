@@ -10,6 +10,21 @@ class DBPoolInfo:
     OPEN: bool
     TIMEOUT: int
 
+@dataclass(frozen=True)
+class PasswordConstantsCrypt:
+    N_CONSTANT: int
+    R_CONSTANT: int
+    P_CONSTANT: int
+    SALT_CONSTANT: str
+
+def getPasswordConstants() -> PasswordConstantsCrypt:
+    return PasswordConstantsCrypt(
+        int(environ["SCRYPT_CONSTANT_N"]),
+        int(environ["SCRYPT_CONSTANT_R"]),
+        int(environ["SCRYPT_CONSTANT_P"]),
+        environ["SCRYPT_SECRET_SALT"]
+    )
+
 def getConnectionPoolInfo() -> DBPoolInfo:
     return DBPoolInfo(
         int(environ["POSTGRES_POOL_MINSIZE"]),

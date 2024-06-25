@@ -1,17 +1,29 @@
-from datetime import datetime
-from dataclasses import dataclass
+from datetime import date
+from dataclasses import dataclass, field
+from typing import Any, Optional
 
+from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.entity_base import BaseFieldsMixin
 
 @dataclass
 class User(BaseFieldsMixin):
-    id: int
-    name: str
-    surname: str
-    email: str
-    birth_date: datetime
+    userId: int
+    userName: str
+    userSurname: str
+    userEmail: str
+    userPassword: str = field(repr=False, hash=False)
+    userBirthDate: date
+    userAvatarUrl: str
+    userPermission: int
+    userIsActive: bool
 
-class User:
-    def __init__(self, data: User) -> None:
-        self.d = data
-        pass
+@dataclass(frozen=True)
+class NewUserInput:
+    userName: str
+    userSurname: str
+    userEmail: str
+    userPassword: str
+    userBirthDate: date = None
+    userAvatarUrl: str = field(default="")
+    userPermission: int = field(default=UserPermissions.P_COMMOM_USER.value)
+    userIsActive: Optional[bool] = field(default=True)

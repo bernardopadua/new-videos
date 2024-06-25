@@ -19,40 +19,43 @@ def index():
         </a>
     """
 
-@homeBp.route("/abc/")
-def abc():
+@homeBp.route("/abc/<int:seconds>")
+def abc(seconds: int = 0):
     import threading, time
+    from nvideos_web.services.user.user_service import UserService
 
-    ini = time.monotonic()
-    tconn = None
+    u = UserService()
+    nInput = UserService.getNewUserInput(
+        userName="sdf",
+        userEmail="dsafsdf",
+        userSurname="sdfsdf",
+        userPassword="sdfsdfsdfs",
+        createSystemUser=True
+    )
+    u.createNewUser(nInput)
 
-    results = []
-    with NewVideosDBContext.getConn() as conn:
-        cur = conn.cursor()
-        tconn = conn.__repr__
-
-        cur.execute("SELECT * FROM nvideos_user;")
-        results = cur.fetchall()
-
-    end = time.monotonic() - ini
+    ini = time.perf_counter()
+    viewResult = u.perfShow(0)
+    time.sleep(seconds)
+    end = time.perf_counter() - ini
 
     script = """
         setTimeout(()=>{
             location.reload()
         });
     """
-    #script = None
+    script = None
 
     return f"""
         <h1>Abc</h1>
             Thread::{threading.get_ident()}<br>
             Time::{end}<br>
-            Conn::{tconn}
-        <br>
-            {results}
         <br>
 
-        <a href='{url_for("index")}'>
+        {viewResult}
+
+        <br>
+        <a href='{url_for("home.index")}'>
             Index
         </a>
         <script>
