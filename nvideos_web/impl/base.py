@@ -32,3 +32,5 @@ class PgRepositoryBase:
                     "Param has no input field. Please verify the input object."
                 )
             paramAssigned[param] = inputFieldValue
+
+    #TODO: use metadata to assign the values from select
