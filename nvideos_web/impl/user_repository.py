@@ -8,6 +8,7 @@ from nvideos_web.core.repository.user import (
     UserPasswordHasher,
     UserRepository
 )
+from nvideos_web.impl.base import PgRepositoryBase
 
 # CONFIG
 from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
@@ -31,7 +32,7 @@ class PasswordHasher(UserPasswordHasher):
             p=self._constants.P_CONSTANT
         ).hex()
 
-class PgUserRepository(UserRepository):
+class PgUserRepository(PgRepositoryBase, UserRepository):
     _instance: PgUserRepository = None
 
     def __new__(cls, dbContext: NewVideosDBContext) -> PgUserRepository:
@@ -41,10 +42,10 @@ class PgUserRepository(UserRepository):
         return cls._instance
 
     def __init__(self, dbContext: NewVideosDBContext) -> None:
+        super().__init__()
         self._db = dbContext
 
     def create(self, userData: NewUserInput) -> User:
-        from psycopg import _queries
         sql = """
             insert into nvideos_user
             (
@@ -54,17 +55,11 @@ class PgUserRepository(UserRepository):
             )
             values
             (
-                %(user_name)s, %(user_surname)s, %(user_email)s, 
-                %(user_password)s, %(user_avatar_url)s, %(user_permission)s, 
-                %(user_is_active)s
+                %(userName)s, %(userSurname)s, %(userEmail)s, 
+                %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
+                %(userIsActive)s
             )
         """
-        params = _queries._re_placeholder.finditer(
-            bytes(sql.encode('ascii'))
-        )
-        # for m in _queries._re_placeholder.finditer(sql):
-        #     print(m)
-
         pass
         #params = 
 
@@ -75,11 +70,12 @@ class PgUserRepository(UserRepository):
         return super().delete(userId)
 
     def perfGetUserById(self, seconds: int) -> dict:
-        self._db.initConn()
+        #self._db.initConn()
         with self._db.getConn() as conn:
             cur = conn.cursor()
             cur.execute(f"select * from testing_for_now; select pg_sleep({seconds})")
             r = cur.fetchall()
             r.append(id(conn))
+            r.
             return r
 
