@@ -9,9 +9,9 @@ create table nvideo_user (
 	user_permission char(1) not null, -- edit videos (that I dont own), edit comments, delete and etc...
 	user_is_active bool not null,
 	updated_by int,
-	created_by int not null,
+	created_by int,
 	created_at timestamptz not null,
-	update_at timestamptz
+	updated_at timestamptz
 );
 
 create table user_permission (
@@ -41,7 +41,7 @@ create table channel (
 	updated_by int,
 	created_by int not null,
 	created_at timestamptz not null,
-	update_at timestamptz
+	updated_at timestamptz
 );
 
 create table subscriber (
@@ -52,7 +52,7 @@ create table subscriber (
 	updated_by int,
 	created_by int not null,
 	created_at timestamptz not null,
-	update_at timestamptz
+	updated_at timestamptz
 );
 
 create table video (
@@ -69,7 +69,7 @@ create table video (
 	updated_by int,
 	created_by int not null,
 	created_at timestamptz not null,
-	update_at timestamptz
+	updated_at timestamptz
 );
 
 create table video_permission (
@@ -86,7 +86,7 @@ create table nvideo_comment (
 	updated_by int,
 	created_by int not null,
 	created_at timestamptz not null,
-	update_at timestamptz
+	updated_at timestamptz
 );
 
 -- ### Applying constrains ###
@@ -95,6 +95,13 @@ create table nvideo_comment (
 alter table nvideo_user 
 add constraint fk_user_user_permission 
 foreign key (user_permission) references user_permission(user_permission);
+
+alter table nvideo_user 
+add constraint fk_user_created_user 
+foreign key (created_by) references nvideo_user(user_id);
+alter table nvideo_user 
+add constraint fk_user_updated_user 
+foreign key (updated_by) references nvideo_user(user_id);
 
 -- --------------------------------
 

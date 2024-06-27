@@ -1,14 +1,21 @@
+# PSYCOPG
+from psycopg import Cursor
+
 # BUILT-IN
 from hashlib import scrypt
-from typing import TypeVar
+from typing import TypeVar, Sequence, Any
 
 # ENTITY / REPOSITORY
-from nvideos_web.core.entity.user import User, NewUserInput
+from nvideos_web.core.entity.entity_base import AuditData
+from nvideos_web.core.entity.user import User, UserInput, UserMetadata
 from nvideos_web.core.repository.user import (
     UserPasswordHasher,
     UserRepository
 )
 from nvideos_web.impl.base import PgRepositoryBase
+
+# ERRORS
+from nvideos_web.impl.error.base import PgRepositoryMissingParameter
 
 # CONFIG
 from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
@@ -45,23 +52,61 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         super().__init__()
         self._db = dbContext
 
-    def create(self, userData: NewUserInput) -> User:
+    def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
+        if not userInputData or not auditInputData:
+            raise PgRepositoryMissingParameter(
+                "Missing parameter. InputData or AuditData."
+            )
+
+        sqlFields = self.sqlFields(
+            UserMetadata.userName, UserMetadata.userSurname,
+            UserMetadata.userEmail, UserMetadata.userPassword,
+            UserMetadata.userAvatarUrl, UserMetadata.userPermission,
+            UserMetadata.userIsActive,
+            #Audit
+            UserMetadata.createdAt, UserMetadata.createdBy,
+            UserMetadata.updatedAt, UserMetadata.updatedBy
+        )
         sql = """
-            insert into nvideos_user
+            insert into {table_name}
             (
-                user_name, user_surname, user_email,
-                user_password, user_avatar_url, user_permission,
-                user_is_active
+                {sql_fields}
             )
             values
             (
                 %(userName)s, %(userSurname)s, %(userEmail)s, 
                 %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
-                %(userIsActive)s
-            )
-        """
-        pass
-        #params = 
+                %(userIsActive)s, %(createdAt)s, %(createdBy)s,
+                %(updatedAt)s, %(updatedBy)s
+            );
+        """.format(**{ "table_name": UserMetadata.__table_name__, "sql_fields": sqlFields })
+        parsedParams = self.parseSqlParams(sql, userInputData, auditObject=auditInputData)
+
+        nSql = "select a.user_id, p.user_permission, p.permission_description from nvideo_user a, user_permission p where a.user_id = 9 and a.user_permission = p.user_permission;"
+        #nParsedParms = self.parseSqlParams(nSql, userInputData)
+
+        #nSql = "select * from user_permission where user_permission = %(userPermission)s;"
+        #nParsedParms = self.parseSqlParams(nSql, userInputData)
+
+        class DictRowFactory:
+            def __init__(self, cursor: Cursor[Any]):
+                self.fields = [c.name for c in cursor.description]
+
+            def __call__(self, values: Sequence[Any]) -> dict[str, Any]:
+                return dict(zip(self.fields, values))
+
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=DictRowFactory)
+            #cur.execute(nSql, nParsedParms)
+            #rr = cur.fetchall()
+            # cur.execute(
+            #     sql, parsedParams
+            # )
+            cur.execute(nSql)
+            #cur.execute(nSql, nParsedParms)
+            rr = cur.fetchall()
+            conn.rollback()
+            #conn.commit()
 
     def update(self, userData: User, newUserData: User) -> User:
         return super().update(userData, newUserData)
@@ -76,6 +121,5 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             cur.execute(f"select * from testing_for_now; select pg_sleep({seconds})")
             r = cur.fetchall()
             r.append(id(conn))
-            r.
             return r
 

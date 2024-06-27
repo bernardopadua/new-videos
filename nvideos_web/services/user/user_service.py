@@ -1,22 +1,38 @@
-from dataclasses import dataclass
-
 from datetime import date
+from typing import Optional
 
-from nvideos_web.core.entity.user import User, NewUserInput
+from nvideos_web.services.base_service import BaseService
+from nvideos_web.services.user.error import UserServiceNoUserInput
+
+from nvideos_web.core.entity.user import User, UserInput
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.impl.user_repository import PgUserRepository, PasswordHasher
 from nvideos_web.db.pgcontext import NewVideosDBContext
 # Used to perform test with single connection
 #from nvideos_web.db.pgcontext_perf_test import NewVideosDBContext
 
-class UserService:
+class UserService(BaseService):
 
-    def __init__(self) -> None:
+    def __init__(self, currentUser: Optional[int] = None) -> None:
+        super().__init__(currentUser=currentUser)
         self._usuRep = PgUserRepository(dbContext=NewVideosDBContext)
 
-    def createNewUser(self, userInput: NewUserInput) -> User:
-        self._usuRep.create(userData=userInput)
-        pass
+        self._inputUser: Optional[UserInput] = None
+
+    def createNewUser(self, *, userInput: Optional[UserInput] = None) -> User:
+        self.insertingMode()
+        auditData = self.fillAuditData()
+        userInput = userInput if userInput else self._inputUser
+
+        if not userInput:
+            raise UserServiceNoUserInput(
+                "No user input. Verify if you are setting the user input."
+            )
+
+        self._usuRep.create(
+            userInputData=userInput, 
+            auditInputData=auditData
+        )
 
     def perfShow(self, seconds: int):
         print(seconds)
@@ -33,26 +49,21 @@ class UserService:
                 result:: {result}
             </h3>            
         """
-    
-    @classmethod
-    def getDateNow(cls) -> date:
-        return date.today()
 
-    @classmethod
-    def getNewUserInput(
-        cls, 
+    def setUserInput(
+        self, 
         userName: str = "",
         userEmail: str = "",
         userSurname: str = "",
         userAvatarUrl: str = "",
-        userBirthDate: date = None,
+        userBirthDate: Optional[date] = None,
         userPassword: str = "",
         createSystemUser: bool = False
-    ) -> NewUserInput:
+    ) -> UserInput:
         if not userBirthDate:
-            userBirthDate = cls.getDateNow()
+            userBirthDate = date.today()
 
-        userPerm = NewUserInput.userPermission
+        userPerm = UserInput.userPermission
         if createSystemUser:
             userPerm = UserPermissions.P_SYSTEM.value
         
@@ -60,7 +71,7 @@ class UserService:
             userPassword
         )
 
-        nInput = NewUserInput(
+        self._inputUser = UserInput(
             userName=userName,
             userSurname=userSurname,
             userEmail=userEmail,
@@ -71,4 +82,4 @@ class UserService:
             userIsActive=True
         )
 
-        return nInput
+        return self._inputUser

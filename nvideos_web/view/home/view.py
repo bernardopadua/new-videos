@@ -25,14 +25,14 @@ def abc(seconds: int = 0):
     from nvideos_web.services.user.user_service import UserService
 
     u = UserService()
-    nInput = UserService.getNewUserInput(
+    nInput = u.setUserInput(
         userName="sdf",
         userEmail="dsafsdf",
         userSurname="sdfsdf",
         userPassword="sdfsdfsdfs",
         createSystemUser=True
     )
-    u.createNewUser(nInput)
+    u.createNewUser()
 
     ini = time.perf_counter()
     viewResult = u.perfShow(0)

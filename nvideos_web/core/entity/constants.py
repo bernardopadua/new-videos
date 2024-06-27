@@ -1,11 +1,11 @@
 from enum import Enum
 
 class UserPermissions(Enum):
-    P_SYSTEM = 0x0
-    P_COMMOM_USER = 0x1
+    P_SYSTEM = '\x01'
+    P_COMMOM_USER = '\x02'
 
 class VideoPermissions(Enum):
-    P_PUBLIC = 0x0
-    P_PRIVATE = 0x1
-    P_SUBSCRIBER_ONLY = 0x2
-    P_LINK_ONLY = 0x3
+    P_PUBLIC = '\x01'
+    P_PRIVATE = '\x02'
+    P_SUBSCRIBER_ONLY = '\x03'
+    P_LINK_ONLY = '\x04'

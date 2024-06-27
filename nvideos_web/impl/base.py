@@ -6,15 +6,33 @@ from dataclasses import is_dataclass, Field
 from nvideos_web.core.entity.metadata import METADATA_FIELD_NAME
 from nvideos_web.impl.error.base import (
     PgRepositoryInputIsNotDataclass,
-    PgRepositoryMissingParameter,
-    PgRepositoryFieldMissingMetadata
+    PgRepositoryMissingSqlParameter
 )
 
 GenericInputClass = NewType("GenericInputClass", type)
 
+class NvSql:
+    @classmethod
+    def literal(*args):
+        concat = []
+        for i in args:
+            concat.append(i)
+        return ''.join(concat)
+
 class PgRepositoryBase:
 
-    def parseSqlParams(self, _sql: str, inputObject: GenericInputClass) -> dict:
+    def sqlFields(self, *args) -> str:
+        concat = []
+        for arg in args:
+            concat.append(arg)
+        return ','.join(concat)
+
+    def parseSqlParams(
+        self, _sql: str, 
+        inputObject: GenericInputClass,
+        *,
+        auditObject: GenericInputClass = None
+    ) -> dict:
         if not is_dataclass(inputObject):
             raise PgRepositoryInputIsNotDataclass(
                 "Object passed to parsing params is not dataclass."
@@ -25,12 +43,21 @@ class PgRepositoryBase:
             bytes(_sql.encode('utf-8'))
         )
         for param in sqlParams:
+            inputFieldValue = None
+            paramAttr = _sql[param.span(0)[0]+2:param.span(0)[1]-2]
+            
             try:
-                inputFieldValue = inputObject.__getattribute__(param)
+                if not hasattr(inputObject, paramAttr) and auditObject:
+                    inputFieldValue = auditObject.__getattribute__(paramAttr)
+                else:
+                    inputFieldValue = inputObject.__getattribute__(paramAttr)
             except AttributeError as e:
-                raise PgRepositoryMissingParameter(
-                    "Param has no input field. Please verify the input object."
+                raise PgRepositoryMissingSqlParameter(
+                    "Param has no input field. Please verify the input and audit objects."
                 )
-            paramAssigned[param] = inputFieldValue
+
+            paramAssigned[paramAttr] = inputFieldValue
+
+        return paramAssigned
 
     #TODO: use metadata to assign the values from select
