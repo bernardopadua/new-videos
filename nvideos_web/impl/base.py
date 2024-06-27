@@ -1,9 +1,9 @@
 from typing import NewType
 from psycopg import _queries
 
-from dataclasses import is_dataclass, Field
+from dataclasses import is_dataclass
 
-from nvideos_web.core.entity.metadata import METADATA_FIELD_NAME
+from nvideos_web.core.entity.entity_base import ModelField
 from nvideos_web.impl.error.base import (
     PgRepositoryInputIsNotDataclass,
     PgRepositoryMissingSqlParameter
@@ -21,7 +21,7 @@ class NvSql:
 
 class PgRepositoryBase:
 
-    def sqlFields(self, *args) -> str:
+    def sqlFields(self, *args: ModelField) -> str:
         concat = []
         for arg in args:
             concat.append(arg)
