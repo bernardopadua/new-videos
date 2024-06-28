@@ -5,13 +5,17 @@ from psycopg import Cursor
 from hashlib import scrypt
 from typing import TypeVar, Sequence, Any
 
-# ENTITY / REPOSITORY
+# ENTITY
 from nvideos_web.core.entity.base_entity import AuditData
 from nvideos_web.core.entity.user import User, UserInput, UserMetadata
+
+# REPOSITORY
 from nvideos_web.core.repository.user import (
     UserPasswordHasher,
     UserRepository
 )
+
+# IMPL
 from nvideos_web.impl.base_repository import (
     PgRepositoryBase,
     ModelRowFactory
@@ -23,7 +27,7 @@ from nvideos_web.impl.error.base import PgRepositoryMissingParameter
 # CONFIG
 from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
 
-# FOR TYPES
+# DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # Custom Type
@@ -95,8 +99,10 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         nSql = """
             select a.user_id, a.user_name, a.user_email 
             from nvideo_user a, user_permission p 
-            where a.user_id = 1
-              and a.user_permission = p.user_permission;
+            --where a.user_id = 1
+              --and
+              where
+              a.user_permission = p.user_permission;
         """
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 

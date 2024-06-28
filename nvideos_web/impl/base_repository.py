@@ -1,15 +1,24 @@
-from typing import NewType, Sequence, Any
-from psycopg import _queries, Cursor
-
+# BUILT-IN
+from typing import ( 
+    Sequence, Any, Type,
+    TypeVar, Optional
+)
 from dataclasses import is_dataclass
 
+# PSYCOPG
+from psycopg import _queries, Cursor
+
+# ENTITY
 from nvideos_web.core.entity.base_entity import ModelField
+
+# IMPL
 from nvideos_web.impl.error.base import (
     PgRepositoryInputIsNotDataclass,
     PgRepositoryMissingSqlParameter
 )
 
-GenericInputClass = NewType("GenericInputClass", type)
+GenericInputClass = TypeVar("GenericInputClass")
+M = TypeVar("M")
 
 class NvSql:
     @classmethod
@@ -22,20 +31,23 @@ class NvSql:
 class ModelRowFactory:
     def __init__(
         self, 
-        listOrderFields: list[ModelField]
+        listOrderFields: list[ModelField],
+        /, *,
+        modelReturn: Optional[Type[M]]= None
     ):
         self.fields = listOrderFields
+        self.returningModel = modelReturn
 
     def __call__(
         self, 
         *args: Sequence[Any]
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | dict[Type[M], M]:
         if len(args) == 0:
             raise Exception("RowFactory is been called with no parameters.")
         if len(args) > 0 and isinstance(args[0], Cursor):
             return self
 
-        values = args[0]
+        values: Sequence[Any] = args[0]
         eachModel: dict[str, Any] = {}
         instancesModel: dict[object, object] = {}
 
@@ -48,6 +60,9 @@ class ModelRowFactory:
 
         for model in eachModel.keys():
             instancesModel[model] = model(**eachModel[model])
+        
+        if len(instancesModel) > 0:
+            return instancesModel
 
         return dict(zip(self.fields, values))
 

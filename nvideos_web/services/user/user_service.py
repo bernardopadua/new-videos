@@ -1,12 +1,19 @@
+# BUILT-IN
 from datetime import date
 from typing import Optional
 
+# SERVICES
 from nvideos_web.services.base_service import BaseService
 from nvideos_web.services.user.error import UserServiceNoUserInput
 
+# ENTITY
 from nvideos_web.core.entity.user import User, UserInput
 from nvideos_web.core.entity.constants import UserPermissions
+
+# REPOSITORY
 from nvideos_web.impl.user_repository import PgUserRepository, PasswordHasher
+
+# DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 # Used to perform test with single connection
 #from nvideos_web.db.pgcontext_perf_test import NewVideosDBContext
