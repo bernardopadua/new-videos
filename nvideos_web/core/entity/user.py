@@ -4,11 +4,12 @@ from typing import Any, Optional
 
 from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
-from nvideos_web.core.entity.entity_base import BaseMetadata, ModelField, modelMetadataMapper
+from nvideos_web.core.entity.base_entity import BaseMetadata, ModelField, modelMetadataMapper
 
 @modelMetadataMapper
 class UserMetadata(BaseMetadata):
     __table_name__: str = "nvideo_user"
+    __model_data__: "User" = "User"
     #Columns
     userId: ModelField = ModelField("user_id")
     userName: ModelField = ModelField("user_name")
@@ -19,8 +20,6 @@ class UserMetadata(BaseMetadata):
     userAvatarUrl: ModelField = ModelField("user_avatar_url")
     userPermission: ModelField = ModelField("user_permission")
     userIsActive: ModelField = ModelField("user_is_active")
-
-print(UserMetadata.userPermission.owner)
 
 @dataclass(frozen=True, slots=True)
 class User:

@@ -1,5 +1,5 @@
 from typing import NewType, Sequence, Any
-from psycopg import _queries
+from psycopg import _queries, Cursor
 
 from dataclasses import is_dataclass
 
@@ -19,71 +19,36 @@ class NvSql:
             concat.append(i)
         return ''.join(concat)
 
-# class DictRowFactory:
-#     def __init__(
-#         self, 
-#         #cursor
-#         listOrderFields: list[ModelField]
-#     ):
-#         #self.fields = [c.name for c in cursor.description]
-#         self.fields = listOrderFields
+class DictRowFactory:
+    def __init__(
+        self, 
+        listOrderFields: list[ModelField]
+    ):
+        self.fields = listOrderFields
 
-#     def __call__(
-#         self, 
-#         #values: Sequence[Any],
-#         *args
-#     ) -> dict[str, Any]:
-#         if len(args) <= 1:
-#             self._s = args[0]
-#             return
-        
-#         eachModel: dict[str, Any] = {}
-#         instancesModel: dict[object, object] = {}
-#         values = []
+    def __call__(
+        self, 
+        *args: Sequence[Any]
+    ) -> dict[str, Any]:
+        if len(args) == 0:
+            raise Exception("RowFactory is been called with no parameters.")
+        if len(args) > 0 and isinstance(args[0], Cursor):
+            return self
 
-#         for i in values:
-#             field = self.fields[i]
-#             if field.owner not in eachModel:
-#                 eachModel[field.owner] = {}
-#             eachModel[field.owner].update({ field.attr: values[i] })
+        values = args[0]
+        eachModel: dict[str, Any] = {}
+        instancesModel: dict[object, object] = {}
 
-#         for model in eachModel.keys():
-#             instancesModel[model] = model(**eachModel[model])
+        for i in range(len(values)):
+            field = self.fields[i]
+            if field.owner not in eachModel:
+                eachModel[field.owner] = {}
+            eachModel[field.owner].update({ field.attr: values[i] })
 
-#         return dict(zip(self.fields, values))
+        for model in eachModel.keys():
+            instancesModel[model] = model(**eachModel[model])
 
-def makeRowFactory(listFieldsOrder: list[ModelField]):
-    listFieldsOrder = listFieldsOrder
-    class DictRowFactory:
-        def __init__(
-            self, 
-            cursor
-            #listOrderFields: list[ModelField]
-        ):
-            #self.fields = [c.name for c in cursor.description]
-            self.fields = listFieldsOrder
-
-        def __call__(
-            self, 
-            #values: Sequence[Any],
-            *args
-        ) -> dict[str, Any]:
-            eachModel: dict[str, Any] = {}
-            instancesModel: dict[object, object] = {}
-            values = []
-
-            for i in values:
-                field = self.fields[i]
-                if field.owner not in eachModel:
-                    eachModel[field.owner] = {}
-                eachModel[field.owner].update({ field.attr: values[i] })
-
-            for model in eachModel.keys():
-                instancesModel[model] = model(**eachModel[model])
-
-            return dict(zip(self.fields, values))
-    
-    return DictRowFactory
+        return dict(zip(self.fields, values))
 
 class PgRepositoryBase:
 

@@ -14,8 +14,7 @@ from nvideos_web.core.repository.user import (
 )
 from nvideos_web.impl.base_repository import (
     PgRepositoryBase,
-    #DictRowFactory,
-    makeRowFactory
+    DictRowFactory
 )
 
 # ERRORS
@@ -96,7 +95,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         nSql = """
             select a.user_id, a.user_name, a.user_email 
             from nvideo_user a, user_permission p 
-            where a.user_id = 9 
+            where a.user_id = 1
               and a.user_permission = p.user_permission;
         """
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
@@ -105,21 +104,23 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=makeRowFactory(fieldsOrder))
+            #cur = conn.cursor(row_factory=makeRowFactory(fieldsOrder))
+            cur = conn.cursor(row_factory=DictRowFactory(fieldsOrder))
+            #cur = conn.cursor()
             cur.execute(nSql)
             rr = cur.fetchall()
             conn.rollback()
             return
+            # cur.execute(nSql, nParsedParms)
+            # rr = cur.fetchall()
+            cur.execute(
+                sql, parsedParams
+            )
+            #cur.execute(nSql)
             #cur.execute(nSql, nParsedParms)
             #rr = cur.fetchall()
-            # cur.execute(
-            #     sql, parsedParams
-            # )
-            cur.execute(nSql)
-            #cur.execute(nSql, nParsedParms)
-            rr = cur.fetchall()
-            conn.rollback()
-            #conn.commit()
+            #conn.rollback()
+            conn.commit()
 
     def update(self, userData: User, newUserData: User) -> User:
         return super().update(userData, newUserData)
