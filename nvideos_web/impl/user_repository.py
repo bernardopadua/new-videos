@@ -108,7 +108,8 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             cur = conn.cursor(row_factory=makeRowFactory(fieldsOrder))
             cur.execute(nSql)
             rr = cur.fetchall()
-            pass
+            conn.rollback()
+            return
             #cur.execute(nSql, nParsedParms)
             #rr = cur.fetchall()
             # cur.execute(

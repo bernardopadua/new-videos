@@ -33,7 +33,7 @@ def abc(seconds: int = 0):
         createSystemUser=True
     )
     u.createNewUser()
-
+    return "<h1>Hello</h1>"
     ini = time.perf_counter()
     viewResult = u.perfShow(0)
     time.sleep(seconds)
