@@ -41,9 +41,10 @@ class ModelRowFactory:
 
         for i in range(len(values)):
             field = self.fields[i]
-            if field.owner not in eachModel:
-                eachModel[field.owner] = {}
-            eachModel[field.owner].update({ field.attr: values[i] })
+            modelData = field.owner.__model_data__
+            if modelData not in eachModel:
+                eachModel[modelData] = {}
+            eachModel[modelData].update({ field.attr: values[i] })
 
         for model in eachModel.keys():
             instancesModel[model] = model(**eachModel[model])

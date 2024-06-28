@@ -1,17 +1,16 @@
 from datetime import datetime
 from dataclasses import dataclass
+from typing import Generic, TypeVar
 
-def modelMetadataMapper(cls: object) -> None:
+T = TypeVar("T")
+
+def modelMetadataMapper(cls: Generic[T]) -> T:
     props = cls.__dict__
     for k in props:
         if isinstance(props[k], ModelField):
             p: ModelField = props[k]
             p.attr = k
             p.owner = cls
-    return cls
-
-def mapToMetadata(cls: object, metadata: object) -> None:
-    metadata.__model_class__ = cls
     return cls
 
 class ModelField:
