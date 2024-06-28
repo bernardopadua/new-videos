@@ -1,7 +1,10 @@
 from datetime import datetime
 from dataclasses import dataclass
 
-def modelMetadataMapper(cls: object):
+from typing import Any
+
+#LSP was confusing the intellisense when typing cls
+def modelMetadataMapper(cls):
     props = cls.__dict__
     for k in props:
         if isinstance(props[k], ModelField):
@@ -10,12 +13,6 @@ def modelMetadataMapper(cls: object):
             p.owner = cls
     return cls
 
-class ModelMetaMetaClass:
-    def __new__(cls, a, b, c, *args, **kwargs):
-        ncls = super().__new__(cls)
-
-        return ncls
-
 class ModelField:
     def __init__(self, fieldName: str, *, attrName: str = "") -> None:
         self.field:str = fieldName
@@ -23,10 +20,10 @@ class ModelField:
         self.owner:object = None
 
 class BaseMetadata:
-    updatedBy = "updated_by"
-    createdBy = "created_by"
-    createdAt = "created_at"
-    updatedAt = "updated_at"
+    updatedBy:ModelField = ModelField("updated_by")
+    createdBy:ModelField = ModelField("created_by")
+    createdAt:ModelField = ModelField("created_at")
+    updatedAt:ModelField = ModelField("updated_at")
     all = "*"
 
 @dataclass(frozen=True)

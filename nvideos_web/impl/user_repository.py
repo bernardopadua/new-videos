@@ -12,7 +12,11 @@ from nvideos_web.core.repository.user import (
     UserPasswordHasher,
     UserRepository
 )
-from nvideos_web.impl.base import PgRepositoryBase
+from nvideos_web.impl.base_repository import (
+    PgRepositoryBase,
+    #DictRowFactory,
+    makeRowFactory
+)
 
 # ERRORS
 from nvideos_web.impl.error.base import PgRepositoryMissingParameter
@@ -58,7 +62,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 "Missing parameter. InputData or AuditData."
             )
 
-        sqlFields = self.sqlFields(
+        sqlFields, fieldsOrder = self.sqlFields(
             UserMetadata.userName, UserMetadata.userSurname,
             UserMetadata.userEmail, UserMetadata.userPassword,
             UserMetadata.userAvatarUrl, UserMetadata.userPermission,
@@ -79,24 +83,32 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 %(userIsActive)s, %(createdAt)s, %(createdBy)s,
                 %(updatedAt)s, %(updatedBy)s
             );
-        """.format(**{ "table_name": UserMetadata.__table_name__, "sql_fields": sqlFields })
+        """.format(**{ 
+            "table_name": UserMetadata.__table_name__, 
+            "sql_fields": sqlFields 
+        })
         parsedParams = self.parseSqlParams(sql, userInputData, auditObject=auditInputData)
 
-        nSql = "select a.user_id, p.user_permission, p.permission_description from nvideo_user a, user_permission p where a.user_id = 9 and a.user_permission = p.user_permission;"
+        sqlFields, fieldsOrder = self.sqlFields(
+            UserMetadata.userId, UserMetadata.userName,
+            UserMetadata.userEmail
+        )
+        nSql = """
+            select a.user_id, a.user_name, a.user_email 
+            from nvideo_user a, user_permission p 
+            where a.user_id = 9 
+              and a.user_permission = p.user_permission;
+        """
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
         #nSql = "select * from user_permission where user_permission = %(userPermission)s;"
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
-        class DictRowFactory:
-            def __init__(self, cursor: Cursor[Any]):
-                self.fields = [c.name for c in cursor.description]
-
-            def __call__(self, values: Sequence[Any]) -> dict[str, Any]:
-                return dict(zip(self.fields, values))
-
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=DictRowFactory)
+            cur = conn.cursor(row_factory=makeRowFactory(fieldsOrder))
+            cur.execute(nSql)
+            rr = cur.fetchall()
+            pass
             #cur.execute(nSql, nParsedParms)
             #rr = cur.fetchall()
             # cur.execute(

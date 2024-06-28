@@ -4,21 +4,21 @@ from typing import Any, Optional
 
 from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
-from nvideos_web.core.entity.entity_base import BaseMetadata, ModelField, modelMetadataMapper, ModelMetaMetaClass
+from nvideos_web.core.entity.entity_base import BaseMetadata, ModelField, modelMetadataMapper
 
 @modelMetadataMapper
-class UserMetadata():#metaclass=ModelMetaMetaClass):
+class UserMetadata(BaseMetadata):
     __table_name__: str = "nvideo_user"
     #Columns
-    userId = ModelField("user_id") #attrName="userId")
-    userName = ModelField("user_name") #attrName="userName")
-    userSurname = ModelField("user_surname") #attrName="userSurname")
-    userEmail = ModelField("user_email") #attrName="userEmail")
-    userPassword = ModelField("user_password") #attrName="userPassword")
-    userBirthDate = ModelField("user_birth_date") #attrName="userBirthDate")
-    userAvatarUrl = ModelField("user_avatar_url") #attrName="userAvatarUrl")
-    userPermission = ModelField("user_permission") #attrName="userPermission")
-    userIsActive = ModelField("user_is_active") #attrName="userIsActive")
+    userId: ModelField = ModelField("user_id")
+    userName: ModelField = ModelField("user_name")
+    userSurname: ModelField = ModelField("user_surname")
+    userEmail: ModelField = ModelField("user_email")
+    userPassword: ModelField = ModelField("user_password")
+    userBirthDate: ModelField = ModelField("user_birth_date")
+    userAvatarUrl: ModelField = ModelField("user_avatar_url")
+    userPermission: ModelField = ModelField("user_permission")
+    userIsActive: ModelField = ModelField("user_is_active")
 
 print(UserMetadata.userPermission.owner)
 
