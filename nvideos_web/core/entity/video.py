@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from nvideos_web.core.entity.entity_base import BaseFieldsMixin
+from nvideos_web.core.entity.base_entity import BaseFieldsMixin
 
 @dataclass
 class Video(BaseFieldsMixin):

@@ -6,7 +6,7 @@ from hashlib import scrypt
 from typing import TypeVar, Sequence, Any
 
 # ENTITY / REPOSITORY
-from nvideos_web.core.entity.entity_base import AuditData
+from nvideos_web.core.entity.base_entity import AuditData
 from nvideos_web.core.entity.user import User, UserInput, UserMetadata
 from nvideos_web.core.repository.user import (
     UserPasswordHasher,
@@ -14,7 +14,7 @@ from nvideos_web.core.repository.user import (
 )
 from nvideos_web.impl.base_repository import (
     PgRepositoryBase,
-    DictRowFactory
+    ModelRowFactory
 )
 
 # ERRORS
@@ -105,7 +105,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
 
         with self._db.getConn() as conn:
             #cur = conn.cursor(row_factory=makeRowFactory(fieldsOrder))
-            cur = conn.cursor(row_factory=DictRowFactory(fieldsOrder))
+            cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
             #cur = conn.cursor()
             cur.execute(nSql)
             rr = cur.fetchall()

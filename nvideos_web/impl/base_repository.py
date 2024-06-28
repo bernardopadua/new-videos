@@ -3,7 +3,7 @@ from psycopg import _queries, Cursor
 
 from dataclasses import is_dataclass
 
-from nvideos_web.core.entity.entity_base import ModelField
+from nvideos_web.core.entity.base_entity import ModelField
 from nvideos_web.impl.error.base import (
     PgRepositoryInputIsNotDataclass,
     PgRepositoryMissingSqlParameter
@@ -19,7 +19,7 @@ class NvSql:
             concat.append(i)
         return ''.join(concat)
 
-class DictRowFactory:
+class ModelRowFactory:
     def __init__(
         self, 
         listOrderFields: list[ModelField]

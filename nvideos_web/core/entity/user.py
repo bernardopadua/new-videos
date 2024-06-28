@@ -1,15 +1,18 @@
 from datetime import date
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Optional
 
 from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
-from nvideos_web.core.entity.base_entity import BaseMetadata, ModelField, modelMetadataMapper
+from nvideos_web.core.entity.base_entity import (
+    BaseMetadata, ModelField, 
+    modelMetadataMapper, mapToMetadata
+)
 
 @modelMetadataMapper
 class UserMetadata(BaseMetadata):
     __table_name__: str = "nvideo_user"
-    __model_data__: "User" = "User"
+    __model_data__: "User"
     #Columns
     userId: ModelField = ModelField("user_id")
     userName: ModelField = ModelField("user_name")
@@ -21,6 +24,7 @@ class UserMetadata(BaseMetadata):
     userPermission: ModelField = ModelField("user_permission")
     userIsActive: ModelField = ModelField("user_is_active")
 
+@mapToMetadata(UserMetadata)
 @dataclass(frozen=True, slots=True)
 class User:
     userId: int = setUpField(UserMetadata.userId, default=0)

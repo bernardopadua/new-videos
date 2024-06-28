@@ -1,5 +1,5 @@
 from datetime import date
-from nvideos_web.core.entity.entity_base import AuditData
+from nvideos_web.core.entity.base_entity import AuditData
 
 class BaseService:
     def __init__(self, currentUser: int = None) -> None:

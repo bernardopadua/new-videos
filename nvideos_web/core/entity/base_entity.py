@@ -1,16 +1,17 @@
 from datetime import datetime
 from dataclasses import dataclass
 
-from typing import Any
-
-#LSP was confusing the intellisense when typing cls
-def modelMetadataMapper(cls):
+def modelMetadataMapper(cls: object) -> None:
     props = cls.__dict__
     for k in props:
         if isinstance(props[k], ModelField):
             p: ModelField = props[k]
             p.attr = k
             p.owner = cls
+    return cls
+
+def mapToMetadata(cls: object, metadata: object) -> None:
+    metadata.__model_class__ = cls
     return cls
 
 class ModelField:
