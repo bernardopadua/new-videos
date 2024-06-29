@@ -31,6 +31,10 @@ class BaseMetadataAuditMixin:
     all = "*"
 
 class BaseMetadataUtilMixin:
+    __table_name__: str = None
+    __model_data__: M = None
+    __use_prefix__: str = None
+
     #TODO: Implement the type METADACLASS and the model class return
     @classmethod
     def model(cls: Type[M]) -> M:
