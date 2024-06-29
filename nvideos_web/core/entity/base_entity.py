@@ -8,7 +8,7 @@ T = TypeVar("T")
 #Model from METADATA class
 M = TypeVar("M")
 
-def modelMetadataMapper(cls: Type[T]) -> T:
+def modelMetadataMapper(cls: Type[T]) -> Type[T]:
     props = cls.__dict__
     for k in props:
         if isinstance(props[k], ModelField):
@@ -54,13 +54,17 @@ class BaseMetadataUtilMixin:
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 
-    def __init__(self: Type[T], *, newPrefix: str = None):
+    def __init__(self: T, *, newPrefix: str = None):
         if not newPrefix:
             raise Exception("For a new instace of a table you need to inform a new prefix!")
         self.__use_prefix__ = newPrefix
 
     def getTable(self: T) -> str:
         return self.__table_name__
+
+    @classmethod
+    def as_(cls: Type[T], newPrefix: str = None):
+        return cls(newPrefix=newPrefix)
 
     @classmethod
     def getTable(cls: Type[T]) -> str:

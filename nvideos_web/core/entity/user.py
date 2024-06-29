@@ -11,7 +11,7 @@ from nvideos_web.core.entity.base_entity import (
 )
 
 @modelMetadataMapper
-class UserMetadata(BaseMetadataAuditMixin, BaseMetadataUtilMixin):
+class UserMetadata(BaseMetadataUtilMixin, BaseMetadataAuditMixin):
     __table_name__: str = "nvideo_user"
     __model_data__: Optional["User"] = None #Stored after definition
     __use_prefix__: str = "uu"

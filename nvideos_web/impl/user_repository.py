@@ -96,11 +96,13 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             UserMetadata.userEmail, UserMetadata.userPermission,
             UserPermissionMetadata.permissionDescription
         )
-        stmt = NvSql().select(
-            UserMetadata.userId, UserMetadata.userName,
-            UserMetadata.userEmail, UserMetadata.userPermission,
-            UserPermissionMetadata.permissionDescription
-        )
+        # stmt = NvSql().select(
+        #     UserMetadata.userId, UserMetadata.userName,
+        #     UserMetadata.userEmail, UserMetadata.userPermission,
+        #     UserPermissionMetadata.permissionDescription
+        # )
+        tt = UserMetadata.as_(newPrefix='pp')
+        
         nSql = """
             select a.user_id, a.user_name, a.user_email , p.permission_description
             from nvideo_user a, user_permission p 
@@ -113,6 +115,20 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             from nvideo_user uu, user_permission up 
             where uu.user_id = 1
               and uu.user_permission = up.user_permission
+        """
+        subU = UserMetadata.as_(newPrefix='us')
+        sqlFields, fieldsOrder = self.sqlFields(
+            UserMetadata.userName, subU.userName, subU.userEmail
+        )
+        nSql = """
+            select 
+                --nu.user_name, ch.channel_name, s.subscriber_id, nu2.user_name, nu2.user_email 
+                nu.user_name, nu2.user_name, nu2.user_email
+              from nvideo_user nu, channel ch, subscriber s, nvideo_user nu2
+            where nu.user_id = 1
+              and ch.user_id  = nu.user_id
+              and s.channel_id = ch.channel_id 
+              and s.user_id  = nu2.user_id 
         """
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
