@@ -33,7 +33,7 @@ class ModelRowFactory:
         self, 
         listOrderFields: list[ModelField],
         /, *,
-        modelReturn: Optional[Type[M]]= None
+        modelReturn: Optional[Type[M]] = None
     ):
         self.fields = listOrderFields
         self.returningModel = modelReturn
@@ -50,6 +50,7 @@ class ModelRowFactory:
         values: Sequence[Any] = args[0]
         eachModel: dict[str, Any] = {}
         instancesModel: dict[object, object] = {}
+        retObject: M = None
 
         for i in range(len(values)):
             field = self.fields[i]
@@ -58,12 +59,25 @@ class ModelRowFactory:
                 eachModel[modelData] = {}
             eachModel[modelData].update({ field.attr: values[i] })
 
+        if self.returningModel:
+            retObject = self.returningModel()
+
+            for model in eachModel.keys():
+                if not retObject.__dict__.get(model):
+                    raise Exception("Model assigned to return the query doesn't exists as a type of returned query.")
+
+                for attr in retObject.__dict__.keys():
+                    if isinstance(retObject.__dict__[attr], model):
+                        setattr(retObject, attr, model(**eachModel[model])) 
+            
+            instancesModel[self.returningModel] = retObject
+            return instancesModel
+        
         for model in eachModel.keys():
             instancesModel[model] = model(**eachModel[model])
-        
-        if len(instancesModel) > 0:
-            return instancesModel
 
+        return instancesModel
+        
         return dict(zip(self.fields, values))
 
 class PgRepositoryBase:

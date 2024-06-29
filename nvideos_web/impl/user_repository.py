@@ -1,13 +1,11 @@
-# PSYCOPG
-from psycopg import Cursor
-
 # BUILT-IN
 from hashlib import scrypt
-from typing import TypeVar, Sequence, Any
+from typing import TypeVar
 
 # ENTITY
 from nvideos_web.core.entity.base_entity import AuditData
 from nvideos_web.core.entity.user import User, UserInput, UserMetadata
+from nvideos_web.core.entity.user_permission import UserPermissionMetadata
 
 # REPOSITORY
 from nvideos_web.core.repository.user import (
@@ -94,15 +92,21 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
 
         sqlFields, fieldsOrder = self.sqlFields(
             UserMetadata.userId, UserMetadata.userName,
-            UserMetadata.userEmail
+            UserMetadata.userEmail, UserMetadata.userPermission,
+            UserPermissionMetadata.permissionDescription
         )
         nSql = """
-            select a.user_id, a.user_name, a.user_email 
+            select a.user_id, a.user_name, a.user_email , p.permission_description
             from nvideo_user a, user_permission p 
-            --where a.user_id = 1
-              --and
-              where
-              a.user_permission = p.user_permission;
+            where a.user_id = 1
+            and   a.user_permission = p.user_permission;
+        """
+        nSql = """
+            select 
+                uu.user_id, uu.user_name, uu.user_email, uu.user_permission, up.permission_description
+            from nvideo_user uu, user_permission up 
+            where uu.user_id = 1
+              and uu.user_permission = up.user_permission
         """
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
@@ -110,11 +114,10 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
         with self._db.getConn() as conn:
-            #cur = conn.cursor(row_factory=makeRowFactory(fieldsOrder))
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
-            #cur = conn.cursor()
             cur.execute(nSql)
             rr = cur.fetchall()
+            print(UserMetadata.get(rr[0]).userName)
             conn.rollback()
             return
             # cur.execute(nSql, nParsedParms)

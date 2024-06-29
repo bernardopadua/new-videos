@@ -5,14 +5,16 @@ from typing import Optional
 from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.base_entity import (
-    BaseMetadata, ModelField, 
+    BaseMetadataAuditMixin, 
+    BaseMetadataUtilMixin, ModelField, 
     modelMetadataMapper
 )
 
 @modelMetadataMapper
-class UserMetadata(BaseMetadata):
+class UserMetadata(BaseMetadataAuditMixin, BaseMetadataUtilMixin):
     __table_name__: str = "nvideo_user"
     __model_data__: Optional["User"] = None #Stored after definition
+    __use_prefix__: str = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")
     userName: ModelField = ModelField("user_name")
@@ -36,7 +38,7 @@ class User:
     )
     userBirthDate: Optional[date] = setUpField(UserMetadata.userBirthDate, default=None)
     userAvatarUrl: str = setUpField(UserMetadata.userAvatarUrl, default="")
-    userPermission: int = setUpField(UserMetadata.userPermission, default=0)
+    userPermission: bytes = setUpField(UserMetadata.userPermission, default=bytes(0))
     userIsActive: bool = setUpField(UserMetadata.userIsActive, default=True)
 
 @dataclass
