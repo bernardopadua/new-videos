@@ -9,7 +9,7 @@ from dataclasses import is_dataclass
 from psycopg import _queries, Cursor
 
 # ENTITY
-from nvideos_web.core.entity.base_entity import ModelField
+from nvideos_web.core.entity.base_entity import ModelField, ModelFieldKeyWord
 
 # IMPL
 from nvideos_web.impl.error.base import (
@@ -23,16 +23,32 @@ M = TypeVar("M")
 class NvSql:
     def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
         self._sql: str = ""
-        
+                
         self._fieldsListOrder: list[ModelField] = None
         self._tables: list[str]
-        
+
         self._usePrefix = usePrefix
 
-    def select(self: "NvSql", *args: ModelField) -> "NvSql":
+    def selectFields(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+        if len(args) == 1 and args[0].field == "*":
+            for attr in args[0].owner.__dict__:
+                if isinstance(attr, ModelField):
+                    self._fieldsListOrder.append(attr)
         for arg in args:
+            if isinstance(arg, ModelFieldKeyWord) and arg.field == "*":
+                self.selectFields(arg)
             self._fieldsListOrder.append(arg)
+        return self
 
+    def select(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+        self._isSelecting = True
+        self.selectFields(*args)
+        return self
+
+    def insert(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+        self._isInserting = True
+        self.selectFields(*args)
+        self._insertTable = args[0].owner.__table_name__
         return self
 
     def build(self: "NvSql") -> str:

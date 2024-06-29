@@ -17,39 +17,55 @@ def modelMetadataMapper(cls: Type[T]) -> T:
             p.owner = cls
     return cls
 
-@dataclass(frozen=True, slots=True)
-class BaseModelData:
-    @classmethod
-    def get(cls: Type[M], row: dict[Type[M], M]) -> M:
-        return row.get(cls)
-
 class ModelField:
-    def __init__(self, fieldName: str, /, *, attrName: str = "") -> None:
-        self.field:str = fieldName
-        self.attr:str = attrName
-        self.owner:object = None
+    def __init__(self: "ModelField", fieldName: str, /, *, attrName: str = "") -> None:
+        self.field: str = fieldName
+        self.attr: str = attrName
+        self.owner: Type[T] = None
 
-    def __eq__(self: "ModelField", value: "ModelField") -> str:
+    def getWithPrefix(self: "ModelField") -> str:
+        prefix: str = self.owner.__use_prefix__
+        return f"{prefix}.{self.field}"
+
+    def __eq__(
+        self: "ModelField", value: "ModelField",
+        *, usePrefix: bool = False
+    ) -> str:
+        nField: str = self.field if not usePrefix else self.getWithPrefix()
         if not isinstance(value, ModelField):
-            raise Exception("Cannot compare a ModelField with a non Modelfield")
+            return f"{nField} = {value}"
+        
+        fieldComp: str = value.field if not usePrefix else value.getWithPrefix()
+        return f"{nField} = {fieldComp}"
 
-        return f"{self.field} = {value.field}"
-
+class ModelFieldKeyWord(ModelField):
+    pass
 
 class BaseMetadataAuditMixin:
-    updatedBy:ModelField = ModelField("updated_by")
-    createdBy:ModelField = ModelField("created_by")
-    createdAt:ModelField = ModelField("created_at")
-    updatedAt:ModelField = ModelField("updated_at")
-    all = "*"
+    updatedBy: ModelField = ModelField("updated_by")
+    createdBy: ModelField = ModelField("created_by")
+    createdAt: ModelField = ModelField("created_at")
+    updatedAt: ModelField = ModelField("updated_at")
 
 class BaseMetadataUtilMixin:
     __table_name__: str = None
     __model_data__: M = None
     __use_prefix__: str = None
 
-    # This typing was made to facilitate autocompletion rather than 
-    # correctability of what type __model_data__ represents.
+    all: ModelFieldKeyWord = ModelFieldKeyWord("*")
+
+    def __init__(self: Type[T], *, newPrefix: str = None):
+        if not newPrefix:
+            raise Exception("For a new instace of a table you need to inform a new prefix!")
+        self.__use_prefix__ = newPrefix
+
+    def getTable(self: T) -> str:
+        return self.__table_name__
+
+    @classmethod
+    def getTable(cls: Type[T]) -> str:
+        return cls.__table_name__
+
     @classmethod
     def model(cls: Type[T]) -> M:
         return cls.__model_data__
@@ -60,3 +76,9 @@ class AuditData:
     createdBy: int
     createdAt: datetime
     updatedAt: datetime
+
+@dataclass(frozen=True, slots=True)
+class BaseModelData:
+    @classmethod
+    def get(cls: Type[M], row: dict[Type[M], M]) -> M:
+        return row.get(cls)
