@@ -59,6 +59,7 @@ class ModelRowFactory:
                 eachModel[modelData] = {}
             eachModel[modelData].update({ field.attr: values[i] })
 
+        #TODO: I don't know if I want to continue this. I think the default is working OK, at least for now.
         if self.returningModel:
             retObject = self.returningModel()
 

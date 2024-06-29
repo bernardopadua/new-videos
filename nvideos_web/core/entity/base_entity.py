@@ -35,7 +35,8 @@ class BaseMetadataUtilMixin:
     __model_data__: M = None
     __use_prefix__: str = None
 
-    #TODO: Implement the type METADACLASS and the model class return
+    # This typing was made to facilitate autocompletion rather than 
+    # correctability of what type __model_data__ represents.
     @classmethod
     def model(cls: Type[M]) -> M:
         return cls.__model_data__

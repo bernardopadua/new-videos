@@ -117,7 +117,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
             cur.execute(nSql)
             rr = cur.fetchall()
-            print(UserMetadata.get(rr[0]).userName)
+            print(UserMetadata.get(rr[0]))
             conn.rollback()
             return
             # cur.execute(nSql, nParsedParms)
