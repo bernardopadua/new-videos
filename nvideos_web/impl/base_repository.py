@@ -21,6 +21,23 @@ GenericInputClass = TypeVar("GenericInputClass")
 M = TypeVar("M")
 
 class NvSql:
+    def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
+        self._sql: str = ""
+        
+        self._fieldsListOrder: list[ModelField] = None
+        self._tables: list[str]
+        
+        self._usePrefix = usePrefix
+
+    def select(self: "NvSql", *args: ModelField) -> "NvSql":
+        for arg in args:
+            self._fieldsListOrder.append(arg)
+
+        return self
+
+    def build(self: "NvSql") -> str:
+        pass
+
     @classmethod
     def literal(*args):
         concat = []

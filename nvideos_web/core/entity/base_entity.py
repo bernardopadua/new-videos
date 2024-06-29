@@ -17,11 +17,24 @@ def modelMetadataMapper(cls: Type[T]) -> T:
             p.owner = cls
     return cls
 
+@dataclass(frozen=True, slots=True)
+class BaseModelData:
+    @classmethod
+    def get(cls: Type[M], row: dict[Type[M], M]) -> M:
+        return row.get(cls)
+
 class ModelField:
     def __init__(self, fieldName: str, /, *, attrName: str = "") -> None:
         self.field:str = fieldName
         self.attr:str = attrName
         self.owner:object = None
+
+    def __eq__(self: "ModelField", value: "ModelField") -> str:
+        if not isinstance(value, ModelField):
+            raise Exception("Cannot compare a ModelField with a non Modelfield")
+
+        return f"{self.field} = {value.field}"
+
 
 class BaseMetadataAuditMixin:
     updatedBy:ModelField = ModelField("updated_by")
@@ -38,11 +51,8 @@ class BaseMetadataUtilMixin:
     # This typing was made to facilitate autocompletion rather than 
     # correctability of what type __model_data__ represents.
     @classmethod
-    def model(cls: Type[M]) -> M:
+    def model(cls: Type[T]) -> M:
         return cls.__model_data__
-    @classmethod
-    def get(cls: Type[M], row: dict[Type[M], M]) -> M:
-        return row.get(cls.__model_data__)
 
 @dataclass(frozen=True)
 class AuditData:

@@ -16,7 +16,8 @@ from nvideos_web.core.repository.user import (
 # IMPL
 from nvideos_web.impl.base_repository import (
     PgRepositoryBase,
-    ModelRowFactory
+    ModelRowFactory,
+    NvSql
 )
 
 # ERRORS
@@ -95,6 +96,11 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             UserMetadata.userEmail, UserMetadata.userPermission,
             UserPermissionMetadata.permissionDescription
         )
+        stmt = NvSql().select(
+            UserMetadata.userId, UserMetadata.userName,
+            UserMetadata.userEmail, UserMetadata.userPermission,
+            UserPermissionMetadata.permissionDescription
+        )
         nSql = """
             select a.user_id, a.user_name, a.user_email , p.permission_description
             from nvideo_user a, user_permission p 
@@ -117,7 +123,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
             cur.execute(nSql)
             rr = cur.fetchall()
-            print(UserMetadata.get(rr[0]))
+            print(User.get(rr[0]).userName)
             conn.rollback()
             return
             # cur.execute(nSql, nParsedParms)
