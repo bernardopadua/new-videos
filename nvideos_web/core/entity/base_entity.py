@@ -8,19 +8,19 @@ T = TypeVar("T", bound="MetadataClass")
 #Model from METADATA class
 M = TypeVar("M")
 
-# def modelMetadataMapper(cls: Type[T]) -> Type[T]:
-#     props = cls.__dict__
-#     for k in props:
-#         if isinstance(props[k], ModelField) or isinstance(props[k], ModelFieldKeyWord):
-#             p: ModelField = props[k]
-#             p.attr = k
-#             p.owner = cls
-#     return cls
+def modelMetadataMapper(cls: Type[T]) -> Type[T]:
+    props = cls.__dict__
+    for k in props:
+        if isinstance(props[k], ModelField) or isinstance(props[k], ModelFieldKeyWord):
+            p: ModelField = props[k]
+            p.attr = k
+            p.owner = cls
+    return cls
 
 class MetadataClass(Protocol[M]):
-    __table_name__: str
-    __model_data__: Type[M]
-    __use_prefix__: str
+    _table_name: str
+    _model_data: Type[M]
+    _use_prefix: str
 
     def __init_subclass__(cls) -> None:
         pass
@@ -38,7 +38,7 @@ class ModelField(Generic[T]):
         self.owner: Type[T] | None = owner
 
     def getWithPrefix(self: "ModelField") -> str:
-        prefix: str = self.owner.__use_prefix__
+        prefix: str = self.owner._use_prefix
         return f"{prefix}.{self.field}"
 
     def __eq__(

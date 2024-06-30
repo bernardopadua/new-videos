@@ -49,7 +49,7 @@ class NvSql:
     def insert(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
         self._isInserting = True
         self.selectFields(*args)
-        self._insertTable = args[0].owner.__table_name__
+        self._insertTable = args[0].owner._table_name
         return self
 
     def build(self: "NvSql") -> str:
@@ -90,7 +90,7 @@ class ModelRowFactory:
             field = self.fields[i]
             modelData = id(field.owner)
             if modelData not in eachModel:
-                eachModel[modelData] = { "model": field.owner.__model_data__, "row": {} }
+                eachModel[modelData] = { "model": field.owner._model_data, "row": {} }
             eachModel[modelData]["row"].update({ field.attr: values[i] })
 
         #TODO: I don't know if I want to continue this. I think the default is working OK, at least for now.

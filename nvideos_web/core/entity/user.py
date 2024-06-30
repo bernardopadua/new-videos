@@ -6,18 +6,18 @@ from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.base_entity import (
     BaseMetadataAuditMixin, BaseMetadataUtilMixin,
-    ModelField, MetadataClass#modelMetadataMapper
+    ModelField, MetadataClass, modelMetadataMapper
 )
 
-#@modelMetadataMapper
+@modelMetadataMapper
 class UserMetadata(
     MetadataClass,
     BaseMetadataUtilMixin, 
     BaseMetadataAuditMixin
 ):
-    __table_name__: str = "nvideo_user"
-    __model_data__: Optional["User"] = None
-    __use_prefix__: str = "uu"
+    _table_name: str = "nvideo_user"
+    _model_data: Optional["User"] = None
+    _use_prefix: str = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")
     userName: ModelField = ModelField("user_name")
@@ -56,4 +56,4 @@ class UserInput:
     userIsActive: Optional[bool] = setUpField(UserMetadata.userIsActive, default=True) 
 
 #Storing into metadata object the reference to User value-object
-UserMetadata.__model_data__ = User
+UserMetadata._model_data= User

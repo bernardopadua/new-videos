@@ -11,9 +11,9 @@ from nvideos_web.core.entity.metadata import setUpField
 
 @modelMetadataMapper
 class UserPermissionMetadata(BaseMetadataUtilMixin):
-    __table_name__: str = "user_permission"
-    __model_data__: Optional["UserPermission"] = None #Stored after definition
-    __use_prefix__: str = "up"
+    _table_name: str = "user_permission"
+    _model_data: Optional["UserPermission"] = None #Stored after definition
+    _use_prefix: str = "up"
     #Columns
     userPermission: ModelField = ModelField("user_permission")
     permissionDescription: ModelField = ModelField("permission_description")

@@ -85,7 +85,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 %(updatedAt)s, %(updatedBy)s
             );
         """.format(**{ 
-            "table_name": UserMetadata.__table_name__, 
+            "table_name": UserMetadata._table_name, 
             "sql_fields": sqlFields 
         })
         parsedParams = self.parseSqlParams(sql, userInputData, auditObject=auditInputData)
