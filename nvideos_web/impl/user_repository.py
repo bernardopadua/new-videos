@@ -29,9 +29,6 @@ from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
-# Custom Type
-PgUserRepository = TypeVar("PgUserRepository", bound="PgUserRepository")
-
 class PasswordHasher(UserPasswordHasher):
     def __init__(self) -> None:
         self._constants:PasswordConstantsCrypt = getPasswordConstants()
@@ -46,9 +43,9 @@ class PasswordHasher(UserPasswordHasher):
         ).hex()
 
 class PgUserRepository(PgRepositoryBase, UserRepository):
-    _instance: PgUserRepository = None
+    _instance: "PgUserRepository" = None
 
-    def __new__(cls, dbContext: NewVideosDBContext) -> PgUserRepository:
+    def __new__(cls, dbContext: NewVideosDBContext) -> "PgUserRepository":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         

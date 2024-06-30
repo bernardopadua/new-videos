@@ -5,9 +5,8 @@ from typing import Optional
 from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.base_entity import (
-    BaseMetadataAuditMixin, BaseModelData,
-    BaseMetadataUtilMixin, ModelField, 
-    modelMetadataMapper
+    BaseMetadataAuditMixin, BaseMetadataUtilMixin,
+    ModelField, modelMetadataMapper
 )
 
 @modelMetadataMapper
@@ -27,7 +26,7 @@ class UserMetadata(BaseMetadataUtilMixin, BaseMetadataAuditMixin):
     userIsActive: ModelField = ModelField("user_is_active")
 
 @dataclass(frozen=True, slots=True)
-class User(BaseModelData):
+class User:
     userId: int = setUpField(UserMetadata.userId, default=0)
     userName: str = setUpField(UserMetadata.userName, default="")
     userSurname: str = setUpField(UserMetadata.userSurname, default="")

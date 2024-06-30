@@ -67,7 +67,7 @@ class ModelRowFactory:
         self, 
         listOrderFields: list[ModelField],
         /, *,
-        modelReturn: Optional[Type[M]] = None
+        modelReturn: Type[M] | None = None
     ):
         self.fields = listOrderFields
         self.returningModel = modelReturn

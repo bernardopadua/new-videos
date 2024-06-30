@@ -17,9 +17,9 @@ def modelMetadataMapper(cls: Type[T]) -> Type[T]:
             p.owner = cls
     return cls
 
-class MetadataClass(Protocol):
+class MetadataClass(Protocol[M]):
     __table_name__: str
-    __model_data__: M
+    __model_data__: Type[M]
     __use_prefix__: str
 
 class ModelField(Generic[T]):
@@ -27,11 +27,11 @@ class ModelField(Generic[T]):
         self: "ModelField", 
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type[T] | T = None
+        owner: Type[T] | None
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
-        self.owner: Type[T] | T | None = owner
+        self.owner: Type[T] | None = owner
 
     def getWithPrefix(self: "ModelField") -> str:
         prefix: str = self.owner.__use_prefix__
@@ -59,7 +59,7 @@ class BaseMetadataAuditMixin:
 
 class BaseMetadataUtilMixin(Generic[M]):
     __table_name__: str
-    __model_data__: M
+    __model_data__: Type[M]
     __use_prefix__: str
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
@@ -98,9 +98,3 @@ class AuditData:
     createdBy: int
     createdAt: datetime
     updatedAt: datetime
-
-@dataclass(frozen=True, slots=True)
-class BaseModelData:
-    @classmethod
-    def get(cls: Type[M], row: dict[Type[M], M]) -> M:
-        return row.get(cls)
