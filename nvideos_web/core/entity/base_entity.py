@@ -8,26 +8,30 @@ T = TypeVar("T", bound="MetadataClass")
 #Model from METADATA class
 M = TypeVar("M")
 
-def modelMetadataMapper(cls: Type[T]) -> Type[T]:
-    props = cls.__dict__
-    for k in props:
-        if isinstance(props[k], ModelField) or isinstance(props[k], ModelFieldKeyWord):
-            p: ModelField = props[k]
-            p.attr = k
-            p.owner = cls
-    return cls
+# def modelMetadataMapper(cls: Type[T]) -> Type[T]:
+#     props = cls.__dict__
+#     for k in props:
+#         if isinstance(props[k], ModelField) or isinstance(props[k], ModelFieldKeyWord):
+#             p: ModelField = props[k]
+#             p.attr = k
+#             p.owner = cls
+#     return cls
 
 class MetadataClass(Protocol[M]):
     __table_name__: str
     __model_data__: Type[M]
     __use_prefix__: str
 
+    def __init_subclass__(cls) -> None:
+        pass
+        return super().__init_subclass__()
+
 class ModelField(Generic[T]):
     def __init__(
         self: "ModelField", 
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type[T] | None
+        owner: Type[T] | None = None
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
@@ -64,7 +68,7 @@ class BaseMetadataUtilMixin(Generic[M]):
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 
-    def __init__(self: T, *, newPrefix: str = None):
+    def __init__(self, *, newPrefix: str = None):
         if not newPrefix:
             raise Exception("For a new instace of a table you need to inform a new prefix!")
 
@@ -81,15 +85,15 @@ class BaseMetadataUtilMixin(Generic[M]):
         return self.__table_name__
 
     @classmethod
-    def as_(cls: Type[T], newPrefix: str = None):
+    def as_(cls, newPrefix: str = None):
         return cls(newPrefix=newPrefix)
 
     @classmethod
-    def getTable(cls: Type[T]) -> str:
+    def getTable(cls) -> str:
         return cls.__table_name__
 
     @classmethod
-    def model(cls: Type[T]) -> M:
+    def model(cls) -> M:
         return cls.__model_data__
 
 @dataclass(frozen=True)

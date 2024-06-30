@@ -6,13 +6,17 @@ from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.base_entity import (
     BaseMetadataAuditMixin, BaseMetadataUtilMixin,
-    ModelField, modelMetadataMapper
+    ModelField, MetadataClass#modelMetadataMapper
 )
 
-@modelMetadataMapper
-class UserMetadata(BaseMetadataUtilMixin, BaseMetadataAuditMixin):
+#@modelMetadataMapper
+class UserMetadata(
+    MetadataClass,
+    BaseMetadataUtilMixin, 
+    BaseMetadataAuditMixin
+):
     __table_name__: str = "nvideo_user"
-    __model_data__: Optional["User"] = None #Stored after definition
+    __model_data__: Optional["User"] = None
     __use_prefix__: str = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")
