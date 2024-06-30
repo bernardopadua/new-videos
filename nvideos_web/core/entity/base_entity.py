@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Any
 
 #METADATA class
 T = TypeVar("T")
@@ -11,7 +11,7 @@ M = TypeVar("M")
 def modelMetadataMapper(cls: Type[T]) -> Type[T]:
     props = cls.__dict__
     for k in props:
-        if isinstance(props[k], ModelField):
+        if isinstance(props[k], ModelField) or isinstance(props[k], ModelFieldKeyWord):
             p: ModelField = props[k]
             p.attr = k
             p.owner = cls
@@ -57,7 +57,16 @@ class BaseMetadataUtilMixin:
     def __init__(self: T, *, newPrefix: str = None):
         if not newPrefix:
             raise Exception("For a new instace of a table you need to inform a new prefix!")
+
         self.__use_prefix__ = newPrefix
+
+        for i in self.__dir__():
+            attr = getattr(self, i)
+            if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+                attrN = attr.field
+                attrA = attr.attr
+                attr = ModelField(attrN, attrName=attrA)
+                attr.owner = self
 
     def getTable(self: T) -> str:
         return self.__table_name__

@@ -101,21 +101,21 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         #     UserMetadata.userEmail, UserMetadata.userPermission,
         #     UserPermissionMetadata.permissionDescription
         # )
-        tt = UserMetadata.as_(newPrefix='pp')
+        # tt = UserMetadata.as_(newPrefix='pp')
         
-        nSql = """
-            select a.user_id, a.user_name, a.user_email , p.permission_description
-            from nvideo_user a, user_permission p 
-            where a.user_id = 1
-            and   a.user_permission = p.user_permission;
-        """
-        nSql = """
-            select 
-                uu.user_id, uu.user_name, uu.user_email, uu.user_permission, up.permission_description
-            from nvideo_user uu, user_permission up 
-            where uu.user_id = 1
-              and uu.user_permission = up.user_permission
-        """
+        # nSql = """
+        #     select a.user_id, a.user_name, a.user_email , p.permission_description
+        #     from nvideo_user a, user_permission p 
+        #     where a.user_id = 1
+        #     and   a.user_permission = p.user_permission;
+        # """
+        # nSql = """
+        #     select 
+        #         uu.user_id, uu.user_name, uu.user_email, uu.user_permission, up.permission_description
+        #     from nvideo_user uu, user_permission up 
+        #     where uu.user_id = 1
+        #       and uu.user_permission = up.user_permission
+        # """
         subU = UserMetadata.as_(newPrefix='us')
         sqlFields, fieldsOrder = self.sqlFields(
             UserMetadata.userName, subU.userName, subU.userEmail
@@ -125,7 +125,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 --nu.user_name, ch.channel_name, s.subscriber_id, nu2.user_name, nu2.user_email 
                 nu.user_name, nu2.user_name, nu2.user_email
               from nvideo_user nu, channel ch, subscriber s, nvideo_user nu2
-            where nu.user_id = 1
+            where nu.user_id = 10
               and ch.user_id  = nu.user_id
               and s.channel_id = ch.channel_id 
               and s.user_id  = nu2.user_id 
@@ -139,7 +139,6 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
             cur.execute(nSql)
             rr = cur.fetchall()
-            print(User.get(rr[0]).userName)
             conn.rollback()
             return
             # cur.execute(nSql, nParsedParms)
