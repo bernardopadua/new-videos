@@ -1,9 +1,9 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Type, TypeVar, Any
+from typing import Type, TypeVar, Generic, Protocol
 
 #METADATA class
-T = TypeVar("T")
+T = TypeVar("T", bound="MetadataClass")
 
 #Model from METADATA class
 M = TypeVar("M")
@@ -17,7 +17,12 @@ def modelMetadataMapper(cls: Type[T]) -> Type[T]:
             p.owner = cls
     return cls
 
-class ModelField:
+class MetadataClass(Protocol):
+    __table_name__: str
+    __model_data__: M
+    __use_prefix__: str
+
+class ModelField(Generic[T]):
     def __init__(
         self: "ModelField", 
         fieldName: str, /, *, 
@@ -26,7 +31,7 @@ class ModelField:
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
-        self.owner: Type[T] | T = owner
+        self.owner: Type[T] | T | None = owner
 
     def getWithPrefix(self: "ModelField") -> str:
         prefix: str = self.owner.__use_prefix__
@@ -52,10 +57,10 @@ class BaseMetadataAuditMixin:
     createdAt: ModelField = ModelField("created_at")
     updatedAt: ModelField = ModelField("updated_at")
 
-class BaseMetadataUtilMixin:
-    __table_name__: str = None
-    __model_data__: M = None
-    __use_prefix__: str = None
+class BaseMetadataUtilMixin(Generic[M]):
+    __table_name__: str
+    __model_data__: M
+    __use_prefix__: str
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 

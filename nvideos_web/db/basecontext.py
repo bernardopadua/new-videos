@@ -1,6 +1,6 @@
 from typing import Protocol, TypeVar
 
-BaseConnection = TypeVar('BaseConnection')
+BaseConnection = TypeVar('BaseConnection', covariant=True)
 
 class BaseContext(Protocol[BaseConnection]):
     @classmethod

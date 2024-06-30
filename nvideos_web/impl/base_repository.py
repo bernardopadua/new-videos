@@ -28,7 +28,7 @@ class NvSql:
         self._fieldsListOrder: list[ModelField] = None
         self._tables: list[str]
 
-        self._usePrefix = usePrefix
+        self._usePrefix: bool = usePrefix
 
     def selectFields(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
         if len(args) == 1 and args[0].field == "*":
