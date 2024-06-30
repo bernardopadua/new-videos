@@ -18,10 +18,15 @@ def modelMetadataMapper(cls: Type[T]) -> Type[T]:
     return cls
 
 class ModelField:
-    def __init__(self: "ModelField", fieldName: str, /, *, attrName: str = "") -> None:
+    def __init__(
+        self: "ModelField", 
+        fieldName: str, /, *, 
+        attrName: str = "",
+        owner: Type[T] | T = None
+    ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
-        self.owner: Type[T] = None
+        self.owner: Type[T] | T = owner
 
     def getWithPrefix(self: "ModelField") -> str:
         prefix: str = self.owner.__use_prefix__
@@ -62,12 +67,11 @@ class BaseMetadataUtilMixin:
 
         for i in self.__dir__():
             attr = getattr(self, i)
-            if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
-                attrN = attr.field
-                attrA = attr.attr
-                attr = ModelField(attrN, attrName=attrA)
-                attr.owner = self
-
+            if isinstance(attr, ModelField):
+                setattr(self, i, ModelField(attr.field, attrName=attr.attr, owner=self))
+            if isinstance(attr, ModelFieldKeyWord):
+                setattr(self, i, ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self))
+    
     def getTable(self: T) -> str:
         return self.__table_name__
 

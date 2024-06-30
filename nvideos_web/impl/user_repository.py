@@ -59,6 +59,8 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         self._db = dbContext
 
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
+        from time import perf_counter
+
         if not userInputData or not auditInputData:
             raise PgRepositoryMissingParameter(
                 "Missing parameter. InputData or AuditData."
@@ -116,6 +118,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         #     where uu.user_id = 1
         #       and uu.user_permission = up.user_permission
         # """
+        ini = perf_counter()
         subU = UserMetadata.as_(newPrefix='us')
         sqlFields, fieldsOrder = self.sqlFields(
             UserMetadata.userName, subU.userName, subU.userEmail
@@ -125,7 +128,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 --nu.user_name, ch.channel_name, s.subscriber_id, nu2.user_name, nu2.user_email 
                 nu.user_name, nu2.user_name, nu2.user_email
               from nvideo_user nu, channel ch, subscriber s, nvideo_user nu2
-            where nu.user_id = 10
+            where nu.user_id = 1
               and ch.user_id  = nu.user_id
               and s.channel_id = ch.channel_id 
               and s.user_id  = nu2.user_id 
@@ -137,6 +140,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
 
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
+            #cur = conn.cursor()
             cur.execute(nSql)
             rr = cur.fetchall()
             conn.rollback()

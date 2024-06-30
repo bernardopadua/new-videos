@@ -20,6 +20,7 @@ from nvideos_web.impl.error.base import (
 GenericInputClass = TypeVar("GenericInputClass")
 M = TypeVar("M")
 
+#TODO: I'm gonna use this ?
 class NvSql:
     def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
         self._sql: str = ""
@@ -87,10 +88,10 @@ class ModelRowFactory:
 
         for i in range(len(values)):
             field = self.fields[i]
-            modelData = field.owner.__model_data__
+            modelData = id(field.owner)
             if modelData not in eachModel:
-                eachModel[modelData] = {}
-            eachModel[modelData].update({ field.attr: values[i] })
+                eachModel[modelData] = { "model": field.owner.__model_data__, "row": {} }
+            eachModel[modelData]["row"].update({ field.attr: values[i] })
 
         #TODO: I don't know if I want to continue this. I think the default is working OK, at least for now.
         if self.returningModel:
@@ -108,11 +109,10 @@ class ModelRowFactory:
             return instancesModel
         
         for model in eachModel.keys():
-            instancesModel[model] = model(**eachModel[model])
+            modelData = eachModel[model]["model"]
+            instancesModel[model] = modelData(**eachModel[model]["row"])
 
         return instancesModel
-        
-        return dict(zip(self.fields, values))
 
 class PgRepositoryBase:
 
