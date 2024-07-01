@@ -90,7 +90,7 @@ class MetadataClass(Generic[M]):
                 setattr(self, i, ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self))
 
     @classmethod
-    def as_(cls: Type["MetadataClass"], *, newPrefix: str) -> "MetadataClass":
+    def as_(cls: Type[T], *, newPrefix: str) -> T:
         return cls(newPrefix=newPrefix)
 
 class BaseMetadataAuditMixin:

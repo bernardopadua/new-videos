@@ -1,15 +1,19 @@
 # BUILT-IN
 from typing import ( 
     Sequence, Any, Type,
-    TypeVar, Optional
+    TypeVar
 )
 from dataclasses import is_dataclass
 
 # PSYCOPG
 from psycopg import _queries, Cursor
+from psycopg.rows import RowMaker
 
 # ENTITY
 from nvideos_web.core.entity.base_entity import ModelField, ModelFieldKeyWord
+
+# DB
+from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # IMPL
 from nvideos_web.impl.error.base import (
@@ -66,7 +70,7 @@ class NvSql:
             concat.append(i)
         return ''.join(concat)
 
-class ModelRowFactory:
+class ModelRowFactory(RowMaker):
     def __init__(
         self, 
         listOrderFields: list[ModelField],
@@ -80,6 +84,7 @@ class ModelRowFactory:
         self, 
         *args: Sequence[Any]
     ) -> dict[int, Any] | "ModelRowFactory":
+    #RowMaker[dict[int, Any] | "ModelRowFactory"]:
         if len(args) == 0:
             raise Exception("RowFactory is been called with no parameters.")
         if len(args) > 0 and isinstance(args[0], Cursor):
@@ -121,7 +126,18 @@ class ModelRowFactory:
 
         return instancesModel
 
+    @classmethod
+    def getRowFactory(
+        cls: Type["ModelRowFactory"], 
+        listOrderFields: list[ModelField]
+    ) -> "ModelRowFactory":
+        return cls(listOrderFields)
+
 class PgRepositoryBase:
+    _dbContext: Type[NewVideosDBContext]
+
+    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
+        self._dbContext = dbContext
 
     def sqlFields(self, *args: ModelField) -> tuple[str, list[ModelField]]:
         concat = []
@@ -135,7 +151,7 @@ class PgRepositoryBase:
         self, _sql: str, 
         inputObject: GenericInputClass,
         *,
-        auditObject: GenericInputClass = None
+        auditObject: GenericInputClass | None = None
     ) -> dict:
         if not is_dataclass(inputObject):
             raise PgRepositoryInputIsNotDataclass(
@@ -152,12 +168,12 @@ class PgRepositoryBase:
             
             try:
                 if not hasattr(inputObject, paramAttr) and auditObject:
-                    inputFieldValue = auditObject.__getattribute__(paramAttr)
-                else:
-                    inputFieldValue = inputObject.__getattribute__(paramAttr)
+                    inputFieldValue = getattr(auditObject, paramAttr)
+                
+                inputFieldValue = getattr(inputObject, paramAttr)
             except AttributeError as e:
                 raise PgRepositoryMissingSqlParameter(
-                    "Param has no input field. Please verify the input and audit objects."
+                    "Parameter has no input field. Please verify the input and audit objects."
                 )
 
             paramAssigned[paramAttr] = inputFieldValue

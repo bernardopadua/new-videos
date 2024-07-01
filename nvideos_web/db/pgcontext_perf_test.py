@@ -3,17 +3,21 @@ from psycopg_pool import ConnectionPool
 from psycopg import Connection, connect
 from psycopg.rows import dict_row
 
+# BUILT-IN
+from contextlib import contextmanager
+
 # CONFIG
-from nvideos_web.config import getUrlDataBase, getConnectionPoolInfo
+from nvideos_web.config import getUrlDataBase
 
 # CONTEXT DB
 from nvideos_web.db.basecontext import BaseContext
 
-from contextlib import contextmanager
+# TYPING
+from typing import Iterator, Generator, Any
 
 class NewVideosDBContext(BaseContext[Connection]):
-    connPool: ConnectionPool = None
-    dbConn: Connection = None
+    connPool: ConnectionPool
+    dbConn: Connection
 
     # @classmethod
     # def initDBContext(cls) -> None:
@@ -37,8 +41,13 @@ class NewVideosDBContext(BaseContext[Connection]):
 
     @classmethod
     @contextmanager
-    def getConn(cls) -> Connection:
-        # if not cls.connPool._opened:
-        #     cls.connPool.open(wait=True)
-        yield cls.dbConn
-        #return cls.connPool.connection()
+    #def getConn(cls) -> Iterator[Connection]:
+    def getConn(cls) -> Generator[Connection, Any, Any]:
+        try:
+            # if not cls.connPool._opened:
+            #     cls.connPool.open(wait=True)
+            yield cls.dbConn
+            #return cls.connPool.connection()
+        finally:
+            pass
+        

@@ -9,9 +9,14 @@ from nvideos_web.config import getUrlDataBase, getConnectionPoolInfo
 # CONTEXT DB
 from nvideos_web.db.basecontext import BaseContext
 
+# TYPING
+from typing import Iterator, Generator, Any
+
+from contextlib import contextmanager
+
 class NewVideosDBContext(BaseContext[Connection]):
-    connPool: ConnectionPool = None
-    dbConn: Connection = None
+    connPool: ConnectionPool 
+    dbConn: Connection 
 
     @classmethod
     def initDBContext(cls) -> None:
@@ -34,7 +39,13 @@ class NewVideosDBContext(BaseContext[Connection]):
     #         cls.dbConn = connect(url, row_factory=dict_row)
 
     @classmethod
-    def getConn(cls) -> Connection:
+    @contextmanager
+    #def getConn(cls) -> Iterator[Connection]:
+    def getConn(cls) -> Generator[Connection, Any, Any]:
         # if not cls.connPool._opened:
         #     cls.connPool.open(wait=True)
-        return cls.connPool.connection()
+        try:
+            with cls.connPool.connection() as conn:
+                yield conn
+        finally:
+            pass

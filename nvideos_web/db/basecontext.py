@@ -1,4 +1,7 @@
-from typing import Protocol, TypeVar
+# TYPING
+from typing import Protocol, TypeVar, Iterator, Generator, Any
+
+from contextlib import contextmanager
 
 BaseConnection = TypeVar('BaseConnection', covariant=True)
 
@@ -8,5 +11,7 @@ class BaseContext(Protocol[BaseConnection]):
         raise NotImplementedError()
 
     @classmethod
-    def getConn(cls) -> BaseConnection:
+    @contextmanager
+    #def getConn(cls) -> Iterator[BaseConnection]:
+    def getConn(cls) -> Generator[BaseConnection, Any, Any]:
         raise NotImplementedError()

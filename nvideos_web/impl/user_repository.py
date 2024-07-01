@@ -1,11 +1,18 @@
 # BUILT-IN
 from hashlib import scrypt
-from typing import TypeVar
+from typing import Type
+
+# CONFIG
+from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
 
 # ENTITY
 from nvideos_web.core.entity.base_entity import AuditData
 from nvideos_web.core.entity.user import User, UserInput, UserMetadata
 from nvideos_web.core.entity.user_permission import UserPermissionMetadata
+
+# DB
+from nvideos_web.db.pgcontext import NewVideosDBContext
+
 
 # REPOSITORY
 from nvideos_web.core.repository.user import (
@@ -16,18 +23,11 @@ from nvideos_web.core.repository.user import (
 # IMPL
 from nvideos_web.impl.base_repository import (
     PgRepositoryBase,
-    ModelRowFactory,
-    NvSql
+    ModelRowFactory
 )
 
 # ERRORS
 from nvideos_web.impl.error.base import PgRepositoryMissingParameter
-
-# CONFIG
-from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
-
-# DB
-from nvideos_web.db.pgcontext import NewVideosDBContext
 
 class PasswordHasher(UserPasswordHasher):
     def __init__(self) -> None:
@@ -43,16 +43,16 @@ class PasswordHasher(UserPasswordHasher):
         ).hex()
 
 class PgUserRepository(PgRepositoryBase, UserRepository):
-    _instance: "PgUserRepository" = None
+    _instance: "PgUserRepository"
 
-    def __new__(cls, dbContext: NewVideosDBContext) -> "PgUserRepository":
+    def __new__(cls, dbContext: Type[NewVideosDBContext]) -> "PgUserRepository":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         
         return cls._instance
 
-    def __init__(self, dbContext: NewVideosDBContext) -> None:
-        super().__init__()
+    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
+        super().__init__(dbContext=dbContext)
         self._db = dbContext
 
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
@@ -136,11 +136,12 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         #nParsedParms = self.parseSqlParams(nSql, userInputData)
 
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
+            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(fieldsOrder))
             #cur = conn.cursor()
             cur.execute(nSql)
             rr = cur.fetchall()
             conn.rollback()
+            raise NotImplementedError()
             return
             # cur.execute(nSql, nParsedParms)
             # rr = cur.fetchall()
@@ -153,13 +154,14 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             #conn.rollback()
             conn.commit()
 
-    def update(self, userData: User, newUserData: User) -> User:
-        return super().update(userData, newUserData)
+    def update(self, userData: User, newUserData: UserInput) -> User:
+        raise NotImplementedError()
+        return
 
     def delete(self, userId: int) -> None:
-        return super().delete(userId)
+        raise NotImplementedError()
 
-    def perfGetUserById(self, seconds: int) -> dict:
+    def perfGetUserById(self, seconds: int) -> list:
         #self._db.initConn()
         with self._db.getConn() as conn:
             cur = conn.cursor()

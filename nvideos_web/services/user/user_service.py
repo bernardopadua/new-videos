@@ -1,6 +1,5 @@
 # BUILT-IN
 from datetime import date
-from typing import Optional
 
 # SERVICES
 from nvideos_web.services.base_service import BaseService
@@ -20,13 +19,13 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 
 class UserService(BaseService):
 
-    def __init__(self, currentUser: Optional[int] = None) -> None:
+    def __init__(self, currentUser: int) -> None:
         super().__init__(currentUser=currentUser)
         self._usuRep = PgUserRepository(dbContext=NewVideosDBContext)
 
-        self._inputUser: Optional[UserInput] = None
+        self._inputUser: UserInput
 
-    def createNewUser(self, *, userInput: Optional[UserInput] = None) -> User:
+    def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()
         auditData = self.fillAuditData()
         userInput = userInput if userInput else self._inputUser
@@ -63,7 +62,7 @@ class UserService(BaseService):
         userEmail: str = "",
         userSurname: str = "",
         userAvatarUrl: str = "",
-        userBirthDate: Optional[date] = None,
+        userBirthDate: date | None = None,
         userPassword: str = "",
         createSystemUser: bool = False
     ) -> UserInput:

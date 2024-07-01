@@ -1,15 +1,19 @@
 from typing import Protocol
 from abc import abstractmethod
 
-from nvideos_web.core.entity.user import User
+from nvideos_web.core.entity.user import (
+    User,
+    UserInput
+)
+from nvideos_web.core.entity.base_entity import AuditData
 
 class UserRepository(Protocol):
     @abstractmethod
-    def create(self, userData: User) -> User:
+    def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
         raise NotImplementedError()
     
     @abstractmethod
-    def update(self, userData: User, newUserData: User) -> User:
+    def update(self, userData: User, newUserData: UserInput) -> User:
         raise NotImplementedError()
 
     @abstractmethod
