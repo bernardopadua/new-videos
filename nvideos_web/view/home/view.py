@@ -24,7 +24,7 @@ def abc(seconds: int = 0):
     import threading, time
     from nvideos_web.services.user.user_service import UserService
 
-    u = UserService()
+    u = UserService(9)
     nInput = u.setUserInput(
         userName="sdf",
         userEmail="dsafsdf",

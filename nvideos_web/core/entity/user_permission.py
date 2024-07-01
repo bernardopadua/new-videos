@@ -1,27 +1,20 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import TypeVar
 
 from nvideos_web.core.entity.base_entity import (
-    modelMetadataMapper,
-    BaseMetadataUtilMixin,
+    MetadataClass,
     ModelField
 )
 
-from nvideos_web.core.entity.metadata import setUpField
+@dataclass(frozen=True, slots=True)
+class UserPermission:
+    userPermission: bytes = field(default=bytes(0))
+    permissionDescription: str = field(default="")
 
-@modelMetadataMapper
-class UserPermissionMetadata(BaseMetadataUtilMixin):
+class UserPermissionMetadata(MetadataClass):
     _table_name: str = "user_permission"
-    _model_data: Optional["UserPermission"] = None #Stored after definition
+    _model_data: UserPermission | None = None #Stored after definition
     _use_prefix: str = "up"
     #Columns
     userPermission: ModelField = ModelField("user_permission")
     permissionDescription: ModelField = ModelField("permission_description")
-
-@dataclass(frozen=True, slots=True)
-class UserPermission:
-    userPermission: bytes = setUpField(UserPermissionMetadata.userPermission, default=bytes(0))
-    permissionDescription: str = setUpField(UserPermissionMetadata.permissionDescription, default="")
-
-
-UserPermissionMetadata.__model_data__ = UserPermission

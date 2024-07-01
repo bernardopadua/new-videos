@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from nvideos_web.core.entity.base_entity import BaseFieldsMixin
 
 @dataclass
-class Video(BaseFieldsMixin):
+class Video:
     id: int
     title: str
     priv_or_pub: bool

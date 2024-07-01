@@ -2,21 +2,43 @@ from datetime import date
 from dataclasses import dataclass, field
 from typing import Optional
 
-from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
+#from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.base_entity import (
-    BaseMetadataAuditMixin, BaseMetadataUtilMixin,
-    ModelField, MetadataClass, modelMetadataMapper
+    MetadataClass, BaseMetadataAuditMixin,
+    ModelField
 )
 
-@modelMetadataMapper
+@dataclass(frozen=True, slots=True)
+class User:
+    userId: int = field(default=0)
+    userName: str = field(default="")
+    userSurname: str = field(default="")
+    userEmail: str = field(default="")
+    userPassword: str = field(repr=False, hash=False, default="")
+    userBirthDate: Optional[date] = field(default=None)
+    userAvatarUrl: str = field(default="")
+    userPermission: bytes = field(default=bytes(0))
+    userIsActive: bool = field(default=True)
+
+@dataclass
+class UserInput:
+    userName: str 
+    userSurname: str 
+    userEmail: str 
+    userPassword: str 
+    userBirthDate: date = field(default_factory=date.today)
+    userAvatarUrl: str = field(default="") 
+    userPermission: bytes = field(default=UserPermissions.P_COMMOM_USER.value) 
+    userIsActive: Optional[bool] = field(default=True) 
+
+
 class UserMetadata(
     MetadataClass,
-    BaseMetadataUtilMixin, 
     BaseMetadataAuditMixin
 ):
     _table_name: str = "nvideo_user"
-    _model_data: Optional["User"] = None
+    _model_data: User | None = None
     _use_prefix: str = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")
@@ -29,31 +51,31 @@ class UserMetadata(
     userPermission: ModelField = ModelField("user_permission")
     userIsActive: ModelField = ModelField("user_is_active")
 
-@dataclass(frozen=True, slots=True)
-class User:
-    userId: int = setUpField(UserMetadata.userId, default=0)
-    userName: str = setUpField(UserMetadata.userName, default="")
-    userSurname: str = setUpField(UserMetadata.userSurname, default="")
-    userEmail: str = setUpField(UserMetadata.userEmail, default="")
-    userPassword: str = field(repr=False, hash=False, 
-        metadata=setUpMetadata(UserMetadata.userPassword),
-        default=""
-    )
-    userBirthDate: Optional[date] = setUpField(UserMetadata.userBirthDate, default=None)
-    userAvatarUrl: str = setUpField(UserMetadata.userAvatarUrl, default="")
-    userPermission: bytes = setUpField(UserMetadata.userPermission, default=bytes(0))
-    userIsActive: bool = setUpField(UserMetadata.userIsActive, default=True)
+# @dataclass(frozen=True, slots=True)
+# class User:
+#     userId: int = setUpField(UserMetadata.userId, default=0)
+#     userName: str = setUpField(UserMetadata.userName, default="")
+#     userSurname: str = setUpField(UserMetadata.userSurname, default="")
+#     userEmail: str = setUpField(UserMetadata.userEmail, default="")
+#     userPassword: str = field(repr=False, hash=False, 
+#         metadata=setUpMetadata(UserMetadata.userPassword),
+#         default=""
+#     )
+#     userBirthDate: Optional[date] = setUpField(UserMetadata.userBirthDate, default=None)
+#     userAvatarUrl: str = setUpField(UserMetadata.userAvatarUrl, default="")
+#     userPermission: bytes = setUpField(UserMetadata.userPermission, default=bytes(0))
+#     userIsActive: bool = setUpField(UserMetadata.userIsActive, default=True)
 
-@dataclass
-class UserInput:
-    userName: str = setUpField(UserMetadata.userName)
-    userSurname: str = setUpField(UserMetadata.userSurname)
-    userEmail: str = setUpField(UserMetadata.userEmail)
-    userPassword: str = setUpField(UserMetadata.userPassword)
-    userBirthDate: date = setUpField(UserMetadata.userBirthDate, default_factory=date.today)
-    userAvatarUrl: str = setUpField(UserMetadata.userAvatarUrl, default="") 
-    userPermission: bytes = setUpField(UserMetadata.userPermission, default=UserPermissions.P_COMMOM_USER.value) 
-    userIsActive: Optional[bool] = setUpField(UserMetadata.userIsActive, default=True) 
+# @dataclass
+# class UserInput:
+#     userName: str = setUpField(UserMetadata.userName)
+#     userSurname: str = setUpField(UserMetadata.userSurname)
+#     userEmail: str = setUpField(UserMetadata.userEmail)
+#     userPassword: str = setUpField(UserMetadata.userPassword)
+#     userBirthDate: date = setUpField(UserMetadata.userBirthDate, default_factory=date.today)
+#     userAvatarUrl: str = setUpField(UserMetadata.userAvatarUrl, default="") 
+#     userPermission: bytes = setUpField(UserMetadata.userPermission, default=UserPermissions.P_COMMOM_USER.value) 
+#     userIsActive: Optional[bool] = setUpField(UserMetadata.userIsActive, default=True) 
 
 #Storing into metadata object the reference to User value-object
-UserMetadata._model_data= User
+#UserMetadata._model_data= User

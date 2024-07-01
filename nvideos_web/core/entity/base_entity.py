@@ -17,62 +17,65 @@ def modelMetadataMapper(cls: Type[T]) -> Type[T]:
             p.owner = cls
     return cls
 
-class MetadataClass(Protocol[M]):
-    _table_name: str
-    _model_data: Type[M]
-    _use_prefix: str
-
-    def __init_subclass__(cls) -> None:
-        pass
-        return super().__init_subclass__()
-
 class ModelField(Generic[T]):
     def __init__(
         self: "ModelField", 
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type[T] | None = None
+        owner: Type[T] | T | None = None
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
-        self.owner: Type[T] | None = owner
+        self.owner: Type[T] | T | None = owner
 
     def getWithPrefix(self: "ModelField") -> str:
+        if self.owner is None:
+            raise Exception("Owner of ModelField is none and it cannot be.")
         prefix: str = self.owner._use_prefix
         return f"{prefix}.{self.field}"
 
-    def __eq__(
-        self: "ModelField", value: "ModelField",
-        *, usePrefix: bool = False
-    ) -> str:
-        nField: str = self.field if not usePrefix else self.getWithPrefix()
-        if not isinstance(value, ModelField):
-            return f"{nField} = {value}"
+    # def __eq__(
+    #     self: "ModelField", value: "ModelField",
+    #     *, usePrefix: bool = False
+    # ) -> str:
+    #     nField: str = self.field if not usePrefix else self.getWithPrefix()
+    #     if not isinstance(value, ModelField):
+    #         return f"{nField} = {value}"
         
-        fieldComp: str = value.field if not usePrefix else value.getWithPrefix()
-        return f"{nField} = {fieldComp}"
+    #     fieldComp: str = value.field if not usePrefix else value.getWithPrefix()
+    #     return f"{nField} = {fieldComp}"
 
 class ModelFieldKeyWord(ModelField):
     pass
 
-class BaseMetadataAuditMixin:
-    updatedBy: ModelField = ModelField("updated_by")
-    createdBy: ModelField = ModelField("created_by")
-    createdAt: ModelField = ModelField("created_at")
-    updatedAt: ModelField = ModelField("updated_at")
-
-class BaseMetadataUtilMixin(Generic[M]):
-    __table_name__: str
-    __model_data__: Type[M]
-    __use_prefix__: str
+class MetadataClass(Generic[M]):
+    _table_name: str
+    _model_data: Type[M]
+    _use_prefix: str
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 
-    def __init__(self, *, newPrefix: str = None):
+    def __init_subclass__(cls, **kwargs) -> None:
+        attrsCheck = ["_use_prefix", "_model_data", "_table_name"]
+        if any(attr not in cls.__dict__ for attr in attrsCheck):
+            raise Exception(f"Class {cls} metadata not implemented on of three main attributes.")
+
+        super().__init_subclass__(**kwargs)
+        for k in cls.__dict__:
+            attr = cls.__dict__[k]
+            if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+                attr.attr = k
+                attr.owner = cls
+
+    def __del__(cls):
+        pass
+
+    def __init__(self, *, newPrefix: str) -> None:
+        super().__init__()
         if not newPrefix:
             raise Exception("For a new instace of a table you need to inform a new prefix!")
 
-        self.__use_prefix__ = newPrefix
+        self._use_prefix = newPrefix
 
         for i in self.__dir__():
             attr = getattr(self, i)
@@ -80,25 +83,21 @@ class BaseMetadataUtilMixin(Generic[M]):
                 setattr(self, i, ModelField(attr.field, attrName=attr.attr, owner=self))
             if isinstance(attr, ModelFieldKeyWord):
                 setattr(self, i, ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self))
-    
-    def getTable(self: T) -> str:
-        return self.__table_name__
 
     @classmethod
-    def as_(cls, newPrefix: str = None):
+    def as_(cls: Type["MetadataClass"], *, newPrefix: str) -> "MetadataClass":
+        #return cls()
         return cls(newPrefix=newPrefix)
 
-    @classmethod
-    def getTable(cls) -> str:
-        return cls.__table_name__
-
-    @classmethod
-    def model(cls) -> M:
-        return cls.__model_data__
+class BaseMetadataAuditMixin:
+    updatedBy: ModelField = ModelField("updated_by")
+    createdBy: ModelField = ModelField("created_by")
+    createdAt: ModelField = ModelField("created_at")
+    updatedAt: ModelField = ModelField("updated_at")
 
 @dataclass(frozen=True)
 class AuditData:
     updatedBy: int
-    createdBy: int
-    createdAt: datetime
+    createdBy: int | None
+    createdAt: datetime | None
     updatedAt: datetime
