@@ -34,6 +34,11 @@ class ModelField(Generic[T]):
         prefix: str = self.owner._use_prefix
         return f"{prefix}.{self.field}"
 
+    def getOwner(self) -> Type[T] | T:
+        if not self.owner:
+            raise Exception("Owner cannot be None at this step. Investigate.")
+        return self.owner
+
     # def __eq__(
     #     self: "ModelField", value: "ModelField",
     #     *, usePrefix: bool = False
@@ -50,7 +55,7 @@ class ModelFieldKeyWord(ModelField):
 
 class MetadataClass(Generic[M]):
     _table_name: str
-    _model_data: Type[M]
+    _model_data: Type[M] | None
     _use_prefix: str
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
@@ -86,7 +91,6 @@ class MetadataClass(Generic[M]):
 
     @classmethod
     def as_(cls: Type["MetadataClass"], *, newPrefix: str) -> "MetadataClass":
-        #return cls()
         return cls(newPrefix=newPrefix)
 
 class BaseMetadataAuditMixin:

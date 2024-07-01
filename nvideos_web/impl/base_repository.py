@@ -25,7 +25,7 @@ class NvSql:
     def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
         self._sql: str = ""
                 
-        self._fieldsListOrder: list[ModelField] = None
+        self._fieldsListOrder: list[ModelField] = []
         self._tables: list[str]
 
         self._usePrefix: bool = usePrefix
@@ -39,6 +39,10 @@ class NvSql:
             if isinstance(arg, ModelFieldKeyWord) and arg.field == "*":
                 self.selectFields(arg)
             self._fieldsListOrder.append(arg)
+
+        if len(self._fieldsListOrder) <= 0:
+            raise Exception("Fields must be passed to continue to generate a valid SQL.")
+        
         return self
 
     def select(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
@@ -49,10 +53,10 @@ class NvSql:
     def insert(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
         self._isInserting = True
         self.selectFields(*args)
-        self._insertTable = args[0].owner._table_name
+        self._insertTable = self._fieldsListOrder[0].getOwner()._table_name
         return self
 
-    def build(self: "NvSql") -> str:
+    def build(self: "NvSql") -> None:
         pass
 
     @classmethod
@@ -75,38 +79,41 @@ class ModelRowFactory:
     def __call__(
         self, 
         *args: Sequence[Any]
-    ) -> dict[str, Any] | dict[Type[M], M]:
+    ) -> dict[int, Any] | "ModelRowFactory":
         if len(args) == 0:
             raise Exception("RowFactory is been called with no parameters.")
         if len(args) > 0 and isinstance(args[0], Cursor):
             return self
 
         values: Sequence[Any] = args[0]
-        eachModel: dict[str, Any] = {}
-        instancesModel: dict[object, object] = {}
-        retObject: M = None
+        eachModel: dict[int, dict[str, Any]] = {}
+        instancesModel: dict[int, object] = {}
+        
+        #TODO: I dont know if I will be implementing this yet. 
+        #The idea is to return a different value-object and assemble this special case object at this step.
+        #retObject: M = None
 
         for i in range(len(values)):
-            field = self.fields[i]
-            modelData = id(field.owner)
-            if modelData not in eachModel:
-                eachModel[modelData] = { "model": field.owner._model_data, "row": {} }
-            eachModel[modelData]["row"].update({ field.attr: values[i] })
+            field: ModelField = self.fields[i]
+            modelIdentification: int = id(field.owner)
+            if modelIdentification not in eachModel:
+                eachModel[modelIdentification] = { "model": field.getOwner()._model_data, "row": {} }
+            eachModel[modelIdentification]["row"].update({ field.attr: values[i] })
 
         #TODO: I don't know if I want to continue this. I think the default is working OK, at least for now.
-        if self.returningModel:
-            retObject = self.returningModel()
+        # if self.returningModel:
+        #     retObject = self.returningModel()
 
-            for model in eachModel.keys():
-                if not retObject.__dict__.get(model):
-                    raise Exception("Model assigned to return the query doesn't exists as a type of returned query.")
+        #     for model in eachModel.keys():
+        #         if not retObject.__dict__.get(model):
+        #             raise Exception("Model assigned to return the query doesn't exists as a type of returned query.")
 
-                for attr in retObject.__dict__.keys():
-                    if isinstance(retObject.__dict__[attr], model):
-                        setattr(retObject, attr, model(**eachModel[model])) 
+        #         for attr in retObject.__dict__.keys():
+        #             if isinstance(retObject.__dict__[attr], model):
+        #                 setattr(retObject, attr, model(**eachModel[model])) 
             
-            instancesModel[self.returningModel] = retObject
-            return instancesModel
+        #    instancesModel[self.returningModel] = retObject
+        #    return instancesModel
         
         for model in eachModel.keys():
             modelData = eachModel[model]["model"]

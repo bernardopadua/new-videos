@@ -1,10 +1,13 @@
 #!/usr/bin/bash
 
-absolute_path=$(pwd)
+#absolute_path=$(cd $(dirname "$0") && pwd)
+absolute_path=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
+export NVIDEOS_MODULE_NAME="nvideos_web"
+export NVIDEOS_SRC="nvideos_web"
 export NVIDEOS_PATH="${absolute_path}"
 
 wnvideos.runlocal(){
-    python3 -m nvideos_web
+    python3 -m "$NVIDEOS_MODULE_NAME"
 }
 wnvideos.export_env_vars(){
     set -o allexport
@@ -47,4 +50,9 @@ wnvideos.kill_any_pg_and_up_nvideo_pg(){
         fi
 
     done <<< $containers
+}
+
+# Validations
+wnvideos.mypy(){
+    python3 -m mypy "$NVIDEOS_PATH/$NVIDEOS_SRC"
 }

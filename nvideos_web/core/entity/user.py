@@ -1,6 +1,6 @@
 from datetime import date
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Type
 
 #from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
 from nvideos_web.core.entity.constants import UserPermissions
@@ -16,7 +16,7 @@ class User:
     userSurname: str = field(default="")
     userEmail: str = field(default="")
     userPassword: str = field(repr=False, hash=False, default="")
-    userBirthDate: Optional[date] = field(default=None)
+    userBirthDate: date | None = field(default=None)
     userAvatarUrl: str = field(default="")
     userPermission: bytes = field(default=bytes(0))
     userIsActive: bool = field(default=True)
@@ -29,16 +29,16 @@ class UserInput:
     userPassword: str 
     userBirthDate: date = field(default_factory=date.today)
     userAvatarUrl: str = field(default="") 
-    userPermission: bytes = field(default=UserPermissions.P_COMMOM_USER.value) 
-    userIsActive: Optional[bool] = field(default=True) 
+    userPermission: str = field(default=UserPermissions.P_COMMOM_USER.value) 
+    userIsActive: bool | None = field(default=True) 
 
 
 class UserMetadata(
-    MetadataClass,
+    MetadataClass[User],
     BaseMetadataAuditMixin
 ):
     _table_name: str = "nvideo_user"
-    _model_data: User | None = None
+    _model_data: Type[User] | None = None
     _use_prefix: str = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")
