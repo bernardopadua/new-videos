@@ -1,7 +1,7 @@
 # BUILT-IN
 from typing import ( 
     Sequence, Any, Type,
-    TypeVar
+    TypeVar, Generic, Union
 )
 from dataclasses import is_dataclass
 
@@ -25,6 +25,7 @@ GenericInputClass = TypeVar("GenericInputClass")
 M = TypeVar("M")
 
 #TODO: I'm gonna use this ?
+#REFACTOR: Change this to a new file under folder base inside impl
 class NvSql:
     def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
         self._sql: str = ""
@@ -70,6 +71,7 @@ class NvSql:
             concat.append(i)
         return ''.join(concat)
 
+#REFACTOR: Change this to a new file under folder base inside impl
 class ModelRowFactory(RowMaker):
     def __init__(
         self, 
@@ -83,8 +85,7 @@ class ModelRowFactory(RowMaker):
     def __call__(
         self, 
         *args: Sequence[Any]
-    ) -> dict[int, Any] | "ModelRowFactory":
-    #RowMaker[dict[int, Any] | "ModelRowFactory"]:
+    ) -> Union[dict[int, Any], "ModelRowFactory"]:
         if len(args) == 0:
             raise Exception("RowFactory is been called with no parameters.")
         if len(args) > 0 and isinstance(args[0], Cursor):
@@ -96,7 +97,7 @@ class ModelRowFactory(RowMaker):
         
         #TODO: I dont know if I will be implementing this yet. 
         #The idea is to return a different value-object and assemble this special case object at this step.
-        #retObject: M = None
+        #>>>>>>>>> retObject: M = None
 
         for i in range(len(values)):
             field: ModelField = self.fields[i]
@@ -133,11 +134,21 @@ class ModelRowFactory(RowMaker):
     ) -> "ModelRowFactory":
         return cls(listOrderFields)
 
-class PgRepositoryBase:
+T_Repository = TypeVar("T_Repository", bound="PgRepositoryBase")
+class PgRepositoryBase(Generic[T_Repository]):
     _dbContext: Type[NewVideosDBContext]
+    _instance: T_Repository
+
+    def __new__(cls: Type[T_Repository]
+    #, dbContext: Type[NewVideosDBContext]
+    ) -> T_Repository:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        
+        return cls._instance
 
     def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
-        self._dbContext = dbContext
+        self._db = dbContext
 
     def sqlFields(self, *args: ModelField) -> tuple[str, list[ModelField]]:
         concat = []

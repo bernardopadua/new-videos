@@ -43,18 +43,9 @@ class PasswordHasher(UserPasswordHasher):
         ).hex()
 
 class PgUserRepository(PgRepositoryBase, UserRepository):
-    _instance: "PgUserRepository"
-
-    def __new__(cls, dbContext: Type[NewVideosDBContext]) -> "PgUserRepository":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        
-        return cls._instance
-
-    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
+    def __init__(self, dbContext: NewVideosDBContext) -> None:
         super().__init__(dbContext=dbContext)
-        self._db = dbContext
-
+    
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
         from time import perf_counter
 

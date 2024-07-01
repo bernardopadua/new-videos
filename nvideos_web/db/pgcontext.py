@@ -10,27 +10,27 @@ from nvideos_web.config import getUrlDataBase, getConnectionPoolInfo
 from nvideos_web.db.basecontext import BaseContext
 
 # TYPING
-from typing import Iterator, Generator, Any
+from typing import Type, Generator, Any
 
 from contextlib import contextmanager
 
 class NewVideosDBContext(BaseContext[Connection]):
-    connPool: ConnectionPool 
-    dbConn: Connection 
-
+    _connPool: ConnectionPool | None = None
+    _dbConn: Connection 
+    
     @classmethod
-    def initDBContext(cls) -> None:
-        if cls.connPool is None:
+    def initDBContext(cls: Type["NewVideosDBContext"]) -> None:
+        if cls._connPool is None:
             url = getUrlDataBase()
             poolInfo = getConnectionPoolInfo()
-            cls.connPool = ConnectionPool(
+            cls._connPool = ConnectionPool(
                 url, 
                 open=poolInfo.OPEN, 
                 min_size=poolInfo.MINSIZE, 
                 max_size=poolInfo.MAXSIZE,
                 timeout=poolInfo.TIMEOUT,
             )
-            cls.connPool.open(wait=True)
+            cls._connPool.open(wait=True)
 
     # @classmethod
     # def initConn(cls) -> None:
@@ -44,8 +44,11 @@ class NewVideosDBContext(BaseContext[Connection]):
     def getConn(cls) -> Generator[Connection, Any, Any]:
         # if not cls.connPool._opened:
         #     cls.connPool.open(wait=True)
+        if cls._connPool is None:
+            raise Exception("Connection pool cannot be null")
+
         try:
-            with cls.connPool.connection() as conn:
+            with cls._connPool.connection() as conn:
                 yield conn
         finally:
             pass
