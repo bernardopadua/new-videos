@@ -43,7 +43,7 @@ class PasswordHasher(UserPasswordHasher):
         ).hex()
 
 class PgUserRepository(PgRepositoryBase, UserRepository):
-    def __init__(self, dbContext: NewVideosDBContext) -> None:
+    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
         super().__init__(dbContext=dbContext)
     
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:

@@ -1,5 +1,5 @@
 from os import environ
-from io import TextIOWrapper
+from typing import IO, Mapping, Any, TextIO
 
 from dataclasses import dataclass
 
@@ -46,7 +46,7 @@ def getUrlDataBase() -> str:
 
     return urlConn
 
-def loadDotEnv(filename: TextIOWrapper) -> dict:
+def loadDotEnv(filename: IO[Any]) -> Mapping[str, Any]:
     configRet = {}
     line = filename.readline()
     while line:

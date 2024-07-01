@@ -18,7 +18,6 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 #from nvideos_web.db.pgcontext_perf_test import NewVideosDBContext
 
 class UserService(BaseService):
-
     def __init__(self, currentUser: int) -> None:
         super().__init__(currentUser=currentUser)
         self._usuRep = PgUserRepository(dbContext=NewVideosDBContext)
@@ -35,7 +34,7 @@ class UserService(BaseService):
                 "No user input. Verify if you are setting the user input."
             )
 
-        self._usuRep.create(
+        return self._usuRep.create(
             userInputData=userInput, 
             auditInputData=auditData
         )

@@ -134,17 +134,17 @@ class ModelRowFactory(RowMaker):
     ) -> "ModelRowFactory":
         return cls(listOrderFields)
 
-T_Repository = TypeVar("T_Repository", bound="PgRepositoryBase")
-class PgRepositoryBase(Generic[T_Repository]):
+class PgRepositoryBase:
     _dbContext: Type[NewVideosDBContext]
-    _instance: T_Repository
+    _instance: "PgRepositoryBase" | None = None
 
-    def __new__(cls: Type[T_Repository]
-    #, dbContext: Type[NewVideosDBContext]
-    ) -> T_Repository:
+    def __new__(
+        cls: Type["PgRepositoryBase"], 
+        *args: Any, 
+        **kwargs: dict[str, Any]
+    ) -> "PgRepositoryBase":
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        
+            cls._instance = super(PgRepositoryBase, cls).__new__(cls, *args, **kwargs)
         return cls._instance
 
     def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
@@ -180,8 +180,8 @@ class PgRepositoryBase(Generic[T_Repository]):
             try:
                 if not hasattr(inputObject, paramAttr) and auditObject:
                     inputFieldValue = getattr(auditObject, paramAttr)
-                
-                inputFieldValue = getattr(inputObject, paramAttr)
+                else:
+                    inputFieldValue = getattr(inputObject, paramAttr)
             except AttributeError as e:
                 raise PgRepositoryMissingSqlParameter(
                     "Parameter has no input field. Please verify the input and audit objects."
