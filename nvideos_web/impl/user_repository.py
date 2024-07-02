@@ -13,6 +13,8 @@ from nvideos_web.core.entity.user_permission import UserPermissionMetadata
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
+# SQL BUILDER
+from nvideos_web.impl.base.sql_builder import NvSql
 
 # REPOSITORY
 from nvideos_web.core.repository.user import (
@@ -21,10 +23,8 @@ from nvideos_web.core.repository.user import (
 )
 
 # IMPL
-from nvideos_web.impl.base_repository import (
-    PgRepositoryBase,
-    ModelRowFactory
-)
+from nvideos_web.impl.base.row_factory import ModelRowFactory
+from nvideos_web.impl.base_repository import PgRepositoryBase
 
 # ERRORS
 from nvideos_web.impl.error.base import PgRepositoryMissingParameter
@@ -54,7 +54,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 "Missing parameter. InputData or AuditData."
             )
 
-        sqlFields, fieldsOrder = self.sqlFields(
+        sqlFields, fieldsOrder = NvSql.selectOder(
             UserMetadata.userName, UserMetadata.userSurname,
             UserMetadata.userEmail, UserMetadata.userPassword,
             UserMetadata.userAvatarUrl, UserMetadata.userPermission,
@@ -76,12 +76,12 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 %(updatedAt)s, %(updatedBy)s
             );
         """.format(**{ 
-            "table_name": UserMetadata._table_name, 
+            "table_name": UserMetadata.tableName(), 
             "sql_fields": sqlFields 
         })
-        parsedParams = self.parseSqlParams(sql, userInputData, auditObject=auditInputData)
+        parsedParams = NvSql.parseSqlParams(sql, userInputData, auditObject=auditInputData)
 
-        sqlFields, fieldsOrder = self.sqlFields(
+        sqlFields, fieldsOrder = NvSql.selectOder(
             UserMetadata.userId, UserMetadata.userName,
             UserMetadata.userEmail, UserMetadata.userPermission,
             UserPermissionMetadata.permissionDescription
@@ -108,7 +108,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         # """
         ini = perf_counter()
         subU = UserMetadata.as_(newPrefix='us')
-        sqlFields, fieldsOrder = self.sqlFields(
+        sqlFields, fieldsOrder = NvSql.selectOder(
             UserMetadata.userName, subU.userName, subU.userEmail
         )
         nSql = """
@@ -116,7 +116,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
                 --nu.user_name, ch.channel_name, s.subscriber_id, nu2.user_name, nu2.user_email 
                 nu.user_name, nu2.user_name, nu2.user_email
               from nvideo_user nu, channel ch, subscriber s, nvideo_user nu2
-            where nu.user_id = 1
+            where nu.user_id = 10
               and ch.user_id  = nu.user_id
               and s.channel_id = ch.channel_id 
               and s.user_id  = nu2.user_id 
@@ -131,19 +131,10 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             #cur = conn.cursor()
             cur.execute(nSql)
             rr = cur.fetchall()
+            a = UserMetadata.getRow(rr[0])
+            b = subU.getRow(rr[0])
             conn.rollback()
             raise NotImplementedError()
-            return
-            # cur.execute(nSql, nParsedParms)
-            # rr = cur.fetchall()
-            cur.execute(
-                sql, parsedParams
-            )
-            #cur.execute(nSql)
-            #cur.execute(nSql, nParsedParms)
-            #rr = cur.fetchall()
-            #conn.rollback()
-            conn.commit()
 
     def update(self, userData: User, newUserData: UserInput) -> User:
         raise NotImplementedError()

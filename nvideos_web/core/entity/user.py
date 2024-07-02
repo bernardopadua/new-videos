@@ -38,7 +38,7 @@ class UserMetadata(
     BaseMetadataAuditMixin
 ):
     _table_name: str = "nvideo_user"
-    _model_data: Type[User] | None = None
+    _model_data: Type[User] = User
     _use_prefix: str = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")

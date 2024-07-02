@@ -1,32 +1,26 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Type, TypeVar, Generic, Protocol
+from typing import (
+    Type, TypeVar, Generic, 
+    Callable, Optional
+)
 
 #METADATA class
-T = TypeVar("T", bound="MetadataClass")
+TMetada = TypeVar("TMetada", bound="MetadataClass")
 
 #Model from METADATA class
-M = TypeVar("M")
+TModel = TypeVar("TModel")
 
-def modelMetadataMapper(cls: Type[T]) -> Type[T]:
-    props = cls.__dict__
-    for k in props:
-        if isinstance(props[k], ModelField) or isinstance(props[k], ModelFieldKeyWord):
-            p: ModelField = props[k]
-            p.attr = k
-            p.owner = cls
-    return cls
-
-class ModelField(Generic[T]):
+class ModelField(Generic[TMetada]):
     def __init__(
         self: "ModelField", 
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type[T] | T | None = None
+        owner: Type[TMetada] | TMetada | None = None
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
-        self.owner: Type[T] | T | None = owner
+        self.owner: Type[TMetada] | TMetada | None = owner
 
     def getWithPrefix(self: "ModelField") -> str:
         if self.owner is None:
@@ -34,7 +28,7 @@ class ModelField(Generic[T]):
         prefix: str = self.owner._use_prefix
         return f"{prefix}.{self.field}"
 
-    def getOwner(self) -> Type[T] | T:
+    def getOwner(self) -> Type[TMetada] | TMetada:
         if not self.owner:
             raise Exception("Owner cannot be None at this step. Investigate.")
         return self.owner
@@ -53,9 +47,22 @@ class ModelField(Generic[T]):
 class ModelFieldKeyWord(ModelField):
     pass
 
-class MetadataClass(Generic[M]):
+class MethodClassAndInstance:
+    def __init__(self: "MethodClassAndInstance", method: Callable) -> None:
+        self._method: Callable = method
+    
+    def __get__(
+        self: "MethodClassAndInstance", 
+        instance: Optional["MetadataClass"], 
+        classCaller: Type["MetadataClass"]
+    ) -> Callable:
+        if instance is None:
+            return self._method.__get__(classCaller, classCaller)
+        return self._method.__get__(instance, classCaller)
+
+class MetadataClass(Generic[TModel]):
     _table_name: str
-    _model_data: Type[M] | None
+    _model_data: Type[TModel] | None
     _use_prefix: str
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
@@ -72,9 +79,6 @@ class MetadataClass(Generic[M]):
                 attr.attr = k
                 attr.owner = cls
 
-    def __del__(cls):
-        pass
-
     def __init__(self, *, newPrefix: str) -> None:
         super().__init__()
         if not newPrefix:
@@ -90,8 +94,19 @@ class MetadataClass(Generic[M]):
                 setattr(self, i, ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self))
 
     @classmethod
-    def as_(cls: Type[T], *, newPrefix: str) -> T:
+    def tableName(cls: Type[TMetada]) -> str:
+        return cls._table_name
+
+    @classmethod
+    def as_(cls: Type[TMetada], *, newPrefix: str) -> TMetada:
         return cls(newPrefix=newPrefix)
+
+    @MethodClassAndInstance
+    def getRow(
+        clsSelf: Type["MetadataClass"] | "MetadataClass", 
+        rowDict: dict[int, TModel]
+    ) -> TModel:
+        return rowDict[id(clsSelf)]
 
 class BaseMetadataAuditMixin:
     updatedBy: ModelField = ModelField("updated_by")
