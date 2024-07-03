@@ -3,7 +3,7 @@ from datetime import date
 from dataclasses import dataclass, field
 
 # TYPING
-from typing import Type
+from typing import Type, TypeVar
 
 # ENTITY
 from nvideos_web.core.entity.base_entity import (
@@ -34,7 +34,6 @@ class UserInput(BaseInput):
     userAvatarUrl: str | None 
     userPermission: str | None 
     userIsActive: bool | None
-
 
 class UserMetadata(
     MetadataClass[User],

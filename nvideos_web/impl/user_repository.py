@@ -85,7 +85,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             cur.execute(stmt, params=parsedParams)
             result = cur.fetchone()
             conn.commit()
-            return UserMetadata.getRow(result)
+            return UserMetadata.row(result)
 
     def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
         if newUserData.isNone():
@@ -107,9 +107,8 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             userId=userId
         )
         paramsUpdate: dict = NvSql.parseSqlParams(stmt, inputObject=newUserData, auditObject=auditData)
-
         with self._db.getConn() as conn:
-            conn.cursor(row_factory=ModelRowFactory())
+            pass
 
         raise NotImplementedError()
         return

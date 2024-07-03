@@ -12,18 +12,20 @@ TMetadata = TypeVar("TMetadata", bound="MetadataClass")
 #Model from METADATA class
 TModel = TypeVar("TModel")
 
-class ModelField(Generic[TMetadata]):
+class ModelField:
     def __init__(
         self,
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type[TMetadata] | TMetadata | None = None
+        owner: Type["MetadataClass"] | "MetadataClass" | None = None,
+        isInstance: bool = False
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
+        self.isInstance: bool = isInstance
         self.owner: Type["MetadataClass"] | "MetadataClass" | None = owner
 
-    def getWithPrefix(self: "ModelField") -> str:
+    def getWithPrefix(self) -> str:
         if self.owner is None:
             raise Exception("Owner of ModelField is none and it cannot be.")
         prefix: str = self.owner._use_prefix
@@ -48,9 +50,9 @@ class ModelField(Generic[TMetadata]):
 class ModelFieldKeyWord(ModelField):
     pass
 
-TMethodSelf = TypeVar("TMethodSelf", bound="MethodClassAndInstance")
+TMethodSelf = TypeVar("TMethodSelf", bound="GetRowClassAndInstance")
 TOwnerClass = TypeVar("TOwnerClass")
-class MethodClassAndInstance(Generic[TOwnerClass, TModel]):
+class GetRowClassAndInstance(Generic[TOwnerClass, TModel]):
     def __init__(
         self: TMethodSelf, 
         method: Callable[[TOwnerClass, Any], TModel]
@@ -65,6 +67,22 @@ class MethodClassAndInstance(Generic[TOwnerClass, TModel]):
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
+TGetModelData = TypeVar("TGetModelData", bound="GetModelData")
+class GetModelData(Generic[TOwnerClass, TModel]):
+    def __init__(
+        self: TGetModelData, 
+        method: Callable[[TOwnerClass], Type[TModel]]
+    ) -> None:
+       self._method: Callable[[TOwnerClass], Type[TModel]] = method
+
+    def __get__(
+        self: TGetModelData, 
+        instance: Optional["MetadataClass"], 
+        classCaller: Type["MetadataClass"]
+    ) -> Callable[[], Type[TModel]]:
+        if instance is None:
+            return self._method.__get__(classCaller, classCaller)
+        return self._method.__get__(instance, classCaller)
 
 class MetadataClass(Generic[TModel]):
     _table_name: str
@@ -75,7 +93,7 @@ class MetadataClass(Generic[TModel]):
 
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls: Type[TMetadata], **kwargs) -> None:
         attrsCheck = ["_use_prefix", "_model_data", "_table_name"]
         if any(attr not in cls.__dict__ for attr in attrsCheck):
             raise Exception(f"Class {cls} metadata not implemented on of three main attributes.")
@@ -110,7 +128,7 @@ class MetadataClass(Generic[TModel]):
             cls._all_fields.append(attrAll)
             updateField(cls, attrAll)
 
-    def __init__(self, *, newPrefix: str) -> None:
+    def __init__(self: TMetadata, *, newPrefix: str) -> None:
         super().__init__()
         if not newPrefix:
             raise Exception("For a new instace of a table you need to inform a new prefix!")
@@ -121,12 +139,12 @@ class MetadataClass(Generic[TModel]):
         for i in self.__dir__():
             attr = getattr(self, i)
             if isinstance(attr, ModelField):
-                _m = ModelField(attr.field, attrName=attr.attr, owner=self)
-                setattr(self, i, ModelField(attr.field, attrName=attr.attr, owner=self))
+                _m = ModelField(attr.field, attrName=attr.attr, owner=self, isInstance=True)
+                setattr(self, i, _m)
                 self._all_fields.append(_m)
             if isinstance(attr, ModelFieldKeyWord):
-                _m = ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self)
-                setattr(self, i, ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self))
+                _m = ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self, isInstance=True)
+                setattr(self, i, _m)
                 self._all_fields.append(_m)
 
     @classmethod
@@ -137,8 +155,16 @@ class MetadataClass(Generic[TModel]):
     def as_(cls: Type[TMetadata], *, newPrefix: str) -> TMetadata:
         return cls(newPrefix=newPrefix)
 
-    @MethodClassAndInstance["MetadataClass", TModel]
-    def getRow(
+    @GetModelData["MetadataClass", TModel]
+    def modelData(
+        clsSelf
+    ) -> Type[TModel]:
+        if clsSelf._model_data is None:
+            raise Exception("Model cannot be null at the time of this call. If this is null, something wen wrong.")
+        return clsSelf._model_data
+
+    @GetRowClassAndInstance["MetadataClass", TModel]
+    def row(
         clsSelf, 
         rowDict: Any | None
     ) -> TModel:

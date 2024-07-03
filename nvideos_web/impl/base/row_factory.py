@@ -44,7 +44,7 @@ class ModelRowFactory(RowMaker):
             field: ModelField = self.fields[i]
             modelIdentification: int = id(field.getOwner())
             if modelIdentification not in eachModel:
-                eachModel[modelIdentification] = { "model": field.getOwner()._model_data, "row": {} }
+                eachModel[modelIdentification] = { "model": field.getOwner().modelData() , "row": {} }
             eachModel[modelIdentification]["row"].update({ field.attr: values[i] })
 
         #TODO: I don't know if I want to continue this. I think the default is working OK, at least for now.
