@@ -2,10 +2,10 @@
 from psycopg import _queries
 
 # BUILT-IN
-from dataclasses import is_dataclass
+from dataclasses import is_dataclass, fields
 
 # TYPING
-from typing import TypeVar, Any, NewType, cast
+from typing import TypeVar, Any, NewType, cast, Generic, Type
 
 # BASE ENTITY
 from nvideos_web.core.entity.base_entity import ModelField, ModelFieldKeyWord
@@ -16,11 +16,13 @@ from nvideos_web.impl.error.base import (
     PgRepositoryMissingSqlParameter
 )
 
+TMetaData = TypeVar("TMetaData")
 GenericInputClass = TypeVar("GenericInputClass")
 FieldsCommaStr = NewType("FieldsCommaStr", str)
 
-class NvSql:
-    def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
+
+class NvSql(Generic[TMetaData]):
+    def __init__(self, *, usePrefix: bool = False) -> None:
         self._sql: str = ""
                 
         self._fieldsListOrder: list[ModelField] = []
@@ -28,7 +30,7 @@ class NvSql:
 
         self._usePrefix: bool = usePrefix
 
-    def selectFields(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+    def selectFields(self, *args: ModelField | ModelFieldKeyWord) -> "NvSql":
         if len(args) == 1 and args[0].field == "*":
             for attr in args[0].owner.__dict__:
                 if isinstance(attr, ModelField):
@@ -43,18 +45,18 @@ class NvSql:
         
         return self
 
-    def select(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+    def select(self, *args: ModelField | ModelFieldKeyWord) -> "NvSql":
         self._isSelecting = True
         self.selectFields(*args)
         return self
 
-    def insert(self: "NvSql", *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+    def insert(self, *args: ModelField | ModelFieldKeyWord) -> "NvSql":
         self._isInserting = True
         self.selectFields(*args)
         self._insertTable = self._fieldsListOrder[0].getOwner()._table_name
         return self
 
-    def build(self: "NvSql") -> None:
+    def build(self) -> None:
         pass
 
     @staticmethod
@@ -68,10 +70,17 @@ class NvSql:
     def selectOder(
         *args: ModelField | ModelFieldKeyWord
     ) -> tuple[FieldsCommaStr, list[ModelField]]:
+        newArgs: list[ModelField | ModelFieldKeyWord] = [*args]
         concat = []
         listRowFactory = []
         returnStr: FieldsCommaStr
-        for arg in args:
+        
+        if len(newArgs) == 1 and isinstance(args[0], ModelFieldKeyWord) and \
+        args[0].field == "*":
+            attr: ModelFieldKeyWord = args[0]
+            newArgs = attr.getOwner()._all_fields
+
+        for arg in newArgs:
             concat.append(arg.field)
             listRowFactory.append(arg)
         returnStr = cast(FieldsCommaStr, ','.join(concat))
@@ -116,5 +125,19 @@ class NvSql:
         return _stmt.format(
             **kwargs
         )
+
+    @staticmethod
+    def updateFields(_metaData: Type[TMetaData], inputData: GenericInputClass) -> str:
+        retMapValue = []
+        if not is_dataclass(inputData):
+            raise Exception("Expecting a input of dataclass type.")
+
+        for field in fields(inputData):
+            fieldInput: Any = getattr(inputData, field.name)
+            if fieldInput is not None:
+                metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
+                retMapValue.append(f"{metadataAttr.field} = %({field.name})s")
+
+        return ', '.join(retMapValue)
 
     #TODO: use metadata to assign the values from select

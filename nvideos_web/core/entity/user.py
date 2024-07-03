@@ -1,12 +1,15 @@
+# BUILT-IN
 from datetime import date
 from dataclasses import dataclass, field
+
+# TYPING
 from typing import Type
 
-#from nvideos_web.core.entity.metadata import setUpField, setUpMetadata
-from nvideos_web.core.entity.constants import UserPermissions
+# ENTITY
 from nvideos_web.core.entity.base_entity import (
     MetadataClass, BaseMetadataAuditMixin,
-    ModelField, AuditData, BaseModelData
+    ModelField, AuditData, BaseModelData,
+    BaseInput
 )
 
 @dataclass(frozen=True, slots=True)
@@ -22,15 +25,15 @@ class User(AuditData, BaseModelData):
     userIsActive: bool = field(default=True)
 
 @dataclass
-class UserInput:
-    userName: str 
-    userSurname: str 
-    userEmail: str 
-    userPassword: str 
-    userBirthDate: date = field(default_factory=date.today)
-    userAvatarUrl: str = field(default="") 
-    userPermission: str = field(default=UserPermissions.P_COMMOM_USER.value) 
-    userIsActive: bool | None = field(default=True) 
+class UserInput(BaseInput):
+    userName: str | None
+    userSurname: str | None
+    userEmail: str | None
+    userPassword: str | None
+    userBirthDate: date | None
+    userAvatarUrl: str | None 
+    userPermission: str | None 
+    userIsActive: bool | None
 
 
 class UserMetadata(

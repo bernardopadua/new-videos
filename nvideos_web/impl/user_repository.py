@@ -2,7 +2,7 @@
 from hashlib import scrypt
 
 # TYPING
-from typing import Type, Mapping, cast
+from typing import Type
 
 # CONFIG
 from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
@@ -80,25 +80,37 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             sql_fields=sqlFields 
         )
         parsedParams = NvSql.parseSqlParams(stmt, userInputData, auditObject=auditInputData)
-
-        sqlfields, fieldsOrder = NvSql.selectOder(
-            UserMetadata.userName, UserMetadata.userEmail
-        )
-        stmt = NvSql.formatStmt("""
-            select {sql_fields} from {table_name} where user_id = 1;
-        """, table_name=UserMetadata.tableName(), sql_fields=sqlfields)
-
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(fieldsOrder))
-            #cur.execute(stmt, params=parsedParams)
-            cur.execute(stmt)
+            cur.execute(stmt, params=parsedParams)
             result = cur.fetchone()
-            
-            conn.rollback()
-            #conn.commit()
+            conn.commit()
             return UserMetadata.getRow(result)
 
-    def update(self, userData: User, newUserData: UserInput) -> User:
+    def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
+        if newUserData.isNone():
+            raise Exception("You cant update a record with an empty input.")
+        fieldsAudit = NvSql.updateFields(UserMetadata, inputData=auditData)
+        fieldsTable = NvSql.updateFields(UserMetadata, inputData=newUserData)
+
+        stmt = """update {table_name} 
+            set {fieldsTable}, {fieldsAudit}
+          where {userIdField} = {userId}
+          returning {returningFields};
+        """
+        ff = NvSql.selectOder(UserMetadata.all)
+        stmt = NvSql.formatStmt(stmt, 
+            table_name=UserMetadata.tableName(),
+            fieldsTable=fieldsTable,
+            fieldsAudit=fieldsAudit,
+            userIdField=UserMetadata.userId.field,
+            userId=userId
+        )
+        paramsUpdate: dict = NvSql.parseSqlParams(stmt, inputObject=newUserData, auditObject=auditData)
+
+        with self._db.getConn() as conn:
+            conn.cursor(row_factory=ModelRowFactory())
+
         raise NotImplementedError()
         return
 

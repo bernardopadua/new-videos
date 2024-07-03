@@ -9,7 +9,7 @@ from nvideos_web.services.base_service import BaseService
 from nvideos_web.services.user.error import UserServiceNoUserInput
 
 # ENTITY
-from nvideos_web.core.entity.user import User, UserInput
+from nvideos_web.core.entity.user import User, UserInput, AuditData
 from nvideos_web.core.entity.constants import UserPermissions
 
 # REPOSITORY
@@ -20,7 +20,7 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 # Used to perform test with single connection
 #from nvideos_web.db.pgcontext_perf_test import NewVideosDBContext
 
-class UserService(BaseService):
+class UserService(BaseService[UserInput]):
     def __init__(
         self, 
         *,
@@ -37,22 +37,40 @@ class UserService(BaseService):
             dbContext=dbContext
         )
 
-        self._inputUser: UserInput
-
     def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()
-        auditData = self.fillAuditData()
-        userInput = userInput if userInput else self._inputUser
+        auditData = self.fillAuditData().getAuditData()
+        userInput = userInput if userInput else self._filledInputData
 
         if not userInput:
             raise UserServiceNoUserInput(
                 "No user input. Verify if you are setting the user input."
             )
+        try:
+            return self._usuRep.create(
+                userInputData=userInput, 
+                auditInputData=auditData
+            )
+        finally:
+            self.resetData()
 
-        return self._usuRep.create(
-            userInputData=userInput, 
-            auditInputData=auditData
-        )
+    def updateUserById(
+        self, 
+        userId: int,
+        /, *, 
+        userInput: UserInput | None = None
+    ) -> User:
+        auditData = self.fillAuditData().getAuditData()
+        inputData = self.getInputData()
+
+        try:
+            return self._usuRep.updateById(
+                userId=userId,
+                newUserData=inputData, 
+                auditData=auditData
+            )
+        finally:
+            self.resetData()
 
     def perfShow(self, seconds: int):
         print(seconds)
@@ -70,31 +88,41 @@ class UserService(BaseService):
             </h3>            
         """
 
-    def getUserInput(self) -> UserInput:
-        return self._inputUser
+    def getInputData(self) -> UserInput:
+        if self._filledInputData is None:
+            raise Exception("User input data is None. Cant get a data while it is None.")
+        return self._filledInputData
 
-    def setUserInput(
+    def fillInputData(
         self, 
-        userName: str = "",
-        userEmail: str = "",
-        userSurname: str = "",
-        userAvatarUrl: str = "",
+        /, *,
+        userName: str | None = None,
+        userEmail: str | None = None,
+        userSurname: str | None = None,
+        userAvatarUrl: str | None = None,
         userBirthDate: date | None = None,
-        userPassword: str = "",
-        createSystemUser: bool = False
+        userPassword: str | None = None,
+        userPermission: str | None = None,
+        userIsActive: bool | None = None,
+        createSystemUser: bool = False,
+        fillTodayData: bool = False
     ) -> "UserService":
-        if not userBirthDate:
+        if not userBirthDate and fillTodayData:
             userBirthDate = date.today()
 
-        userPerm = UserInput.userPermission
+        userPerm: str | None = None
         if createSystemUser:
             userPerm = UserPermissions.P_SYSTEM.value
+        elif userPermission:
+            userPerm = userPermission
         
-        passwordHash = PasswordHasher().hashPassword(
-            userPassword
-        )
+        passwordHash: str | None = userPassword
+        if userPassword is not None:
+            passwordHash = PasswordHasher().hashPassword(
+                userPassword
+            )
 
-        self._inputUser = UserInput(
+        self._filledInputData = UserInput(
             userName=userName,
             userSurname=userSurname,
             userEmail=userEmail,
@@ -102,7 +130,7 @@ class UserService(BaseService):
             userBirthDate=userBirthDate,
             userAvatarUrl=userAvatarUrl,
             userPermission=userPerm,
-            userIsActive=True
+            userIsActive=userIsActive
         )
 
         return self

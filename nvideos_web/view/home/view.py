@@ -23,13 +23,15 @@ def index():
 def abc(seconds: int = 0):
     from nvideos_web.services.user.service import UserService
 
-    u = UserService()
-    nInput = u.setUserInput(
-        userName="sdf",
-        userEmail="dsafsdf",
-        userSurname="sdfsdf",
-        userPassword="sdfsdfsdfs",
-        createSystemUser=True
-    ).getUserInput()
-    u.createNewUser()
+    # us = UserService()
+    # nInput = us.fillInputData(
+    #     userName="sdf",
+    #     userEmail="dsafsdf",
+    #     userSurname="sdfsdf",
+    #     userPassword="sdfsdfsdfs",
+    #     createSystemUser=True
+    # ).getInputData()
+    # us.createNewUser()
+    us = UserService(userId=9)
+    us.fillInputData(userName="Changing name 1").updateUserById(10)
     return "<h1>Hello</h1>"

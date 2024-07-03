@@ -1,26 +1,27 @@
 from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import (
     Type, TypeVar, Generic, 
-    Callable, Optional, Any
+    Callable, Optional, Any,
+    cast, Sequence
 )
 
 #METADATA class
-TMetada = TypeVar("TMetada", bound="MetadataClass")
+TMetadata = TypeVar("TMetadata", bound="MetadataClass")
 
 #Model from METADATA class
 TModel = TypeVar("TModel")
 
-class ModelField(Generic[TMetada]):
+class ModelField(Generic[TMetadata]):
     def __init__(
-        self: "ModelField", 
+        self,
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type[TMetada] | TMetada | None = None
+        owner: Type[TMetadata] | TMetadata | None = None
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
-        self.owner: Type[TMetada] | TMetada | None = owner
+        self.owner: Type["MetadataClass"] | "MetadataClass" | None = owner
 
     def getWithPrefix(self: "ModelField") -> str:
         if self.owner is None:
@@ -28,7 +29,7 @@ class ModelField(Generic[TMetada]):
         prefix: str = self.owner._use_prefix
         return f"{prefix}.{self.field}"
 
-    def getOwner(self) -> Type[TMetada] | TMetada:
+    def getOwner(self) -> Type["MetadataClass"] | "MetadataClass":
         if not self.owner:
             raise Exception("Owner cannot be None at this step. Investigate.")
         return self.owner
@@ -70,6 +71,8 @@ class MetadataClass(Generic[TModel]):
     _model_data: Type[TModel] | None
     _use_prefix: str
 
+    _all_fields: list[ModelField | ModelFieldKeyWord] = []
+
     all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 
     def __init_subclass__(cls, **kwargs) -> None:
@@ -88,6 +91,7 @@ class MetadataClass(Generic[TModel]):
         for k in cls.__dict__:
             attr = cls.__dict__[k]
             if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+                cls._all_fields.append(attr)
                 updateField(cls, attr)
 
         #__init_subclass__ doesnt include audit fields, so this step is necessary.
@@ -97,28 +101,40 @@ class MetadataClass(Generic[TModel]):
             for k in auditFields[0]:
                 attr = auditFields[0][k]
                 if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+                    cls._all_fields.append(attr)
                     updateField(cls, attr)
+        #'all' field doesn't is initialized too. So here we are adding one more step.
+        allField = [i.__dict__ for i in cls.__mro__ if i is MetadataClass]
+        if len(allField) > 0:
+            attrAll: ModelFieldKeyWord = cast(ModelFieldKeyWord, allField[0].get('all'))
+            cls._all_fields.append(attrAll)
+            updateField(cls, attrAll)
 
     def __init__(self, *, newPrefix: str) -> None:
         super().__init__()
         if not newPrefix:
             raise Exception("For a new instace of a table you need to inform a new prefix!")
-
+        
+        self._all_fields = []
         self._use_prefix = newPrefix
 
         for i in self.__dir__():
             attr = getattr(self, i)
             if isinstance(attr, ModelField):
+                _m = ModelField(attr.field, attrName=attr.attr, owner=self)
                 setattr(self, i, ModelField(attr.field, attrName=attr.attr, owner=self))
+                self._all_fields.append(_m)
             if isinstance(attr, ModelFieldKeyWord):
+                _m = ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self)
                 setattr(self, i, ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self))
+                self._all_fields.append(_m)
 
     @classmethod
-    def tableName(cls: Type[TMetada]) -> str:
+    def tableName(cls: Type[TMetadata]) -> str:
         return cls._table_name
 
     @classmethod
-    def as_(cls: Type[TMetada], *, newPrefix: str) -> TMetada:
+    def as_(cls: Type[TMetadata], *, newPrefix: str) -> TMetadata:
         return cls(newPrefix=newPrefix)
 
     @MethodClassAndInstance["MetadataClass", TModel]
@@ -146,4 +162,14 @@ class AuditData:
 @dataclass(frozen=True, slots=True)
 class BaseModelData:
     def print(self):
-        pass
+        print(self)
+
+@dataclass
+class BaseInput:
+    def isNone(self) -> bool:
+        isNone: bool = True
+        for k in fields(self):
+            if getattr(self, k.name) is not None:
+                isNone = False
+                break
+        return isNone

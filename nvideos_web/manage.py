@@ -36,8 +36,9 @@ def insertNewUser():
         userBirthDate=date(year=year, month=month, day=day),
         createSystemUser=True
     ).createNewUser()
-    
-    print("User created:: ")
+
+    print("\nUser created::")
+    user.print()
 
 def main():
     args = parser.parse_args()

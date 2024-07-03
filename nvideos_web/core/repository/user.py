@@ -13,7 +13,7 @@ class UserRepository(Protocol):
         raise NotImplementedError()
     
     @abstractmethod
-    def update(self, userData: User, newUserData: UserInput) -> User:
+    def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
         raise NotImplementedError()
 
     @abstractmethod
