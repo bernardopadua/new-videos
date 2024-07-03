@@ -2,7 +2,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from typing import (
     Type, TypeVar, Generic, 
-    Callable, Optional
+    Callable, Optional, Any
 )
 
 #METADATA class
@@ -47,23 +47,20 @@ class ModelField(Generic[TMetada]):
 class ModelFieldKeyWord(ModelField):
     pass
 
-class MethodClassAndInstance(Generic[TModel]):
+TMethodSelf = TypeVar("TMethodSelf", bound="MethodClassAndInstance")
+TOwnerClass = TypeVar("TOwnerClass")
+class MethodClassAndInstance(Generic[TOwnerClass, TModel]):
     def __init__(
-        self: "MethodClassAndInstance", 
-        method: Callable[[
-            Type["MetadataClass"] | "MetadataClass",
-            dict[int, TModel]
-        ], TModel]
+        self: TMethodSelf, 
+        method: Callable[[TOwnerClass, Any], TModel]
     ) -> None:
-        self._method: Callable[[
-            Type["MetadataClass"] | "MetadataClass",
-            dict[int, TModel]], TModel] = method
-    
+        self._method: Callable[[TOwnerClass, Any], TModel] = method
+
     def __get__(
-        self: "MethodClassAndInstance", 
+        self: TMethodSelf, 
         instance: Optional["MetadataClass"], 
         classCaller: Type["MetadataClass"]
-    ) -> Callable[[dict[int, TModel]], TModel]:
+    ) -> Callable[[Any], TModel]:
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
@@ -124,11 +121,13 @@ class MetadataClass(Generic[TModel]):
     def as_(cls: Type[TMetada], *, newPrefix: str) -> TMetada:
         return cls(newPrefix=newPrefix)
 
-    @MethodClassAndInstance[TModel]
+    @MethodClassAndInstance["MetadataClass", TModel]
     def getRow(
-        clsSelf: Type["MetadataClass"] | "MetadataClass", 
-        rowDict: dict[int, TModel]
+        clsSelf, 
+        rowDict: Any | None
     ) -> TModel:
+        if rowDict is None:
+            raise Exception("Rerturned row cannot be None.")
         return rowDict[id(clsSelf)]
 
 class BaseMetadataAuditMixin:
