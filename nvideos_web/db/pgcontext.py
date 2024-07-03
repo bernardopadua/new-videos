@@ -16,7 +16,7 @@ from contextlib import contextmanager
 
 class NewVideosDBContext(BaseContext[Connection]):
     _connPool: ConnectionPool | None = None
-    _dbConn: Connection 
+    _dbConn: Connection | None = None
     
     @classmethod
     def initDBContext(cls: Type["NewVideosDBContext"]) -> None:
@@ -28,7 +28,7 @@ class NewVideosDBContext(BaseContext[Connection]):
                 open=poolInfo.OPEN, 
                 min_size=poolInfo.MINSIZE, 
                 max_size=poolInfo.MAXSIZE,
-                timeout=poolInfo.TIMEOUT,
+                timeout=poolInfo.TIMEOUT
             )
             cls._connPool.open(wait=True)
 

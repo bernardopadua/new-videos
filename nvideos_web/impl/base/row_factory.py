@@ -42,7 +42,7 @@ class ModelRowFactory(RowMaker):
 
         for i in range(len(values)):
             field: ModelField = self.fields[i]
-            modelIdentification: int = id(field.owner)
+            modelIdentification: int = id(field.getOwner())
             if modelIdentification not in eachModel:
                 eachModel[modelIdentification] = { "model": field.getOwner()._model_data, "row": {} }
             eachModel[modelIdentification]["row"].update({ field.attr: values[i] })

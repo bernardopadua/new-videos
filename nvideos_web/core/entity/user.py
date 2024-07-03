@@ -6,11 +6,11 @@ from typing import Type
 from nvideos_web.core.entity.constants import UserPermissions
 from nvideos_web.core.entity.base_entity import (
     MetadataClass, BaseMetadataAuditMixin,
-    ModelField
+    ModelField, AuditData, BaseModelData
 )
 
 @dataclass(frozen=True, slots=True)
-class User:
+class User(AuditData, BaseModelData):
     userId: int = field(default=0)
     userName: str = field(default="")
     userSurname: str = field(default="")

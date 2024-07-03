@@ -2,8 +2,8 @@ from datetime import date
 from nvideos_web.core.entity.base_entity import AuditData
 
 class BaseService:
-    def __init__(self, currentUser: int) -> None:
-        self._currentUser: int = currentUser
+    def __init__(self, currentUser: int | None) -> None:
+        self._currentUser: int | None = currentUser
         self._filledAudit: AuditData | None = None
 
         self._insertingMode: bool = False

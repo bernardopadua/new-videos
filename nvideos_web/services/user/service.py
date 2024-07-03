@@ -1,6 +1,9 @@
 # BUILT-IN
 from datetime import date
 
+# TYPING
+from typing import Type
+
 # SERVICES
 from nvideos_web.services.base_service import BaseService
 from nvideos_web.services.user.error import UserServiceNoUserInput
@@ -18,9 +21,21 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 #from nvideos_web.db.pgcontext_perf_test import NewVideosDBContext
 
 class UserService(BaseService):
-    def __init__(self, currentUser: int) -> None:
-        super().__init__(currentUser=currentUser)
-        self._usuRep = PgUserRepository(dbContext=NewVideosDBContext)
+    def __init__(
+        self, 
+        *,
+        userId: int | None = None, 
+        dbContext: Type[NewVideosDBContext] | None = None
+    ) -> None:
+        super().__init__(currentUser=userId)
+
+        #mypy doesn't understand inline if
+        if dbContext is None:
+            dbContext=NewVideosDBContext
+            
+        self._usuRep = PgUserRepository(
+            dbContext=dbContext
+        )
 
         self._inputUser: UserInput
 
@@ -55,6 +70,9 @@ class UserService(BaseService):
             </h3>            
         """
 
+    def getUserInput(self) -> UserInput:
+        return self._inputUser
+
     def setUserInput(
         self, 
         userName: str = "",
@@ -64,7 +82,7 @@ class UserService(BaseService):
         userBirthDate: date | None = None,
         userPassword: str = "",
         createSystemUser: bool = False
-    ) -> UserInput:
+    ) -> "UserService":
         if not userBirthDate:
             userBirthDate = date.today()
 
@@ -87,4 +105,4 @@ class UserService(BaseService):
             userIsActive=True
         )
 
-        return self._inputUser
+        return self

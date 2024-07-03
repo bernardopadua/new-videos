@@ -5,7 +5,7 @@ from psycopg import _queries
 from dataclasses import is_dataclass
 
 # TYPING
-from typing import TypeVar, Type
+from typing import TypeVar, Any, NewType, cast
 
 # BASE ENTITY
 from nvideos_web.core.entity.base_entity import ModelField, ModelFieldKeyWord
@@ -17,6 +17,7 @@ from nvideos_web.impl.error.base import (
 )
 
 GenericInputClass = TypeVar("GenericInputClass")
+FieldsCommaStr = NewType("FieldsCommaStr", str)
 
 class NvSql:
     def __init__(self: "NvSql", *, usePrefix: bool = False) -> None:
@@ -66,13 +67,15 @@ class NvSql:
     @staticmethod
     def selectOder(
         *args: ModelField | ModelFieldKeyWord
-    ) -> tuple[str, list[ModelField]]:
+    ) -> tuple[FieldsCommaStr, list[ModelField]]:
         concat = []
         listRowFactory = []
+        returnStr: FieldsCommaStr
         for arg in args:
             concat.append(arg.field)
             listRowFactory.append(arg)
-        return (','.join(concat), listRowFactory)
+        returnStr = cast(FieldsCommaStr, ','.join(concat))
+        return (returnStr, listRowFactory)
 
     @staticmethod
     def parseSqlParams(
@@ -107,5 +110,11 @@ class NvSql:
             paramAssigned[paramAttr] = inputFieldValue
 
         return paramAssigned
+
+    @staticmethod
+    def formatStmt(_stmt: str, **kwargs: Any):
+        return _stmt.format(
+            **kwargs
+        )
 
     #TODO: use metadata to assign the values from select

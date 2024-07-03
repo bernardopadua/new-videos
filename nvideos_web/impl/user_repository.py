@@ -47,8 +47,6 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         super().__init__(dbContext=dbContext)
     
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
-        from time import perf_counter
-
         if not userInputData or not auditInputData:
             raise PgRepositoryMissingParameter(
                 "Missing parameter. InputData or AuditData."
@@ -63,78 +61,41 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             UserMetadata.createdAt, UserMetadata.createdBy,
             UserMetadata.updatedAt, UserMetadata.updatedBy
         )
-        sql = """
-            insert into {table_name}
-            (
-                {sql_fields}
-            )
-            values
-            (
-                %(userName)s, %(userSurname)s, %(userEmail)s, 
-                %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
-                %(userIsActive)s, %(createdAt)s, %(createdBy)s,
-                %(updatedAt)s, %(updatedBy)s
-            );
-        """.format(**{ 
-            "table_name": UserMetadata.tableName(), 
-            "sql_fields": sqlFields 
-        })
-        parsedParams = NvSql.parseSqlParams(sql, userInputData, auditObject=auditInputData)
-
-        sqlFields, fieldsOrder = NvSql.selectOder(
-            UserMetadata.userId, UserMetadata.userName,
-            UserMetadata.userEmail, UserMetadata.userPermission,
-            UserPermissionMetadata.permissionDescription
+        stmt = NvSql.formatStmt("""
+                insert into {table_name}
+                (
+                    {sql_fields}
+                )
+                values
+                (
+                    %(userName)s, %(userSurname)s, %(userEmail)s, 
+                    %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
+                    %(userIsActive)s, %(createdAt)s, %(createdBy)s,
+                    %(updatedAt)s, %(updatedBy)s
+                )
+                returning {sql_fields};
+            """,
+            table_name=UserMetadata.tableName(), 
+            sql_fields=sqlFields 
         )
-        # stmt = NvSql().select(
-        #     UserMetadata.userId, UserMetadata.userName,
-        #     UserMetadata.userEmail, UserMetadata.userPermission,
-        #     UserPermissionMetadata.permissionDescription
-        # )
-        # tt = UserMetadata.as_(newPrefix='pp')
-        
-        # nSql = """
-        #     select a.user_id, a.user_name, a.user_email , p.permission_description
-        #     from nvideo_user a, user_permission p 
-        #     where a.user_id = 1
-        #     and   a.user_permission = p.user_permission;
-        # """
-        # nSql = """
-        #     select 
-        #         uu.user_id, uu.user_name, uu.user_email, uu.user_permission, up.permission_description
-        #     from nvideo_user uu, user_permission up 
-        #     where uu.user_id = 1
-        #       and uu.user_permission = up.user_permission
-        # """
-        ini = perf_counter()
-        subU = UserMetadata.as_(newPrefix='us')
-        sqlFields, fieldsOrder = NvSql.selectOder(
-            UserMetadata.userName, subU.userName, subU.userEmail
-        )
-        nSql = """
-            select 
-                --nu.user_name, ch.channel_name, s.subscriber_id, nu2.user_name, nu2.user_email 
-                nu.user_name, nu2.user_name, nu2.user_email
-              from nvideo_user nu, channel ch, subscriber s, nvideo_user nu2
-            where nu.user_id = 10
-              and ch.user_id  = nu.user_id
-              and s.channel_id = ch.channel_id 
-              and s.user_id  = nu2.user_id 
-        """
-        #nParsedParms = self.parseSqlParams(nSql, userInputData)
+        parsedParams = NvSql.parseSqlParams(stmt, userInputData, auditObject=auditInputData)
 
-        #nSql = "select * from user_permission where user_permission = %(userPermission)s;"
-        #nParsedParms = self.parseSqlParams(nSql, userInputData)
+        sqlfields, fieldsOrder = NvSql.selectOder(
+            UserMetadata.userName, UserMetadata.userEmail
+        )
+        stmt = NvSql.formatStmt("""
+            select {sql_fields} from {table_name} where user_id = 9;
+        """, table_name=UserMetadata.tableName(), sql_fields=sqlfields)
 
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(fieldsOrder))
-            #cur = conn.cursor()
-            cur.execute(nSql)
-            rr = cur.fetchall()
-            a = UserMetadata.getRow(rr[0])
-            b = subU.getRow(rr[0])
+            #cur.execute(stmt, params=parsedParams)
+            cur.execute(stmt)
+            result = cur.fetchone()
+            UserMetadata.getRow(result)
             conn.rollback()
-            raise NotImplementedError()
+            #conn.commit()
+            return UserMetadata.getRow(result)
 
     def update(self, userData: User, newUserData: UserInput) -> User:
         raise NotImplementedError()

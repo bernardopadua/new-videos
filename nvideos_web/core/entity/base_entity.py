@@ -1,5 +1,5 @@
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     Type, TypeVar, Generic, 
     Callable, Optional
@@ -47,15 +47,23 @@ class ModelField(Generic[TMetada]):
 class ModelFieldKeyWord(ModelField):
     pass
 
-class MethodClassAndInstance:
-    def __init__(self: "MethodClassAndInstance", method: Callable) -> None:
-        self._method: Callable = method
+class MethodClassAndInstance(Generic[TModel]):
+    def __init__(
+        self: "MethodClassAndInstance", 
+        method: Callable[[
+            Type["MetadataClass"] | "MetadataClass",
+            dict[int, TModel]
+        ], TModel]
+    ) -> None:
+        self._method: Callable[[
+            Type["MetadataClass"] | "MetadataClass",
+            dict[int, TModel]], TModel] = method
     
     def __get__(
         self: "MethodClassAndInstance", 
         instance: Optional["MetadataClass"], 
         classCaller: Type["MetadataClass"]
-    ) -> Callable:
+    ) -> Callable[[dict[int, TModel]], TModel]:
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
@@ -73,11 +81,26 @@ class MetadataClass(Generic[TModel]):
             raise Exception(f"Class {cls} metadata not implemented on of three main attributes.")
 
         super().__init_subclass__(**kwargs)
+        def updateField(
+            cls: Type["MetadataClass"], 
+            attr: ModelField | ModelFieldKeyWord
+        ):
+            attr.attr = k
+            attr.owner = cls
+
         for k in cls.__dict__:
             attr = cls.__dict__[k]
             if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
-                attr.attr = k
-                attr.owner = cls
+                updateField(cls, attr)
+
+        #__init_subclass__ doesnt include audit fields, so this step is necessary.
+        #until I find a better way to do it. There will do it.
+        auditFields = [i.__dict__ for i in cls.__mro__ if i is BaseMetadataAuditMixin]
+        if len(auditFields) > 0:
+            for k in auditFields[0]:
+                attr = auditFields[0][k]
+                if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+                    updateField(cls, attr)
 
     def __init__(self, *, newPrefix: str) -> None:
         super().__init__()
@@ -101,7 +124,7 @@ class MetadataClass(Generic[TModel]):
     def as_(cls: Type[TMetada], *, newPrefix: str) -> TMetada:
         return cls(newPrefix=newPrefix)
 
-    @MethodClassAndInstance
+    @MethodClassAndInstance[TModel]
     def getRow(
         clsSelf: Type["MetadataClass"] | "MetadataClass", 
         rowDict: dict[int, TModel]
@@ -114,9 +137,14 @@ class BaseMetadataAuditMixin:
     createdAt: ModelField = ModelField("created_at")
     updatedAt: ModelField = ModelField("updated_at")
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class AuditData:
-    updatedBy: int
-    createdBy: int | None
-    createdAt: datetime | None
-    updatedAt: datetime
+    updatedBy: int | None = field(default=None)
+    createdBy: int | None = field(default=None)
+    createdAt: datetime | None = field(default=None)
+    updatedAt: datetime | None = field(default=None)
+
+@dataclass(frozen=True, slots=True)
+class BaseModelData:
+    def print(self):
+        pass
