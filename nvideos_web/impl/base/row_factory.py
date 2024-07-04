@@ -4,24 +4,18 @@ from psycopg.rows import RowMaker
 
 # TYPING
 from typing import (
-    Any, Sequence, Type, Union,
-    TypeVar
+    Any, Sequence, Type, Union
 )
 
 # ENTITY
 from nvideos_web.core.entity.base_entity import ModelField
 
-TModel = TypeVar("TModel")
-
 class ModelRowFactory(RowMaker):
     def __init__(
         self, 
         listOrderFields: list[ModelField],
-        /, *,
-        modelReturn: Type[TModel] | None = None
     ):
         self.fields = listOrderFields
-        self.returningModel = modelReturn
 
     def __call__(
         self, 

@@ -17,7 +17,7 @@ parser.add_argument("-iu",
     action="store_true", help="Insert a system user to database"
 )
 
-def insertNewUser():
+def insertSuperUser():
     from datetime import date
     print("For now I'm just hoping you are not informed no empty fields!\n")
     userName = input("UserName: ")
@@ -29,7 +29,7 @@ def insertNewUser():
     month = int(input("Month: "))
     year  = int(input("Year: "))
 
-    user = UserService().setUserInput(
+    user = UserService().fillInputData(
         userName=userName,
         userEmail=userEmail,
         userPassword=userPassword,
@@ -44,7 +44,7 @@ def main():
     args = parser.parse_args()
 
     if args.insert_user:
-        insertNewUser()
+        insertSuperUser()
 
 if __name__=="__main__":
     main()

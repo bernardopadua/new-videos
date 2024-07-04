@@ -3,8 +3,9 @@ from dataclasses import dataclass, field, fields
 from typing import (
     Type, TypeVar, Generic, 
     Callable, Optional, Any,
-    cast, Sequence
+    cast
 )
+from mypy_extensions import DefaultNamedArg
 
 #METADATA class
 TMetadata = TypeVar("TMetadata", bound="MetadataClass")
@@ -26,9 +27,9 @@ class ModelField:
         self.owner: Type["MetadataClass"] | "MetadataClass" | None = owner
 
     def getWithPrefix(self) -> str:
-        if self.owner is None:
+        if self.getOwner() is None:
             raise Exception("Owner of ModelField is none and it cannot be.")
-        prefix: str = self.owner._use_prefix
+        prefix: str = self.getOwner()._use_prefix
         return f"{prefix}.{self.field}"
 
     def getOwner(self) -> Type["MetadataClass"] | "MetadataClass":
@@ -82,6 +83,38 @@ class GetModelData(Generic[TMetadata, TModel]):
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
+TGetTableName = TypeVar("TGetTableName", bound="GetTableName")
+class GetTableName(Generic[TMetadata]):
+    def __init__(
+        self: TGetTableName, 
+        method: Callable[[TMetadata], str]
+    ) -> None:
+       self._method: Callable[[TMetadata], str] = method
+
+    def __get__(
+        self: TGetTableName, 
+        instance: Optional["MetadataClass"], 
+        classCaller: Type["MetadataClass"]
+    ) -> Callable[[], str]:
+        if instance is None:
+            return self._method.__get__(classCaller, classCaller)
+        return self._method.__get__(instance, classCaller)
+TGetTableNamePrefix = TypeVar("TGetTableNamePrefix", bound="GetTableNamePrefix")
+class GetTableNamePrefix(Generic[TMetadata]):
+    def __init__(
+        self: TGetTableNamePrefix, 
+        method: Callable[[TMetadata], str]
+    ) -> None:
+       self._method: Callable[[TMetadata], str] = method
+
+    def __get__(
+        self: TGetTableNamePrefix, 
+        instance: Optional["MetadataClass"], 
+        classCaller: Type["MetadataClass"]
+    ) -> Callable[[], str]:
+        if instance is None:
+            return self._method.__get__(classCaller, classCaller)
+        return self._method.__get__(instance, classCaller)
 
 class MetadataClass(Generic[TModel]):
     _table_name: str
@@ -107,7 +140,7 @@ class MetadataClass(Generic[TModel]):
 
         for k in cls.__dict__:
             attr = cls.__dict__[k]
-            if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+            if isinstance(attr, ModelField):
                 cls._all_fields.append(attr)
                 updateField(cls, attr)
 
@@ -117,14 +150,14 @@ class MetadataClass(Generic[TModel]):
         if len(auditFields) > 0:
             for k in auditFields[0]:
                 attr = auditFields[0][k]
-                if isinstance(attr, ModelField) or isinstance(attr, ModelFieldKeyWord):
+                if isinstance(attr, ModelField):
                     cls._all_fields.append(attr)
                     updateField(cls, attr)
         #'all' field doesn't is initialized too. So here we are adding one more step.
         allField = [i.__dict__ for i in cls.__mro__ if i is MetadataClass]
         if len(allField) > 0:
             attrAll: ModelFieldKeyWord = cast(ModelFieldKeyWord, allField[0].get('all'))
-            cls._all_fields.append(attrAll)
+            #cls._all_fields.append(attrAll)
             updateField(cls, attrAll)
 
     def __init__(self: TMetadata, *, newPrefix: str) -> None:
@@ -144,11 +177,14 @@ class MetadataClass(Generic[TModel]):
             if isinstance(attr, ModelFieldKeyWord):
                 _m = ModelFieldKeyWord(attr.field, attrName=attr.attr, owner=self, isInstance=True)
                 setattr(self, i, _m)
-                self._all_fields.append(_m)
 
-    @classmethod
-    def tableName(cls: Type[TMetadata]) -> str:
-        return cls._table_name
+    @GetTableNamePrefix
+    def tableNamePrefix(clsSelf) -> str:
+        return f"{clsSelf._table_name} {clsSelf._use_prefix}"
+
+    @GetTableName["MetadataClass[TModel]"]
+    def tableName(clsSelf) -> str:
+        return clsSelf._table_name
 
     @classmethod
     def as_(cls: Type[TMetadata], *, newPrefix: str) -> TMetadata:

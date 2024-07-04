@@ -9,18 +9,16 @@ from nvideos_web.core.entity.base_entity import AuditData
 
 class UserRepository(Protocol):
     @abstractmethod
-    def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
-        raise NotImplementedError()
-    
+    def create(self, userInputData: UserInput, auditInputData: AuditData) -> User: 
+        ...
     @abstractmethod
-    def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
-        raise NotImplementedError()
-
+    def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User: 
+        ...
     @abstractmethod
-    def delete(self, userId: int) -> None:
-        raise NotImplementedError()
+    def delete(self, userId: int, auditData: AuditData) -> User: 
+        ...
 
 class UserPasswordHasher(Protocol):
     @abstractmethod
     def hashPassword(self, password: str) -> str:
-        raise NotImplementedError()
+        ...

@@ -24,14 +24,17 @@ def abc(seconds: int = 0):
     from nvideos_web.services.user.service import UserService
 
     # us = UserService()
-    # nInput = us.fillInputData(
-    #     userName="sdf",
-    #     userEmail="dsafsdf",
-    #     userSurname="sdfsdf",
-    #     userPassword="sdfsdfsdfs",
+    # user = us.fillInputData(
+    #     userName="New Test",
+    #     userEmail="newtest@test.com.br",
+    #     userSurname="Test",
+    #     userPassword="123456",
+    #     userIsActive=True,
     #     createSystemUser=True
-    # ).getInputData()
-    # us.createNewUser()
+    # ).createNewUser()
+    # print(user)
     us = UserService(userId=9)
-    us.fillInputData(userName="Changing name 1").updateUserById(10)
+    user = us.fillInputData(userName="Changing name 1").updateUserById(44)
+    # user = us.deleteByUserId(10)
+    print(user)
     return "<h1>Hello</h1>"

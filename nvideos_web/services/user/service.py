@@ -28,14 +28,11 @@ class UserService(BaseService[UserInput]):
         dbContext: Type[NewVideosDBContext] | None = None
     ) -> None:
         super().__init__(currentUser=userId)
-
         #mypy doesn't understand inline if
         if dbContext is None:
             dbContext=NewVideosDBContext
             
-        self._usuRep = PgUserRepository(
-            dbContext=dbContext
-        )
+        self._usuRep = PgUserRepository(dbContext=dbContext)
 
     def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()
@@ -72,21 +69,14 @@ class UserService(BaseService[UserInput]):
         finally:
             self.resetData()
 
-    def perfShow(self, seconds: int):
-        print(seconds)
-
-        result = self._usuRep.perfGetUserById(seconds=seconds)
-        
-        return f"""
-            <h3>
-                <br>
-                repo:: {id(self._usuRep)}
-                <br>
-                id:: {id(self)}
-                <br>
-                result:: {result}
-            </h3>            
-        """
+    def deleteByUserId(self, userId: int) -> User:
+        if self._currentUser is None:
+            raise Exception("Current user cannot be None for deletion of user. It must maintain audit data.")
+        try:
+            self.fillAuditData()
+            return self._usuRep.delete(userId=userId, auditData=self.getAuditData())
+        finally:
+            self.resetData()
 
     def getInputData(self) -> UserInput:
         if self._filledInputData is None:

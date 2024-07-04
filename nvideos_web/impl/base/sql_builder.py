@@ -5,7 +5,7 @@ from psycopg import _queries
 from dataclasses import is_dataclass, fields
 
 # TYPING
-from typing import TypeVar, Any, NewType, cast, Generic, Type
+from typing import TypeVar, Any, cast, Generic, Type, TypeAlias
 
 # BASE ENTITY
 from nvideos_web.core.entity.base_entity import ModelField, ModelFieldKeyWord
@@ -18,7 +18,7 @@ from nvideos_web.impl.error.base import (
 
 TMetaData = TypeVar("TMetaData")
 GenericInputClass = TypeVar("GenericInputClass")
-FieldsCommaStr = NewType("FieldsCommaStr", str)
+FieldsCommaStr: TypeAlias = str
 
 
 class NvSql(Generic[TMetaData]):
@@ -68,12 +68,12 @@ class NvSql(Generic[TMetaData]):
 
     @staticmethod
     def selectOder(
-        *args: ModelField | ModelFieldKeyWord
+        *args: ModelField | ModelFieldKeyWord,
+        usePrefix: bool = False
     ) -> tuple[FieldsCommaStr, list[ModelField]]:
         newArgs: list[ModelField | ModelFieldKeyWord] = [*args]
         concat = []
         listRowFactory = []
-        returnStr: FieldsCommaStr
         
         if len(newArgs) == 1 and isinstance(args[0], ModelFieldKeyWord) and \
         args[0].field == "*":
@@ -81,10 +81,12 @@ class NvSql(Generic[TMetaData]):
             newArgs = attr.getOwner()._all_fields
 
         for arg in newArgs:
-            concat.append(arg.field)
+            if usePrefix:
+                concat.append(arg.getWithPrefix())
+            else:
+                concat.append(arg.field)
             listRowFactory.append(arg)
-        returnStr = cast(FieldsCommaStr, ','.join(concat))
-        return (returnStr, listRowFactory)
+        return (','.join(concat), listRowFactory)
 
     @staticmethod
     def parseSqlParams(

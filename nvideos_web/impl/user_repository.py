@@ -62,19 +62,18 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             UserMetadata.createdAt, UserMetadata.createdBy,
             UserMetadata.updatedAt, UserMetadata.updatedBy
         )
-        stmt = NvSql.formatStmt("""
-                insert into {table_name}
-                (
-                    {sql_fields}
-                )
-                values
-                (
-                    %(userName)s, %(userSurname)s, %(userEmail)s, 
-                    %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
-                    %(userIsActive)s, %(createdAt)s, %(createdBy)s,
-                    %(updatedAt)s, %(updatedBy)s
-                )
-                returning {sql_fields};
+        stmt = NvSql.formatStmt(
+            """
+            insert into {table_name}
+            ({sql_fields})
+            values
+            (
+            %(userName)s, %(userSurname)s, %(userEmail)s, 
+            %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
+            %(userIsActive)s, %(createdAt)s, %(createdBy)s,
+            %(updatedAt)s, %(updatedBy)s
+            )
+            returning {sql_fields};
             """,
             table_name=UserMetadata.tableName(), 
             sql_fields=sqlFields 
@@ -90,32 +89,55 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
     def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
         if newUserData.isNone():
             raise Exception("You cant update a record with an empty input.")
+
         fieldsAudit = NvSql.updateFields(UserMetadata, inputData=auditData)
         fieldsTable = NvSql.updateFields(UserMetadata, inputData=newUserData)
 
-        stmt = """update {table_name} 
-            set {fieldsTable}, {fieldsAudit}
-          where {userIdField} = {userId}
-          returning {returningFields};
-        """
-        ff = NvSql.selectOder(UserMetadata.all)
-        stmt = NvSql.formatStmt(stmt, 
+        allFields, allFieldsOrder = NvSql.selectOder(UserMetadata.all, usePrefix=True)
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} 
+               set {fields_table}, {fields_audit}
+             where {userId_field} = {user_id}
+            returning {returning_fields};
+            """, 
             table_name=UserMetadata.tableName(),
-            fieldsTable=fieldsTable,
-            fieldsAudit=fieldsAudit,
-            userIdField=UserMetadata.userId.field,
-            userId=userId
+            fields_table=fieldsTable,
+            fields_audit=fieldsAudit,
+            userId_field=UserMetadata.userId.field,
+            user_id=userId,
+            returning_fields=allFields
         )
         paramsUpdate: dict = NvSql.parseSqlParams(stmt, inputObject=newUserData, auditObject=auditData)
         with self._db.getConn() as conn:
-            UserMetadata.userId
-            pass
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+        return UserMetadata.row(result)
 
-        raise NotImplementedError()
-        return
-
-    def delete(self, userId: int) -> None:
-        raise NotImplementedError()
+    def delete(self, userId: int, auditData: AuditData) -> User:
+        auditFields = NvSql.updateFields(UserMetadata, auditData)
+        fieldsStr, fieldsOder = NvSql.selectOder(UserMetadata.all)
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} set {active_field} = false, {audit_fields} where {user_id_field} = {user_id_value}
+            returning {fields_str};
+            """,
+            table_name=UserMetadata.tableName(),
+            active_field=UserMetadata.userIsActive.field,
+            audit_fields=auditFields,
+            user_id_field=UserMetadata.userId.field,
+            user_id_value=userId,
+            fields_str=fieldsStr
+        )
+        paramsUpdate = NvSql.parseSqlParams(stmt, auditData)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(fieldsOder))
+            cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+            return UserMetadata.row(result)
 
     def perfGetUserById(self, seconds: int) -> list:
         #self._db.initConn()
