@@ -108,6 +108,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         )
         paramsUpdate: dict = NvSql.parseSqlParams(stmt, inputObject=newUserData, auditObject=auditData)
         with self._db.getConn() as conn:
+            UserMetadata.userId
             pass
 
         raise NotImplementedError()

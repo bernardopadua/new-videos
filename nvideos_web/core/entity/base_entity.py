@@ -51,13 +51,12 @@ class ModelFieldKeyWord(ModelField):
     pass
 
 TMethodSelf = TypeVar("TMethodSelf", bound="GetRowClassAndInstance")
-TOwnerClass = TypeVar("TOwnerClass")
-class GetRowClassAndInstance(Generic[TOwnerClass, TModel]):
+class GetRowClassAndInstance(Generic[TMetadata, TModel]):
     def __init__(
         self: TMethodSelf, 
-        method: Callable[[TOwnerClass, Any], TModel]
+        method: Callable[[TMetadata, Any], TModel]
     ) -> None:
-        self._method: Callable[[TOwnerClass, Any], TModel] = method
+        self._method: Callable[[TMetadata, Any], TModel] = method
 
     def __get__(
         self: TMethodSelf, 
@@ -68,12 +67,12 @@ class GetRowClassAndInstance(Generic[TOwnerClass, TModel]):
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
 TGetModelData = TypeVar("TGetModelData", bound="GetModelData")
-class GetModelData(Generic[TOwnerClass, TModel]):
+class GetModelData(Generic[TMetadata, TModel]):
     def __init__(
         self: TGetModelData, 
-        method: Callable[[TOwnerClass], Type[TModel]]
+        method: Callable[[TMetadata], Type[TModel]]
     ) -> None:
-       self._method: Callable[[TOwnerClass], Type[TModel]] = method
+       self._method: Callable[[TMetadata], Type[TModel]] = method
 
     def __get__(
         self: TGetModelData, 
@@ -100,7 +99,7 @@ class MetadataClass(Generic[TModel]):
 
         super().__init_subclass__(**kwargs)
         def updateField(
-            cls: Type["MetadataClass"], 
+            cls: Type[TMetadata], 
             attr: ModelField | ModelFieldKeyWord
         ):
             attr.attr = k
@@ -113,7 +112,7 @@ class MetadataClass(Generic[TModel]):
                 updateField(cls, attr)
 
         #__init_subclass__ doesnt include audit fields, so this step is necessary.
-        #until I find a better way to do it. There will do it.
+        #until I find a better way to do it. This will do it.
         auditFields = [i.__dict__ for i in cls.__mro__ if i is BaseMetadataAuditMixin]
         if len(auditFields) > 0:
             for k in auditFields[0]:
@@ -155,7 +154,7 @@ class MetadataClass(Generic[TModel]):
     def as_(cls: Type[TMetadata], *, newPrefix: str) -> TMetadata:
         return cls(newPrefix=newPrefix)
 
-    @GetModelData["MetadataClass", TModel]
+    @GetModelData["MetadataClass[TModel]", TModel]
     def modelData(
         clsSelf
     ) -> Type[TModel]:
@@ -163,7 +162,7 @@ class MetadataClass(Generic[TModel]):
             raise Exception("Model cannot be null at the time of this call. If this is null, something wen wrong.")
         return clsSelf._model_data
 
-    @GetRowClassAndInstance["MetadataClass", TModel]
+    @GetRowClassAndInstance["MetadataClass[TModel]", TModel]
     def row(
         clsSelf, 
         rowDict: Any | None
