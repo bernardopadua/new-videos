@@ -19,6 +19,7 @@ class Channel(AuditData, BaseModelData):
     channelDescription: str = field(default="")
     channelImageUrl: str = field(default="")
     channelAvatarUrl: str = field(default="")
+    channelIsActive: bool = field(default=False)
     userId: int = field(default=0)
 
 @dataclass
@@ -27,6 +28,7 @@ class ChannelInput(BaseInput):
     channelDescription: str | None = field(default=None)
     channelImageUrl: str | None = field(default=None)
     channelAvatarUrl: str | None = field(default=None)
+    channelIsActive: bool | None = field(default=None)
     userId: int | None = field(default=None)
 
 class ChannelMetadata(
@@ -42,4 +44,5 @@ class ChannelMetadata(
     channelDescription: ModelField = ModelField("channel_description")
     channelImageUrl: ModelField = ModelField("channel_image_url")
     channelAvatarUrl: ModelField = ModelField("channel_avatar_url")
+    channelIsActive: ModelField = ModelField("channel_is_active")
     userId: ModelField = ModelField("user_id")

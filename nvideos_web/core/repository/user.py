@@ -12,6 +12,9 @@ class UserRepository(Protocol):
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User: 
         ...
     @abstractmethod
+    def checkIdExists(self, userId: int) -> bool: 
+        ...
+    @abstractmethod
     def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User: 
         ...
     @abstractmethod

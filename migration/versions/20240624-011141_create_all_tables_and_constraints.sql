@@ -37,6 +37,7 @@ create table channel (
 	channel_description text,
 	channel_image_url varchar(500),
 	channel_avatar_url varchar(500),
+	channel_is_active bool not null,
 	user_id int not null,
 	updated_by int,
 	created_by int not null,

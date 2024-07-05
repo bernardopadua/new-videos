@@ -40,8 +40,10 @@ def abc(seconds: int = 0):
     #print(user)
     
     ch = ChannelService(userId=10)
-    ch.fillInputData(
-        channelName="Testing channel"
-    ).createNewChannel()
+    ch.checkIdExists(10)
+    # ch.fillInputData(
+    #     channelName="Testing channel 1"
+    # ).createNewChannel()
+
     
     return "<h1>Hello</h1>"

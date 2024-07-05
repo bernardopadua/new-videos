@@ -5,7 +5,7 @@ from typing import Any, Type
 from nvideos_web.services.base_service import BaseService
 
 # ENTITY
-from nvideos_web.core.entity.channel import Channel, ChannelInput, ChannelMetadata
+from nvideos_web.core.entity.channel import Channel, ChannelInput
 
 # REPOSITORY
 from nvideos_web.impl.channel_repository import PgChannelRepository
@@ -15,7 +15,7 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # ERROR
 from nvideos_web.services.base.error import InputDataIsNone
-from nvideos_web.services.channel.error import ChannelServiceCurrentUserIsNone
+from nvideos_web.services.channel.error import ChannelServiceCurrentUserIsNone, ChannelServiceChannelDoesntExists
 
 class ChannelService(BaseService["ChannelService", ChannelInput]):
     def __init__(
@@ -42,6 +42,22 @@ class ChannelService(BaseService["ChannelService", ChannelInput]):
 
         try:
             return self._chRep.create(channelInputData=inputData, auditInputData=auditData)
+        finally:
+            self.resetData()
+
+    def checkIdExists(self, channelId: int) -> "ChannelService":
+        self._checkExists = self._chRep.checkIdExists(channelId=channelId)
+        return self
+
+    def updateChannelById(self, channelId: int, /, *, inputData: ChannelInput | None = None) -> Channel:
+        _inputData = self.getInputData() if inputData is None else inputData
+        _auditData = self.fillAuditData().getAuditData()
+
+        try:
+            if not self.checkIdExists(channelId=channelId).getCheckIdExists():
+                raise ChannelServiceChannelDoesntExists("The channel you are trying to update doesn't exists.")
+
+            return self._chRep.updateById(channelId=channelId, newChannelData=_inputData, auditData=_auditData)
         finally:
             self.resetData()
 

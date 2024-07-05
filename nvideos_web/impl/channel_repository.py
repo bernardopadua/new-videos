@@ -50,8 +50,65 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             conn.commit()
             return ChannelMetadata.row(result)
     
+    def checkIdExists(self, channelId: int) -> bool:
+        stmt = NvSql.formatStmt(
+            "select 1 from {table_name} where {channel_id} = {channel_id_value};",
+            table_name=ChannelMetadata.tableName(),
+            channel_id=ChannelMetadata.channelId.field,
+            channel_id_value=channelId
+        )
+        with self._db.getConn() as conn:
+            r = conn.execute(stmt)
+            return r.rowcount > 0
+
     def updateById(self, channelId: int, newChannelData: ChannelInput, auditData: AuditData) -> Channel:
-        raise NotImplementedError()
+        channelFields = NvSql.updateFields(ChannelMetadata, newChannelData)
+        auditFields = NvSql.updateFields(ChannelMetadata, auditData)
+        
+        sqlFieldsReturn, sqlFieldsOrder = NvSql.selectOder(ChannelMetadata.all)
+
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} 
+               set {channel_fields}, {audit_fields} 
+             where {channel_id} = {channel_id_value}
+             returning {sql_Fields_return};
+            """,
+            table_name=ChannelMetadata.tableName(),
+            channel_fields=channelFields,
+            audit_fields=auditFields,
+            channel_id=ChannelMetadata.channelId.field,
+            channel_id_value=channelId,
+            sql_fields_return=sqlFieldsReturn
+        )
+        paramsUpdate = NvSql.parseSqlParams(stmt, inputObject=newChannelData, auditObject=auditData)
     
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(sqlFieldsOrder))
+            cur.execute(stmt)
+            result = cur.fetchone()
+            conn.commit()
+            return ChannelMetadata.row(result)
+
     def delete(self, channelId: int, auditData: AuditData) -> Channel:
-        raise NotImplementedError()
+        auditFields = NvSql.updateFields(ChannelMetadata, auditData)
+        fieldsStr, fieldsOder = NvSql.selectOder(ChannelMetadata.all)
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} set {active_field} = false, {audit_fields} where {channel_id_field} = {channel_id_value}
+            returning {fields_str};
+            """,
+            table_name=ChannelMetadata.tableName(),
+            active_field=ChannelMetadata.channelIsActive.field,
+            audit_fields=auditFields,
+            channel_id_field=ChannelMetadata.userId.field,
+            channel_id_value=channelId,
+            fields_str=fieldsStr
+        )
+        paramsUpdate = NvSql.parseSqlParams(stmt, auditData)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(fieldsOder))
+            cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+            return ChannelMetadata.row(result)

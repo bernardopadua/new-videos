@@ -6,10 +6,10 @@ from typing import Any, Type
 
 # SERVICES
 from nvideos_web.services.base_service import BaseService
-from nvideos_web.services.user.error import UserServiceNoUserInput
+from nvideos_web.services.user.error import UserServiceNoUserInput, UserServiceUserDoesntExists
 
 # ENTITY
-from nvideos_web.core.entity.user import User, UserInput, AuditData
+from nvideos_web.core.entity.user import User, UserInput
 from nvideos_web.core.entity.base.constants import UserPermissions
 
 # REPOSITORY
@@ -54,6 +54,10 @@ class UserService(BaseService["UserService", UserInput]):
         finally:
             self.resetData()
 
+    def checkIdExists(self, userId: int) -> "UserService":
+        self._checkExists = self._usuRep.checkIdExists(userId=userId)
+        return self
+
     def updateUserById(
         self, 
         userId: int,
@@ -64,6 +68,9 @@ class UserService(BaseService["UserService", UserInput]):
         inputData = self.getInputData()
 
         try:
+            if not self.checkIdExists(userId=userId).getCheckIdExists():
+                raise UserServiceUserDoesntExists("The user you trying to update doesn't exists")
+
             return self._usuRep.updateById(
                 userId=userId,
                 newUserData=inputData, 
@@ -75,9 +82,13 @@ class UserService(BaseService["UserService", UserInput]):
     def deleteByUserId(self, userId: int) -> User:
         if self._currentUser is None:
             raise Exception("Current user cannot be None for deletion of user. It must maintain audit data.")
+        audiData = self.fillAuditData().getAuditData()
+
         try:
-            self.fillAuditData()
-            return self._usuRep.delete(userId=userId, auditData=self.getAuditData())
+            if not self.checkIdExists(userId=userId).getCheckIdExists():
+                raise UserServiceUserDoesntExists("The user you trying to update doesn't exists")
+
+            return self._usuRep.delete(userId=userId, auditData=audiData)
         finally:
             self.resetData()
 

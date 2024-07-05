@@ -12,6 +12,9 @@ class ChannelRepository(Protocol):
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel: 
         ...
     @abstractmethod
+    def checkIdExists(self, channelId: int) -> bool: 
+        ...
+    @abstractmethod
     def updateById(self, channelId: int, newChannelData: ChannelInput, auditData: AuditData) -> Channel: 
         ...
     @abstractmethod

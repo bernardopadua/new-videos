@@ -21,6 +21,8 @@ class BaseService(Generic[TBaseService, TInputData]):
         self._insertingMode: bool = False
         self._updatingMode: bool = False
 
+        self._checkExists: bool = False
+
     @property
     def currentUser(self) -> int | None:
         return self._currentUser
@@ -29,6 +31,13 @@ class BaseService(Generic[TBaseService, TInputData]):
         self._insertingMode = True
     def updatingMode(self):
         self._updatingMode = True
+
+    @abstractmethod
+    def checkIdExists(self, idRegistry: int) -> TBaseService:
+        ...
+
+    def getCheckIdExists(self) -> bool:
+        return self._checkExists
 
     @abstractmethod
     def getInputData(self) -> TInputData:
@@ -71,3 +80,4 @@ class BaseService(Generic[TBaseService, TInputData]):
     def resetData(self):
         self._filledAudit = None
         self._filledInputData = None
+        self._checkExists = False

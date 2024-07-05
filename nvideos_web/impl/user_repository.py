@@ -86,6 +86,17 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             conn.commit()
             return UserMetadata.row(result)
 
+    def checkIdExists(self, userId: int) -> bool:
+        stmt = NvSql.formatStmt(
+            "select 1 from {table_name} where {user_id} = {user_id_value};",
+            table_name=UserMetadata.tableName(),
+            user_id=UserMetadata.userId.field,
+            user_id_value=userId
+        )
+        with self._db.getConn() as conn:
+            r = conn.execute(stmt)
+            return r.rowcount > 0
+
     def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
         if newUserData.isNone():
             raise Exception("You cant update a record with an empty input.")
