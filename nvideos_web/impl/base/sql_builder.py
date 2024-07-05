@@ -19,7 +19,7 @@ from nvideos_web.impl.error.base import (
 TMetaData = TypeVar("TMetaData")
 GenericInputClass = TypeVar("GenericInputClass")
 FieldsCommaStr: TypeAlias = str
-
+ParamsCommaStr: TypeAlias = str
 
 class NvSql(Generic[TMetaData]):
     def __init__(self, *, usePrefix: bool = False) -> None:
@@ -142,4 +142,38 @@ class NvSql(Generic[TMetaData]):
 
         return ', '.join(retMapValue)
 
-    #TODO: use metadata to assign the values from select
+    @staticmethod
+    def insertFields(_metaData: Type[TMetaData], inputData: GenericInputClass) -> tuple[FieldsCommaStr, ParamsCommaStr]:
+        retFieds = []
+        retParams = []
+
+        if not is_dataclass(inputData):
+            raise Exception("Expecting a input of dataclass type.")
+
+        for field in fields(inputData):
+            fieldInput: Any = getattr(inputData, field.name)
+            if fieldInput is not None:
+                metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
+                retFieds.append(f"{metadataAttr.field}")
+                retParams.append(f"%({field.name})s")
+
+        return (",".join(retFieds), ",".join(retParams))
+    
+    @staticmethod
+    def insertFieldsOrder(_metaData: Type[TMetaData], inputData: GenericInputClass) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
+        retFieds = []
+        retParams = []
+        retListOrder = []
+
+        if not is_dataclass(inputData):
+            raise Exception("Expecting a input of dataclass type.")
+
+        for field in fields(inputData):
+            fieldInput: Any = getattr(inputData, field.name)
+            if fieldInput is not None:
+                metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
+                retFieds.append(f"{metadataAttr.field}")
+                retParams.append(f"%({field.name})s")
+                retListOrder.append(metadataAttr)
+
+        return (",".join(retFieds), ",".join(retParams), retListOrder)

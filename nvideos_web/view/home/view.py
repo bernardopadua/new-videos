@@ -22,6 +22,7 @@ def index():
 @homeBp.route("/abc/<int:seconds>")
 def abc(seconds: int = 0):
     from nvideos_web.services.user.service import UserService
+    from nvideos_web.services.channel.service import ChannelService
 
     # us = UserService()
     # user = us.fillInputData(
@@ -33,8 +34,14 @@ def abc(seconds: int = 0):
     #     createSystemUser=True
     # ).createNewUser()
     # print(user)
-    us = UserService(userId=9)
-    user = us.fillInputData(userName="Changing name 1").updateUserById(44)
+    # us = UserService(userId=9)
+    # user = us.fillInputData(userName="Changing name 1").updateUserById(44)
     # user = us.deleteByUserId(10)
-    print(user)
+    #print(user)
+    
+    ch = ChannelService(userId=10)
+    ch.fillInputData(
+        channelName="Testing channel"
+    ).createNewChannel()
+    
     return "<h1>Hello</h1>"

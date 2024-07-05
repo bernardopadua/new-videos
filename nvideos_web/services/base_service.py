@@ -1,15 +1,17 @@
 # BUILT-IN
 from datetime import timezone
+from abc import abstractmethod
 
 # TYPING
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Any
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
 
 TInputData = TypeVar("TInputData")
+TBaseService = TypeVar("TBaseService", bound="BaseService")
 
-class BaseService(Generic[TInputData]):
+class BaseService(Generic[TBaseService, TInputData]):
     def __init__(self, currentUser: int | None) -> None:
         self._currentUser: int | None = currentUser
         
@@ -27,6 +29,14 @@ class BaseService(Generic[TInputData]):
         self._insertingMode = True
     def updatingMode(self):
         self._updatingMode = True
+
+    @abstractmethod
+    def getInputData(self) -> TInputData:
+        ...
+
+    @abstractmethod
+    def fillInputData(self) -> TBaseService:
+        ...
 
     def getAuditData(self) -> AuditData:
         if self._filledAudit is None:

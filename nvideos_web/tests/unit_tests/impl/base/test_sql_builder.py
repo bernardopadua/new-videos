@@ -4,6 +4,10 @@ from nvideos_web.impl.base.sql_builder import NvSql
 from nvideos_web.core.entity.user import UserMetadata, UserInput
 
 class TestSqlBuilder(unittest.TestCase):
+    def test_insertFieldsSuccess(self) -> None:
+        print("\033[31mTODO: IMPLEMENT\033[0m")
+        self.assertTrue(False)
+    
     def test_updadeFieldsSuccess(self) -> None:
         userInput = UserInput(
             userName="Testing",
@@ -68,6 +72,7 @@ class TestSqlBuilder(unittest.TestCase):
 
 def suite_sql_builder_tests():
     suite = unittest.TestSuite()
+    suite.addTest(TestSqlBuilder("test_insertFieldsSuccess"))
     suite.addTest(TestSqlBuilder("test_selectOrder"))
     suite.addTest(TestSqlBuilder("test_updadeFieldsSuccess"))
     suite.addTest(TestSqlBuilder("test_formatStmt"))

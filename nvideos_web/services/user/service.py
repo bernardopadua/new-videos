@@ -2,7 +2,7 @@
 from datetime import date
 
 # TYPING
-from typing import Type
+from typing import Any, Type
 
 # SERVICES
 from nvideos_web.services.base_service import BaseService
@@ -20,7 +20,10 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 # Used to perform test with single connection
 #from nvideos_web.db.pgcontext_perf_test import NewVideosDBContext
 
-class UserService(BaseService[UserInput]):
+# ERROR
+from nvideos_web.services.base.error import InputDataIsNone
+
+class UserService(BaseService["UserService", UserInput]):
     def __init__(
         self, 
         *,
@@ -80,7 +83,7 @@ class UserService(BaseService[UserInput]):
 
     def getInputData(self) -> UserInput:
         if self._filledInputData is None:
-            raise Exception("User input data is None. Cant get a data while it is None.")
+            raise InputDataIsNone(InputDataIsNone.genericError())
         return self._filledInputData
 
     def fillInputData(
