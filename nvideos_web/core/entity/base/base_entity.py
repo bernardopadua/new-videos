@@ -7,6 +7,8 @@ from typing import (
 )
 from mypy_extensions import DefaultNamedArg
 
+AVOID_PREFIX_REPETITION = []
+
 #METADATA class
 TMetadata = TypeVar("TMetadata", bound="MetadataClass")
 
@@ -36,17 +38,6 @@ class ModelField:
         if not self.owner:
             raise Exception("Owner cannot be None at this step. Investigate.")
         return self.owner
-
-    # def __eq__(
-    #     self: "ModelField", value: "ModelField",
-    #     *, usePrefix: bool = False
-    # ) -> str:
-    #     nField: str = self.field if not usePrefix else self.getWithPrefix()
-    #     if not isinstance(value, ModelField):
-    #         return f"{nField} = {value}"
-        
-    #     fieldComp: str = value.field if not usePrefix else value.getWithPrefix()
-    #     return f"{nField} = {fieldComp}"
 
 class ModelFieldKeyWord(ModelField):
     pass
@@ -137,6 +128,10 @@ class MetadataClass(Generic[TModel]):
         ):
             attr.attr = k
             attr.owner = cls
+
+        if cls._use_prefix in AVOID_PREFIX_REPETITION:
+            raise Exception(f"Prefix used by {cls} class it is already taken. Please try to use another one.")
+        AVOID_PREFIX_REPETITION.append(cls._use_prefix)
 
         for k in cls.__dict__:
             attr = cls.__dict__[k]

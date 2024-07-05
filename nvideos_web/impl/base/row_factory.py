@@ -8,7 +8,7 @@ from typing import (
 )
 
 # ENTITY
-from nvideos_web.core.entity.base_entity import ModelField
+from nvideos_web.core.entity.base.base_entity import ModelField
 
 class ModelRowFactory(RowMaker):
     def __init__(

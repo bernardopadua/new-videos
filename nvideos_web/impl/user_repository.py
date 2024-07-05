@@ -8,7 +8,7 @@ from typing import Type
 from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
 
 # ENTITY
-from nvideos_web.core.entity.base_entity import AuditData
+from nvideos_web.core.entity.base.base_entity import AuditData
 from nvideos_web.core.entity.user import User, UserInput, UserMetadata
 
 # DB

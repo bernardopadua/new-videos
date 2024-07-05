@@ -5,7 +5,7 @@ from datetime import timezone
 from typing import Generic, TypeVar
 
 # ENTITY
-from nvideos_web.core.entity.base_entity import AuditData
+from nvideos_web.core.entity.base.base_entity import AuditData
 
 TInputData = TypeVar("TInputData")
 

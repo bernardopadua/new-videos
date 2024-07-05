@@ -5,7 +5,7 @@ from nvideos_web.core.entity.user import (
     User,
     UserInput
 )
-from nvideos_web.core.entity.base_entity import AuditData
+from nvideos_web.core.entity.base.base_entity import AuditData
 
 class UserRepository(Protocol):
     @abstractmethod

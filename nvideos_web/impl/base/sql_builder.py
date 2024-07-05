@@ -8,7 +8,7 @@ from dataclasses import is_dataclass, fields
 from typing import TypeVar, Any, cast, Generic, Type, TypeAlias
 
 # BASE ENTITY
-from nvideos_web.core.entity.base_entity import ModelField, ModelFieldKeyWord
+from nvideos_web.core.entity.base.base_entity import ModelField, ModelFieldKeyWord
 
 # IMPL
 from nvideos_web.impl.error.base import (

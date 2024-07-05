@@ -1,19 +1,19 @@
 from dataclasses import dataclass, field
-from typing import TypeVar, Type
+from typing import Type
 
-from nvideos_web.core.entity.base_entity import (
+from nvideos_web.core.entity.base.base_entity import (
     MetadataClass,
     ModelField
 )
 
 @dataclass(frozen=True, slots=True)
 class UserPermission:
-    userPermission: bytes = field(default=bytes(0))
+    userPermission: str = field(default="")
     permissionDescription: str = field(default="")
 
 class UserPermissionMetadata(MetadataClass[UserPermission]):
     _table_name: str = "user_permission"
-    _model_data: Type[UserPermission] | None = None
+    _model_data: Type[UserPermission] = UserPermission
     _use_prefix: str = "up"
     #Columns
     userPermission: ModelField = ModelField("user_permission")

@@ -10,7 +10,7 @@ from nvideos_web.services.user.error import UserServiceNoUserInput
 
 # ENTITY
 from nvideos_web.core.entity.user import User, UserInput, AuditData
-from nvideos_web.core.entity.constants import UserPermissions
+from nvideos_web.core.entity.base.constants import UserPermissions
 
 # REPOSITORY
 from nvideos_web.impl.user_repository import PgUserRepository, PasswordHasher

@@ -56,3 +56,6 @@ wnvideos.kill_any_pg_and_up_nvideo_pg(){
 wnvideos.mypy(){
     python3 -m mypy "$NVIDEOS_PATH/$NVIDEOS_SRC"
 }
+wnvideos.unit_tests(){
+    python3 "$NVIDEOS_PATH/$NVIDEOS_SRC/tests/main_tests.py" $1
+}

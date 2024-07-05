@@ -1,5 +1,5 @@
 from os import environ
-from typing import IO, Mapping, Any, TextIO
+from typing import IO, Mapping, Any
 
 from dataclasses import dataclass
 
