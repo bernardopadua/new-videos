@@ -48,5 +48,5 @@ def abc(seconds: int = 0):
     # ).createNewChannel()
 
     sub = SubscriberService(userId=49).subscribeToChannel(channelId=4)
-    
+
     return "<h1>Hello</h1>"

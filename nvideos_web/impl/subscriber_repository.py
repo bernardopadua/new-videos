@@ -25,62 +25,68 @@ class PgSubscriberRepository(PgRepositoryBase, SubscriberRepository):
         super().__init__(dbContext=dbContext)
     
     def create(self, subscriberInputData: SubscriberInput, auditInputData: AuditData) -> UserSubscriber:
-        inputFields, inputParams, inputFieldsOrder = NvSql.insertFieldsOrder(SubscriberMetadata, subscriberInputData)
+        inputFields, inputParams, _ = NvSql.insertFieldsOrder(SubscriberMetadata, subscriberInputData)
         auditFields, auditParams, _ = NvSql.insertFieldsOrder(SubscriberMetadata, auditInputData)
-        
-        userFields, userFieldsOrder = NvSql.selectOder(
-            UserMetadata.userName, UserMetadata.userSurname,
-            UserMetadata.userEmail, UserMetadata.userAvatarUrl,
-            UserMetadata.userBirthDate,
-            usePrefix=True
-        )
-        inputFieldsPrefix = NvSql.selectOrderToFields(inputFieldsOrder, usePrefix=True)
-
-        selectOrderFields = inputFieldsOrder + userFieldsOrder
+        _, returningSubscriber = NvSql.selectOder(SubscriberMetadata.all)
 
         stmt = NvSql.formatStmt(
             """
             insert into {table_name}
             ({input_fields},{audit_fields})
             values
-            ({input_params},{audit_params});
-
-            select {input_fields_prefix},{user_fields} 
-              from {table_name_prefix},{user_table_prefix}
-             where {subuser_id_prefix} = {user_id_prefix}
-               and {subscriber_id_prefix} = lastval();
+            ({input_params},{audit_params})
+            returning *;
             """,
             table_name=SubscriberMetadata.tableName(),
             input_fields=inputFields,
             audit_fields=auditFields,
 
             input_params=inputParams,
-            audit_params=auditParams,
-            subscriber_id_field=SubscriberMetadata.subscriberId.field,
-            
-            input_fields_prefix=inputFieldsPrefix,
-            user_fields=userFields,
-            table_name_prefix=SubscriberMetadata.tableNamePrefix(),
-            user_table_prefix=UserMetadata.tableNamePrefix(),
-            subuser_id_prefix=SubscriberMetadata.userId.getWithPrefix(),
-            user_id_prefix=UserMetadata.userId.getWithPrefix(),
-            subscriber_id_prefix=SubscriberMetadata.subscriberId.getWithPrefix()
+            audit_params=auditParams
         )
         paramsExecute = NvSql.parseSqlParams(stmt, inputObject=subscriberInputData, auditObject=auditInputData)
+
+        userFields, userFieldsOrder = NvSql.selectOder(
+            UserMetadata.userName, UserMetadata.userSurname,
+            UserMetadata.userEmail, UserMetadata.userAvatarUrl,
+            UserMetadata.userBirthDate
+        )
+        stmt2 = NvSql.formatStmt(
+            """
+            select {user_fields} 
+              from {user_table}
+             where {user_id_field} = {user_id_value};
+            """,
+            user_fields=userFields,
+            user_table=UserMetadata.tableName(),
+            user_id_field=UserMetadata.userId.field,
+            user_id_value="%(userId)s"
+        )
+
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory(selectOrderFields))
-            cur.execute(stmt, params=paramsExecute)
-            result = cur.fetchone()
+            with conn.cursor(row_factory=ModelRowFactory(returningSubscriber)) as cur:
+                cur.execute(stmt, params=paramsExecute)
+                resSub = cur.fetchone()
+                usuSub = SubscriberMetadata.row(resSub)
+            with conn.cursor(row_factory=ModelRowFactory(userFieldsOrder)) as cur:
+                param = { "userId": usuSub.userId }
+                cur.execute(stmt2, params=param)
+                resUsu = cur.fetchone()
+                usu = UserMetadata.row(resUsu)
+            conn.commit()
             return UserSubscriber(
-                user=UserMetadata.row(result),
-                subscriber=SubscriberMetadata.row(result)
+                user=usu,
+                subscriber=usuSub
             )
 
     def updateById(self, subscriberId: int, newSubscriberData: SubscriberInput, auditData: AuditData) -> Subscriber:
+        raise NotImplementedError()
         return super().updateById(subscriberId, newSubscriberData, auditData)
 
     def delete(self, subscriberId: int, auditData: AuditData) -> Subscriber:
+        raise NotImplementedError()
         return super().delete(subscriberId, auditData)
 
     def checkIdExists(self, subscriberId: int) -> bool:
+        raise NotImplementedError()
         return super().checkIdExists(subscriberId)

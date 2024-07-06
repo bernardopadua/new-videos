@@ -2,7 +2,7 @@
 from typing import Type
 
 # SERVICES
-from nvideos_web.services.base_service import BaseService
+from nvideos_web.services.base.service import BaseService
 
 # ENTITY
 from nvideos_web.core.entity.subscriber import Subscriber, SubscriberInput
@@ -16,6 +16,7 @@ from nvideos_web.impl.channel_repository import PgChannelRepository
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # ERRORS
+from nvideos_web.services.base.error import InputDataIsNone
 from nvideos_web.services.subscriber.error import SubscriberChannelDoesntExists
 
 class SubscriberService(BaseService["SubscriberService", SubscriberInput]):
@@ -50,7 +51,14 @@ class SubscriberService(BaseService["SubscriberService", SubscriberInput]):
         finally:
             self.resetData()
 
+    def checkIdExists(self, idRegistry: int) -> "SubscriberService":
+        raise NotImplementedError()
+        return super().checkIdExists(idRegistry)
+
     def getInputData(self) -> SubscriberInput:
+        if self._filledInputData is None:
+            raise InputDataIsNone(InputDataIsNone.genericError())
+
         return self._filledInputData
 
     def fillInputData(

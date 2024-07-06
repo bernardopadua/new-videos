@@ -2,7 +2,7 @@
 from typing import Any, Type
 
 # SERVICES
-from nvideos_web.services.base_service import BaseService
+from nvideos_web.services.base.service import BaseService
 
 # ENTITY
 from nvideos_web.core.entity.channel import Channel, ChannelInput

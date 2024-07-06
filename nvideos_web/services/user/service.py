@@ -5,7 +5,7 @@ from datetime import date
 from typing import Any, Type
 
 # SERVICES
-from nvideos_web.services.base_service import BaseService
+from nvideos_web.services.base.service import BaseService
 from nvideos_web.services.user.error import UserServiceNoUserInput, UserServiceUserDoesntExists
 
 # ENTITY
