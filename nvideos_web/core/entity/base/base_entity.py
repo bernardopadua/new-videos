@@ -112,22 +112,20 @@ class MetadataClass(Generic[TModel]):
     _model_data: Type[TModel] | None
     _use_prefix: str
 
-    _all_fields: list[ModelField | ModelFieldKeyWord] = []
+    _all_fields: list[ModelField | ModelFieldKeyWord]
 
-    all: ModelFieldKeyWord = ModelFieldKeyWord("*")
+    all: ModelFieldKeyWord
 
-    def __init_subclass__(cls: Type[TMetadata], **kwargs) -> None:
+    def __init_subclass__(cls: Type[TMetadata], **kwargs: Any) -> None:
         attrsCheck = ["_use_prefix", "_model_data", "_table_name"]
         if any(attr not in cls.__dict__ for attr in attrsCheck):
             raise Exception(f"Class {cls} metadata not implemented on of three main attributes.")
 
         super().__init_subclass__(**kwargs)
-        def updateField(
-            cls: Type[TMetadata], 
-            attr: ModelField | ModelFieldKeyWord
-        ):
-            attr.attr = k
-            attr.owner = cls
+
+        #Initializing a new list
+        cls.all = ModelFieldKeyWord("*", attrName="all", owner=cls)
+        cls._all_fields = []
 
         if cls._use_prefix in AVOID_PREFIX_REPETITION:
             raise Exception(f"Prefix used by {cls} class it is already taken. Please try to use another one.")
@@ -135,25 +133,26 @@ class MetadataClass(Generic[TModel]):
 
         for k in cls.__dict__:
             attr = cls.__dict__[k]
-            if isinstance(attr, ModelField):
+            isKeyword = isinstance(attr, ModelFieldKeyWord)
+            if isinstance(attr, ModelField) and not isKeyword:
+                attr.attr = k
+                attr.owner = cls
                 cls._all_fields.append(attr)
-                updateField(cls, attr)
 
         #__init_subclass__ doesnt include audit fields, so this step is necessary.
         #until I find a better way to do it. This will do it.
         auditFields = [i.__dict__ for i in cls.__mro__ if i is BaseMetadataAuditMixin]
         if len(auditFields) > 0:
             for k in auditFields[0]:
-                attr = auditFields[0][k]
+                #attr = auditFields[0][k]
+                try:
+                    attr = getattr(cls, k)
+                except Exception:
+                    continue
                 if isinstance(attr, ModelField):
+                    attr = ModelField(attr.field, attrName=k, owner=cls)
+                    setattr(cls, k, attr)
                     cls._all_fields.append(attr)
-                    updateField(cls, attr)
-        #'all' field doesn't is initialized too. So here we are adding one more step.
-        allField = [i.__dict__ for i in cls.__mro__ if i is MetadataClass]
-        if len(allField) > 0:
-            attrAll: ModelFieldKeyWord = cast(ModelFieldKeyWord, allField[0].get('all'))
-            #cls._all_fields.append(attrAll)
-            updateField(cls, attrAll)
 
     def __init__(self: TMetadata, *, newPrefix: str) -> None:
         super().__init__()
@@ -202,6 +201,7 @@ class MetadataClass(Generic[TModel]):
             raise Exception("Rerturned row cannot be None.")
         return rowDict[id(clsSelf)]
 
+#class BaseMetadataAuditMixin(Generic[TMetadata]):
 class BaseMetadataAuditMixin:
     updatedBy: ModelField = ModelField("updated_by")
     createdBy: ModelField = ModelField("created_by")

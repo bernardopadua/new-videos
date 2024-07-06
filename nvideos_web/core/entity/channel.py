@@ -1,5 +1,4 @@
 # BUILT-IN
-from datetime import date
 from dataclasses import dataclass, field
 
 # TYPING

@@ -52,36 +52,28 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             raise PgRepositoryMissingParameter(
                 "Missing parameter. InputData or AuditData."
             )
+        inputFields, inputParams, _ = NvSql.insertFieldsOrder(UserMetadata, userInputData)
+        auditFields, auditParams, _ = NvSql.insertFieldsOrder(UserMetadata, auditInputData)
+        _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
 
-        sqlFields, fieldsOrder = NvSql.selectOder(
-            UserMetadata.userName, UserMetadata.userSurname,
-            UserMetadata.userEmail, UserMetadata.userPassword,
-            UserMetadata.userAvatarUrl, UserMetadata.userPermission,
-            UserMetadata.userIsActive,
-            #Audit
-            UserMetadata.createdAt, UserMetadata.createdBy,
-            UserMetadata.updatedAt, UserMetadata.updatedBy
-        )
         stmt = NvSql.formatStmt(
             """
             insert into {table_name}
-            ({sql_fields})
+            ({input_fields},{audit_fields})
             values
-            (
-            %(userName)s, %(userSurname)s, %(userEmail)s, 
-            %(userPassword)s, %(userAvatarUrl)s, %(userPermission)s, 
-            %(userIsActive)s, %(createdAt)s, %(createdBy)s,
-            %(updatedAt)s, %(updatedBy)s
-            )
-            returning {sql_fields};
+            ({input_params},{audit_params})
+            returning *;
             """,
-            table_name=UserMetadata.tableName(), 
-            sql_fields=sqlFields 
+            table_name=UserMetadata.tableName(),
+            input_fields=inputFields,
+            audit_fields=auditFields,
+            input_params=inputParams,
+            audit_params=auditParams
         )
-        parsedParams = NvSql.parseSqlParams(stmt, userInputData, auditObject=auditInputData)
+        paramsInsert = NvSql.parseSqlParams(stmt, inputObject=userInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(fieldsOrder))
-            cur.execute(stmt, params=parsedParams)
+            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(allFieldsOrder))
+            cur.execute(stmt, params=paramsInsert)
             result = cur.fetchone()
             conn.commit()
             return UserMetadata.row(result)
@@ -149,13 +141,3 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             result = cur.fetchone()
             conn.commit()
             return UserMetadata.row(result)
-
-    def perfGetUserById(self, seconds: int) -> list:
-        #self._db.initConn()
-        with self._db.getConn() as conn:
-            cur = conn.cursor()
-            cur.execute(f"select * from testing_for_now; select pg_sleep({seconds})")
-            r = cur.fetchall()
-            r.append(id(conn))
-            return r
-
