@@ -85,6 +85,34 @@ class TestSqlBuilder(unittest.TestCase):
 
         self.assertEqual(params, { f"{userEmailAttr}": emailTest })
 
+    def test_selectOrderToFields(self) -> None:
+        uName = "Testing Order"
+        uSurname = "Order"
+        uEmail = "test@order.com"
+
+        userInput = UserInput(
+            userName=uName,
+            userSurname=uSurname,
+            userEmail=uEmail
+        )
+
+        fieldsComma, paramsComma, fieldsOrder = NvSql.insertFieldsOrder(UserMetadata, userInput)
+        
+        expFieldsComma = f"{UserMetadata.userName.field},{UserMetadata.userSurname.field},{UserMetadata.userEmail.field}"
+        expParamsComma = f"%({UserMetadata.userName.attr})s,%({UserMetadata.userSurname.attr})s,%({UserMetadata.userEmail.attr})s"
+        expFieldsOrder = [UserMetadata.userName,UserMetadata.userSurname,UserMetadata.userEmail]
+
+        self.assertEqual(fieldsComma, expFieldsComma)
+        self.assertEqual(paramsComma, expParamsComma)
+        self.assertEqual(fieldsOrder, expFieldsOrder)
+
+        retSelectOrderToField = NvSql.selectOrderToFields(fieldsOrder)
+        retSelectOrderToFieldPrefix = NvSql.selectOrderToFields(fieldsOrder, usePrefix=True)
+
+        expFieldsCommaPrefix = f"{UserMetadata.userName.getWithPrefix()},{UserMetadata.userSurname.getWithPrefix()},{UserMetadata.userEmail.getWithPrefix()}"
+
+        self.assertEqual(retSelectOrderToField, expFieldsComma)
+        self.assertEqual(retSelectOrderToFieldPrefix, expFieldsCommaPrefix)
 
 def suite_sql_builder_tests():
     suite = unittest.TestSuite()
@@ -93,4 +121,5 @@ def suite_sql_builder_tests():
     suite.addTest(TestSqlBuilder("test_updadeFields"))
     suite.addTest(TestSqlBuilder("test_formatStmt"))
     suite.addTest(TestSqlBuilder("test_parseSqlParams"))
+    suite.addTest(TestSqlBuilder("test_selectOrderToFields"))
     return suite

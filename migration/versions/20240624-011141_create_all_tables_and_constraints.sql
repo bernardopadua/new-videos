@@ -144,6 +144,11 @@ alter table subscriber
 add constraint fk_user_subscriber 
 foreign key (user_id) references nvideo_user(user_id);
 
+-- Unique Constraint
+alter table subscriber 
+add constraint unq_user_subscribe_channel
+unique (user_id, channel_id);
+
 --->> Audit
 alter table subscriber 
 add constraint fk_user_created_subscriber 

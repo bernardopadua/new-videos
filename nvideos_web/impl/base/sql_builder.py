@@ -89,6 +89,19 @@ class NvSql(Generic[TMetaData]):
         return (','.join(concat), listRowFactory)
 
     @staticmethod
+    def selectOrderToFields(fieldsOrder: list[ModelField], /, *, usePrefix: bool = False) -> FieldsCommaStr:
+        arFields = []
+        
+        if usePrefix:
+            for f in fieldsOrder:
+                arFields.append(f.getWithPrefix())
+        else:
+            for f in fieldsOrder:
+                arFields.append(f.field)
+
+        return ','.join(arFields)
+
+    @staticmethod
     def parseSqlParams(
         _sql: str, 
         inputObject: GenericInputClass,

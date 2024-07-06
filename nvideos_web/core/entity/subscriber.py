@@ -20,7 +20,6 @@ class Subscriber(AuditData, BaseModelData):
 
 @dataclass
 class SubscriberInput(BaseInput):
-    subscriberId: int | None = field(default=None)
     channelId: int | None = field(default=None)
     userId: int | None = field(default=None)
     subscriberIsActive: bool | None = field(default=None)
