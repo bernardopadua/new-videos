@@ -1,0 +1,1 @@
+ALTER TABLE video ADD COLUMN video_key varchar(11);

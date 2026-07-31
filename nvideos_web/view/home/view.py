@@ -1,10 +1,31 @@
 # FLASK
-from flask import url_for, Blueprint
+from flask import url_for, Blueprint, make_response
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
-homeBp = Blueprint("home", "home")
+homeBp = Blueprint("home", __name__, static_folder='static', static_url_path="/home/static")
+
+@homeBp.route("/player")
+def index_player():
+    urlPlayer = url_for("home.static", filename="player.js")
+    page_resp = f"""
+        <html>
+        <head>
+            <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+        </head>
+        <h1>11</h1>
+        <video id="video" controls style="width: 100%; max-width: 640px;"></video>
+        <script src='{urlPlayer}'></script>
+        </html>
+    """
+    resp = make_response(page_resp)
+
+    cspPol = "script-src 'self' https://cdn.jsdelivr.net;"
+    cspPol = f"{cspPol}connect-src 'self' http://localhost:8099;"
+
+    resp.headers['Content-Security-Policy'] = cspPol
+    return resp
 
 @homeBp.route("/")
 def index():

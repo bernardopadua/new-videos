@@ -70,7 +70,7 @@ def addVersion(fileName: str) -> None:
 
 def runMigrations() -> None:
     # If not init, just init
-    initMigrrootation()
+    initMigration()
 
     #After initMigration the connection is closed
     PgDBContext.initDB()

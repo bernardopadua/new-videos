@@ -1,6 +1,6 @@
 from flask import Blueprint, session
 
-ud = Blueprint("user_details", "user_details")
+ud = Blueprint("user_details", __name__)
 
 @ud.route("/user/")
 def userIndex():
