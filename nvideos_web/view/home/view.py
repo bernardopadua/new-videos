@@ -4,7 +4,12 @@ from flask import url_for, Blueprint, make_response
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
-homeBp = Blueprint("home", __name__, static_folder='static', static_url_path="/home/static")
+homeBp = Blueprint(
+    "home", __name__, 
+    static_folder='static', 
+    static_url_path="/home/static",
+    template_folder="/home/template"
+)
 
 @homeBp.route("/player")
 def index_player():

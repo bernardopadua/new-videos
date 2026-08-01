@@ -1,0 +1,1 @@
+ffmpeg -i video.webm -vf scale=-2:720 -c:v libx264 -preset ultrafast -crf 26 -maxrate 1500k -bufsize 3000k -c:a aac -b:a 96k -g 60 -keyint_min 60 -sc_threshold 0 -hls_time 6 -hls_playlist_type vod -hls_segment_filename "playlist%d.ts" playlist.m3u8

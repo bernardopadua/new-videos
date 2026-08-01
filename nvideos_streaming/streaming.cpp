@@ -9,7 +9,7 @@ int main(int regv, char** regc){
 
         std::string fileFolderLoad = "/usr/videos_data/"+videoId+"/"+fileLoad;
         std::ifstream fileLoadOpen(fileFolderLoad, std::ios::ate | std::ios::binary);
-
+        
         if (!fileLoadOpen.is_open()){
             res.status = 404;
             res.set_content("<h1>This video does not exist.</h1>", "text/html");

@@ -1,0 +1,1 @@
+<h1>Register user</h1>
