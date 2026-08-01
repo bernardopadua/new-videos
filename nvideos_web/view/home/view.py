@@ -16,6 +16,10 @@ def index_home():
     templateRender = render_template("home/home.html")
     return templateRender
 
+@homeBp.route("/registration")
+def user_registration():
+    templateRender = render_template("home/register_user.html")
+
 @homeBp.route("/player")
 def index_player():
     urlPlayer = url_for("home.static", filename="player.js")
