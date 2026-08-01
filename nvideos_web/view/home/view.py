@@ -16,9 +16,10 @@ def index_home():
     templateRender = render_template("home/home.html")
     return templateRender
 
-@homeBp.route("/registration")
+@homeBp.route("/register")
 def user_registration():
     templateRender = render_template("home/register_user.html")
+    return templateRender
 
 @homeBp.route("/player")
 def index_player():

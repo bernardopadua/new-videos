@@ -4,3 +4,5 @@
 .mypy_cache
 
 node_modules
+
+**/view/**/static/dist/*
