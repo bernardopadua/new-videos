@@ -1,0 +1,20 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for i in range(12) %}
+    <div class="flex flex-col gap-3 group cursor-pointer">
+        <div class="aspect-video bg-surface rounded-xl overflow-hidden group-hover:rounded-none transition-all relative">
+            <div class="absolute bottom-2 right-2 bg-black/80 text-xs px-2 py-1 rounded">12:45</div>
+        </div>
+        <div class="flex gap-3">
+            <div class="w-9 h-9 bg-brand/50 rounded-full shrink-0"></div>
+            <div>
+                <h3 class="font-bold line-clamp-2">Como criar um clone do YouTube com Tailwind v4 e Flask</h3>
+                <p class="text-sm text-gray-400 mt-1">Canal DevPro</p>
+                <p class="text-sm text-gray-400">1.2M views • há 3 horas</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

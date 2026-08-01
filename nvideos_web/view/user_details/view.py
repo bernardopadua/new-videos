@@ -1,9 +1,10 @@
-from flask import Blueprint, session
+# FLASK
+from flask import Blueprint, session, render_template
 
 ud = Blueprint("user_details", __name__)
 
 @ud.route("/user/")
-def userIndex():
+def user_index():
     if not "user" in session:
         return "No user"
     else:

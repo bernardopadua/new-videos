@@ -1,5 +1,5 @@
 # FLASK
-from flask import url_for, Blueprint, make_response
+from flask import url_for, Blueprint, make_response, render_template
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
@@ -8,8 +8,13 @@ homeBp = Blueprint(
     "home", __name__, 
     static_folder='static', 
     static_url_path="/home/static",
-    template_folder="/home/template"
+    template_folder="template"
 )
+
+@homeBp.route("/")
+def index_home():
+    templateRender = render_template("home/home.html")
+    return templateRender
 
 @homeBp.route("/player")
 def index_player():
@@ -32,8 +37,8 @@ def index_player():
     resp.headers['Content-Security-Policy'] = cspPol
     return resp
 
-@homeBp.route("/")
-def index():
+@homeBp.route("/home")
+def home():
     return f"""
         <h1>Index</h1>
         <a href='{url_for("home.abc")}'>
