@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 
 # TYPING
-from typing import Type
+from typing import final
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import (
@@ -30,13 +30,14 @@ class ChannelInput(BaseInput):
     channelIsActive: bool | None = field(default=None)
     userId: int | None = field(default=None)
 
+@final
 class ChannelMetadata(
     MetadataClass[Channel],
     BaseMetadataAuditMixin
 ):
-    _table_name: str = "channel"
-    _model_data: type[Channel] = Channel
-    _use_prefix: str = "ch"
+    _table_name = "channel"
+    _model_data = Channel
+    _use_prefix = "ch"
     #Columns
     channelId: ModelField = ModelField("channel_id")
     channelName: ModelField = ModelField("channel_name")

@@ -5,7 +5,7 @@ from psycopg import _queries
 from dataclasses import is_dataclass, fields
 
 # TYPING
-from typing import TypeVar, Any, cast, Generic, Type, TypeAlias
+from typing import TypeVar, Self, cast, Generic, TypeAlias
 
 # BASE ENTITY
 from nvideos_web.core.entity.base.base_entity import ModelField, ModelFieldKeyWord
@@ -17,7 +17,6 @@ from nvideos_web.impl.error.base import (
 )
 
 TMetaData = TypeVar("TMetaData")
-GenericInputClass = TypeVar("GenericInputClass")
 FieldsCommaStr: TypeAlias = str
 ParamsCommaStr: TypeAlias = str
 
@@ -30,7 +29,12 @@ class NvSql(Generic[TMetaData]):
 
         self._usePrefix: bool = usePrefix
 
-    def selectFields(self, *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+        self._isSelecting: bool = False
+        self._isInserting: bool = False
+
+        self._insertTable: str = ""
+
+    def selectFields(self, *args: ModelField | ModelFieldKeyWord) -> Self:
         if len(args) == 1 and args[0].field == "*":
             for attr in args[0].owner.__dict__:
                 if isinstance(attr, ModelField):
@@ -45,26 +49,28 @@ class NvSql(Generic[TMetaData]):
         
         return self
 
-    def select(self, *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+    def select(self, *args: ModelField | ModelFieldKeyWord) -> Self:
         self._isSelecting = True
-        self.selectFields(*args)
+        _ = self.selectFields(*args)
         return self
 
-    def insert(self, *args: ModelField | ModelFieldKeyWord) -> "NvSql":
+    def insert(self, *args: ModelField | ModelFieldKeyWord) -> Self:
         self._isInserting = True
-        self.selectFields(*args)
+        _ = self.selectFields(*args)
         self._insertTable = self._fieldsListOrder[0].getOwner()._table_name
         return self
 
     def build(self) -> None:
         pass
 
-    @staticmethod
-    def literal(*args):
-        concat = []
-        for i in args:
-            concat.append(i)
-        return ''.join(concat)
+    #TODO: 2 years doing not messing with this project.
+    # I just comment this for now to avoid problems with basedpyright
+    # @staticmethod
+    # def literal(*args):
+    #     concat: list[str] = []
+    #     for i in args:
+    #         concat.append(i)
+    #     return ''.join(concat)
 
     @staticmethod
     def selectOder(
@@ -72,8 +78,8 @@ class NvSql(Generic[TMetaData]):
         usePrefix: bool = False
     ) -> tuple[FieldsCommaStr, list[ModelField]]:
         newArgs: list[ModelField | ModelFieldKeyWord] = [*args]
-        concat = []
-        listRowFactory = []
+        concat: list[str] = []
+        listRowFactory: list[ModelField] = []
         
         if len(newArgs) == 1 and isinstance(args[0], ModelFieldKeyWord) and \
         args[0].field == "*":
@@ -90,7 +96,7 @@ class NvSql(Generic[TMetaData]):
 
     @staticmethod
     def selectOrderToFields(fieldsOrder: list[ModelField], /, *, usePrefix: bool = False) -> FieldsCommaStr:
-        arFields = []
+        arFields:list[str] = []
         
         if usePrefix:
             for f in fieldsOrder:
@@ -104,21 +110,23 @@ class NvSql(Generic[TMetaData]):
     @staticmethod
     def parseSqlParams(
         _sql: str, 
-        inputObject: GenericInputClass,
+        inputObject: object,
         *,
-        auditObject: GenericInputClass | None = None
-    ) -> dict:
+        auditObject: object | None = None
+    ) -> dict[str, object]:
         if not is_dataclass(inputObject):
             raise PgRepositoryInputIsNotDataclass(
                 "Object passed to parsing params is not dataclass."
             )
 
-        paramAssigned = {}
+        paramAssigned: dict[str, object] = {}
+        #TODO: I need to create this on my own to avoid using psycpg modules.
+        # For now I will use the psycpg module
         sqlParams = _queries._re_placeholder.finditer(
             bytes(_sql.encode('utf-8'))
         )
         for param in sqlParams:
-            inputFieldValue = None
+            inputFieldValue: object | None = None
             paramAttr = _sql[param.span(0)[0]+2:param.span(0)[1]-2]
             
             try:
@@ -126,7 +134,7 @@ class NvSql(Generic[TMetaData]):
                     inputFieldValue = getattr(auditObject, paramAttr)
                 else:
                     inputFieldValue = getattr(inputObject, paramAttr)
-            except AttributeError as e:
+            except AttributeError:
                 raise PgRepositoryMissingSqlParameter(
                     "Parameter has no input field. Please verify the input and audit objects."
                 )
@@ -136,19 +144,19 @@ class NvSql(Generic[TMetaData]):
         return paramAssigned
 
     @staticmethod
-    def formatStmt(_stmt: str, **kwargs: Any):
+    def formatStmt(_stmt: str, **kwargs: object):
         return _stmt.format(
             **kwargs
         )
 
     @staticmethod
-    def updateFields(_metaData: Type[TMetaData], inputData: GenericInputClass) -> str:
-        retMapValue = []
+    def updateFields(_metaData: type[TMetaData], inputData: object) -> str:
+        retMapValue: list[str] = []
         if not is_dataclass(inputData):
             raise Exception("Expecting a input of dataclass type.")
 
         for field in fields(inputData):
-            fieldInput: Any = getattr(inputData, field.name)
+            fieldInput: object = getattr(inputData, field.name)
             if fieldInput is not None:
                 metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
                 retMapValue.append(f"{metadataAttr.field} = %({field.name})s")
@@ -156,16 +164,16 @@ class NvSql(Generic[TMetaData]):
         return ', '.join(retMapValue)
 
     @staticmethod
-    def insertFieldsOrder(_metaData: Type[TMetaData], inputData: GenericInputClass) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
-        retFieds = []
-        retParams = []
-        retListOrder = []
+    def insertFieldsOrder(_metaData: type[TMetaData], inputData: object) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
+        retFieds: list[str] = []
+        retParams: list[str] = []
+        retListOrder: list[ModelField] = []
 
         if not is_dataclass(inputData):
             raise Exception("Expecting a input of dataclass type.")
 
         for field in fields(inputData):
-            fieldInput: Any = getattr(inputData, field.name)
+            fieldInput: object = getattr(inputData, field.name)
             if fieldInput is not None:
                 metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
                 retFieds.append(f"{metadataAttr.field}")

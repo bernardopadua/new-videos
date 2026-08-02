@@ -32,7 +32,7 @@ class ModelField:
         prefix: str = self.getOwner()._use_prefix
         return f"{prefix}.{self.field}"
 
-    def getOwner(self) -> "MetadataClass":
+    def getOwner(self) -> TMetadata:
         if not self.owner:
             raise Exception("Owner cannot be None at this step. Investigate.")
         return self.owner
@@ -105,13 +105,13 @@ class GetTableNamePrefix(Generic[TMetadata]):
         return self._method.__get__(instance, classCaller)
 
 class MetadataClass(Generic[TModel]):
-    _table_name: str
-    _model_data: type[TModel] | None
+    _table_name: str | None = None
+    _model_data: type[TModel] | None = None
     _use_prefix: str
 
     _all_fields: list[ModelField | ModelFieldKeyWord]
 
-    all: ModelFieldKeyWord
+    all: ModelFieldKeyWord | None = None
 
     def __init_subclass__(cls: type[TMetadata], **kwargs) -> None:
         attrsCheck = ["_use_prefix", "_model_data", "_table_name"]

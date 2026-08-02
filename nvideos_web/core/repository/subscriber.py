@@ -1,8 +1,6 @@
 # BUILT-IN
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
-# TYPING
-from typing import Protocol
 
 # ENTITY
 from nvideos_web.core.entity.subscriber import (
@@ -11,7 +9,7 @@ from nvideos_web.core.entity.subscriber import (
 from nvideos_web.core.entity.user_subscriber import UserSubscriber
 from nvideos_web.core.entity.base.base_entity import AuditData
 
-class SubscriberRepository(Protocol):
+class SubscriberRepository(ABC):
     @abstractmethod
     def create(self, subscriberInputData: SubscriberInput, auditInputData: AuditData) -> UserSubscriber:
         ...
