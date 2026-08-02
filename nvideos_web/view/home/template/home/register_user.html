@@ -1,0 +1,115 @@
+{% extends "base/base.html" %}
+
+{% block title %}Create Account - nVideos{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-6rem)] flex items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
+    <div
+        class="max-w-md w-full space-y-8 bg-surface/80 backdrop-blur-md p-8 rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:border-brand/40">
+
+        <!-- HEADER -->
+        <div class="text-center space-y-2">
+            <div
+                class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-brand/10 text-brand mb-2 border border-brand/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white tracking-tight">Create your account</h2>
+            <p class="text-sm text-gray-400">Join the nVideos community and share your videos</p>
+        </div>
+
+        <!-- FORM -->
+        <form class="mt-8 space-y-5" action="/register" method="POST" enctype="multipart/form-data" id="register-form">
+
+            <!-- AVATAR UPLOAD REACT COMPONENT -->
+            <div id="avatar-root"></div>
+            <script type="module" src="{{ url_for('home.static', filename='dist/avatar_entry.js') }}"></script>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- FIRST NAME -->
+                <div>
+                    <label for="userName"
+                        class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">First
+                        Name</label>
+                    <input id="userName" name="userName" type="text" required placeholder="e.g. John"
+                        class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
+                </div>
+
+                <!-- LAST NAME -->
+                <div>
+                    <label for="userSurname"
+                        class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Last
+                        Name</label>
+                    <input id="userSurname" name="userSurname" type="text" required placeholder="e.g. Doe"
+                        class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
+                </div>
+            </div>
+
+            <!-- EMAIL -->
+            <div>
+                <label for="userEmail"
+                    class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Email
+                    Address</label>
+                <input id="userEmail" name="userEmail" type="email" required placeholder="your.email@example.com"
+                    class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
+            </div>
+
+            <!-- DATE OF BIRTH -->
+            <div>
+                <label for="birthDate"
+                    class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Date of
+                    Birth</label>
+                <input id="birthDate" name="birthDate" type="date" required
+                    class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm [color-scheme:dark]">
+            </div>
+
+            <!-- PASSWORD -->
+            <div>
+                <label for="userPassword"
+                    class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Password</label>
+                <input id="userPassword" name="userPassword" type="password" required placeholder="••••••••"
+                    class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
+            </div>
+
+            <!-- CONFIRM PASSWORD -->
+            <div>
+                <label for="confirmPassword"
+                    class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Confirm
+                    Password</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" required placeholder="••••••••"
+                    class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
+            </div>
+
+            <!-- TERMS -->
+            <div class="flex items-center">
+                <input id="terms" name="terms" type="checkbox" required
+                    class="h-4 w-4 rounded bg-[#121212] border-white/20 text-brand focus:ring-brand focus:ring-offset-bg-dark">
+                <label for="terms" class="ml-2.5 block text-xs text-gray-400">
+                    I agree to the <a href="#" class="text-brand hover:underline font-medium">Terms of Service</a> and
+                    <a href="#" class="text-brand hover:underline font-medium">Privacy Policy</a>.
+                </label>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <div>
+                <button type="submit" id="btn-submit-register"
+                    class="w-full flex justify-center py-3 px-4 rounded-xl shadow-lg text-sm font-semibold text-white bg-brand hover:bg-[#772ce8] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand">
+                    Create Account
+                </button>
+            </div>
+        </form>
+
+        <!-- FOOTER LOGIN LINK -->
+        <div class="text-center pt-2 border-t border-white/5">
+            <p class="text-xs text-gray-400">
+                Already have an account?
+                <a href="/login" class="font-semibold text-brand hover:underline">Sign in</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

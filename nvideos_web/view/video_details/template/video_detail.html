@@ -1,0 +1,233 @@
+{% extends "base/base.html" %}
+
+{% block title %}Video Player - nVideos{% endblock %}
+
+{% block content %}
+<!-- YOUTUBE-INSPIRED WATCH PAGE (SIDE-BY-SIDE DESKTOP LAYOUT, NO LIKES, SPACIOUS PADDING) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 lg:gap-10 pb-16 w-full">
+    
+    <!-- LEFT PRIMARY COLUMN (PLAYER + TITLE + CHANNEL + DESCRIPTION + COMMENTS) -->
+    <div class="xl:col-span-8 space-y-8 min-w-0">
+        
+        <!-- VIDEO PLAYER CONTAINER (16:9) -->
+        <div class="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+            <video id="main-video-player" controls class="w-full h-full object-contain" poster="https://picsum.photos/1280/720?random=1">
+                <source src="" type="video/mp4">
+                Your browser does not support HTML5 video.
+            </video>
+        </div>
+
+        <!-- TITLE & CATEGORY TAGS -->
+        <div class="space-y-3">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-3.5 py-1.5 bg-brand/20 text-brand border border-brand/30 rounded-full text-xs font-semibold">Software Engineering</span>
+                <span class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">Python & Flask</span>
+                <span class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">React v19</span>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">
+                Building a High-Performance YouTube + Twitch Hybrid Web App with Flask & React
+            </h1>
+        </div>
+
+        <!-- CHANNEL & ACTIONS BAR (NO LIKES - SPACIOUS PADDING) -->
+        <div class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 shadow-lg">
+            
+            <!-- CHANNEL INFO + SUBSCRIBE -->
+            <div class="flex items-center gap-4">
+                <div class="relative shrink-0">
+                    <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-brand/30 border-2 border-brand overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow">
+                        DP
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-bg-dark rounded-full" title="Online"></span>
+                </div>
+
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-bold text-white text-base hover:text-brand transition cursor-pointer">DevPro Studio</h3>
+                        <svg class="w-4 h-4 text-brand fill-current" viewBox="0 0 20 20">
+                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-0.5">245K subscribers</p>
+                </div>
+
+                <!-- SUBSCRIBE BUTTON -->
+                <button class="ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-black bg-white hover:bg-gray-200 rounded-full transition shadow active:scale-95">
+                    Subscribe
+                </button>
+            </div>
+
+            <!-- ACTION BUTTONS (NO LIKES) -->
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- SHARE -->
+                <button class="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 107.032-1.176 3 3 0 00-7.032 1.176zm0 8.434a3 3 0 107.032 1.176 3 3 0 00-7.032-1.176z"/>
+                    </svg>
+                    <span>Share</span>
+                </button>
+
+                <!-- CLIP -->
+                <button class="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 11-4.243-4.243 3 3 0 014.243 4.243zm9-9a3 3 0 11-4.243-4.243 3 3 0 014.243 4.243z"/>
+                    </svg>
+                    <span>Clip</span>
+                </button>
+
+                <!-- SAVE -->
+                <button class="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                    </svg>
+                    <span>Save</span>
+                </button>
+
+                <!-- MORE OPTIONS -->
+                <button class="p-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- DESCRIPTION BOX (YOUTUBE STYLE WITH SPACIOUS PADDING) -->
+        <div class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md space-y-4 shadow-lg hover:border-white/20 transition cursor-pointer">
+            <div class="flex items-center gap-4 text-xs font-bold text-gray-300 flex-wrap border-b border-white/10 pb-3">
+                <span class="text-sm text-white">128,430 views</span>
+                <span>•</span>
+                <span class="text-sm text-white">Streamed 2 days ago</span>
+                <span>•</span>
+                <span class="text-brand font-semibold text-sm">Video Key: {{ video_key }}</span>
+            </div>
+            
+            <p class="text-sm text-gray-200 leading-relaxed font-normal">
+                In this deep dive episode, we walk through building a modern web application stack combining Python Flask on the backend with Vite, React v19, and Tailwind CSS v4 on the frontend! Learn how to integrate custom endpoints, component architectures, and responsive layout designs.
+            </p>
+
+            <div class="pt-1 flex items-center gap-2 text-xs font-semibold text-brand hover:underline">
+                <span>...more</span>
+            </div>
+        </div>
+
+        <!-- COMMENTS SECTION (SPACIOUS PADDING & NO LIKE BUTTONS) -->
+        <div class="space-y-8 pt-6 border-t border-white/10">
+            
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-white">248 Comments</h3>
+                <button class="flex items-center gap-2 text-xs font-semibold text-gray-300 hover:text-white transition px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h7"/>
+                    </svg>
+                    <span>Sort by</span>
+                </button>
+            </div>
+
+            <!-- ADD COMMENT INPUT (PADDED CARD CONTAINER) -->
+            <div class="p-6 sm:p-7 rounded-2xl bg-surface/60 border border-white/10 backdrop-blur-md space-y-4 shadow-md">
+                <div class="flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-full bg-brand/30 border border-brand/40 flex items-center justify-center shrink-0 text-sm font-bold text-white shadow-sm">
+                        U
+                    </div>
+                    <div class="flex-1 space-y-3">
+                        <textarea placeholder="Add a public comment..." rows="3" 
+                            class="w-full bg-[#121212] border border-white/10 p-4 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition resize-none shadow-inner"></textarea>
+                        <div class="flex justify-end gap-3 pt-1">
+                            <button class="px-5 py-2 text-xs font-semibold text-gray-300 hover:bg-white/10 rounded-full transition">Cancel</button>
+                            <button class="px-6 py-2 text-xs font-semibold text-white bg-brand rounded-full hover:bg-[#772ce8] transition shadow">Comment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMMENTS THREAD LIST -->
+            <div class="space-y-4">
+                
+                <!-- COMMENT ITEM 1 -->
+                <div class="p-6 rounded-2xl bg-white/[0.04] border border-white/5 hover:border-white/10 transition flex items-start gap-4 shadow-sm">
+                    <div class="w-11 h-11 rounded-full bg-indigo-600 border border-indigo-400/30 flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm">
+                        AL
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="font-bold text-white text-sm">@alexdev</span>
+                            <span class="text-gray-400 text-xs">4 hours ago</span>
+                        </div>
+                        <p class="text-sm text-gray-200 leading-relaxed">
+                            Awesome walkthrough! The layout alignment with YouTube's watch page is super clean and intuitive.
+                        </p>
+                        <div class="flex items-center gap-6 text-xs text-gray-400 pt-2 border-t border-white/5">
+                            <button class="hover:text-white transition text-xs font-semibold">Reply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMMENT ITEM 2 -->
+                <div class="p-6 rounded-2xl bg-white/[0.04] border border-white/5 hover:border-white/10 transition flex items-start gap-4 shadow-sm">
+                    <div class="w-11 h-11 rounded-full bg-emerald-600 border border-emerald-400/30 flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm">
+                        CR
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="font-bold text-white text-sm">@codereal</span>
+                            <span class="text-gray-400 text-xs">1 day ago</span>
+                        </div>
+                        <p class="text-sm text-gray-200 leading-relaxed">
+                            Tailwind CSS v4 with Vite integration makes styling dark mode interfaces so clean and effortless!
+                        </p>
+                        <div class="flex items-center gap-6 text-xs text-gray-400 pt-2 border-t border-white/5">
+                            <button class="hover:text-white transition text-xs font-semibold">Reply</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT SECONDARY COLUMN (RECOMMENDED VIDEOS - STRICT SIDE-BY-SIDE DESKTOP POSITION) -->
+    <div class="xl:col-span-4 space-y-4 min-w-0">
+        
+        <!-- FILTER CHIPS ON TOP -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 text-xs no-scrollbar">
+            <button class="px-4 py-2 bg-white text-black font-bold rounded-xl shrink-0 shadow">All</button>
+            <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shrink-0 transition border border-white/10">From DevPro</button>
+            <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shrink-0 transition border border-white/10">Related</button>
+            <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shrink-0 transition border border-white/10">Recently uploaded</button>
+        </div>
+
+        <!-- RECOMMENDED ITEM LIST (SPACIOUS CARD PADDING) -->
+        <div class="space-y-4">
+            {% for i in range(10) %}
+            <div class="p-3.5 rounded-2xl bg-surface/50 hover:bg-surface/90 border border-white/5 hover:border-white/15 transition flex items-start gap-4 group cursor-pointer shadow-sm">
+                <!-- THUMBNAIL -->
+                <div class="w-40 sm:w-44 aspect-video bg-black rounded-xl overflow-hidden shrink-0 relative border border-white/10 group-hover:border-brand/50 transition shadow-sm">
+                    <img src="https://picsum.photos/320/180?random={{ i + 10 }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Thumbnail">
+                    <span class="absolute bottom-1.5 right-1.5 bg-black/85 text-[10px] font-bold px-1.5 py-0.5 rounded text-white">18:32</span>
+                </div>
+
+                <!-- METADATA -->
+                <div class="flex-1 min-w-0 flex flex-col justify-start py-0.5 space-y-1">
+                    <h4 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-brand transition">
+                        Building Scalable Video Streaming Platforms with HLS and Flask
+                    </h4>
+                    <p class="text-xs text-gray-400 truncate hover:text-white font-medium">DevPro Studio</p>
+                    <div class="text-[11px] text-gray-500 flex items-center gap-1.5 pt-0.5">
+                        <span>45K views</span>
+                        <span>•</span>
+                        <span>3 days ago</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
