@@ -1,28 +1,23 @@
-# BUILT-IN
-from typing import ( 
-    Any, Type, Optional,
-    Sequence
-)
-
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
 
+#TYPING
+from typing import Self
+
 class PgRepositoryBase:
-    _dbContext: Type[NewVideosDBContext]
-    _instance: Optional["PgRepositoryBase"] = None
+    _dbContext: type[NewVideosDBContext] | None = None
+    _instance: Self | None = None
 
     def __new__(
-        cls: Type["PgRepositoryBase"], 
-        *args: Sequence[Any], 
-        **kwargs: dict[str, Any]
-    ) -> "PgRepositoryBase":
+        cls,
+        dbContext: type[NewVideosDBContext]
+    ) -> Self:
         if cls._instance is None:
-            cls._instance = super(PgRepositoryBase, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
-        self._db = dbContext
+    def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
+        self._db: type[NewVideosDBContext] = dbContext
 
         #Guarantee that the connection started
-        if self._db._dbConn is None:
-            self._db.initDBContext()
+        _ = self._db.getDbConn()

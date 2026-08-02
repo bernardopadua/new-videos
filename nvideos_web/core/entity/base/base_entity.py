@@ -1,15 +1,14 @@
 from datetime import datetime
 from dataclasses import dataclass, field, fields
 from typing import (
-    Type, TypeVar, Generic, 
-    Callable, Optional, Any,
-    cast
+    TypeVar, Generic, 
+    Callable, Any
 )
 
-AVOID_PREFIX_REPETITION = []
+AVOID_PREFIX_REPETITION: list[str] = []
 
 #METADATA class
-TMetadata = TypeVar("TMetadata", bound="MetadataClass")
+TMetadata = TypeVar("TMetadata", bound="MetadataClass[TModel]")
 
 #Model from METADATA class
 TModel = TypeVar("TModel")
@@ -19,7 +18,7 @@ class ModelField:
         self,
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: type["MetadataClass"] | None = None,
+        owner: type["MetadataClass[TModel]"] | None = None,
         isInstance: bool = False
     ) -> None:
         self.field: str = fieldName
@@ -41,72 +40,71 @@ class ModelField:
 class ModelFieldKeyWord(ModelField):
     pass
 
-TMethodSelf = TypeVar("TMethodSelf", bound="GetRowClassAndInstance")
-class GetRowClassAndInstance(Generic[TMetadata, TModel]):
+class GetRowClassAndInstance(Generic["MetadataClass", TModel]):
     def __init__(
-        self: TMethodSelf, 
-        method: Callable[[TMetadata, Any], TModel]
+        self, 
+        method: Callable[["MetadataClass[TModel]", Any], TModel]
     ) -> None:
-        self._method: Callable[[TMetadata, Any], TModel] = method
+        self._method: Callable[["MetadataClass[TModel]", Any], TModel] = method
 
     def __get__(
-        self: TMethodSelf, 
-        instance: Optional["MetadataClass"], 
-        classCaller: Type["MetadataClass"]
+        self, 
+        instance: "MetadataClass" | None, 
+        classCaller: type["MetadataClass"]
     ) -> Callable[[Any], TModel]:
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
-TGetModelData = TypeVar("TGetModelData", bound="GetModelData")
+
 class GetModelData(Generic[TMetadata, TModel]):
     def __init__(
-        self: TGetModelData, 
+        self, 
         method: Callable[[TMetadata], Type[TModel]]
     ) -> None:
        self._method: Callable[[TMetadata], Type[TModel]] = method
 
     def __get__(
-        self: TGetModelData, 
-        instance: Optional["MetadataClass"], 
-        classCaller: Type["MetadataClass"]
-    ) -> Callable[[], Type[TModel]]:
+        self, 
+        instance: "MetadataClass" | None, 
+        classCaller: type["MetadataClass"]
+    ) -> Callable[[], type[TModel]]:
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
-TGetTableName = TypeVar("TGetTableName", bound="GetTableName")
+
 class GetTableName(Generic[TMetadata]):
     def __init__(
-        self: TGetTableName, 
+        self, 
         method: Callable[[TMetadata], str]
     ) -> None:
        self._method: Callable[[TMetadata], str] = method
 
     def __get__(
-        self: TGetTableName, 
-        instance: Optional["MetadataClass"], 
-        classCaller: Type["MetadataClass"]
+        self, 
+        instance: "MetadataClass" | None, 
+        classCaller: type["MetadataClass"]
     ) -> Callable[[], str]:
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
-TGetTableNamePrefix = TypeVar("TGetTableNamePrefix", bound="GetTableNamePrefix")
+
 class GetTableNamePrefix(Generic[TMetadata]):
     def __init__(
-        self: TGetTableNamePrefix, 
+        self, 
         method: Callable[[TMetadata], str]
     ) -> None:
        self._method: Callable[[TMetadata], str] = method
 
     def __get__(
-        self: TGetTableNamePrefix, 
-        instance: Optional["MetadataClass"], 
-        classCaller: Type["MetadataClass"]
+        self, 
+        instance: "MetadataClass**kwargs" | None, 
+        classCaller: type["MetadataClass[TModel]"]
     ) -> Callable[[], str]:
         if instance is None:
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
 
-class MetadataClass():
+class MetadataClass(Generic[TModel]):
     _table_name: str
     _model_data: type[TModel] | None
     _use_prefix: str
@@ -115,7 +113,7 @@ class MetadataClass():
 
     all: ModelFieldKeyWord
 
-    def __init_subclass__(cls: Type[TMetadata], **kwargs: Any) -> None:
+    def __init_subclass__(cls: type[TMetadata], **kwargs) -> None:
         attrsCheck = ["_use_prefix", "_model_data", "_table_name"]
         if any(attr not in cls.__dict__ for attr in attrsCheck):
             raise Exception(f"Class {cls} metadata not implemented on of three main attributes.")
@@ -131,8 +129,8 @@ class MetadataClass():
         AVOID_PREFIX_REPETITION.append(cls._use_prefix)
 
         for k in cls.__dict__:
-            attr = cls.__dict__[k]
-            isKeyword = isinstance(attr, ModelFieldKeyWord)
+            attr: ModelField | ModelFieldKeyWord | Any = cls.__dict__[k]
+            isKeyword: bool = isinstance(attr, ModelFieldKeyWord)
             if isinstance(attr, ModelField) and not isKeyword:
                 attr.attr = k
                 attr.owner = cls
