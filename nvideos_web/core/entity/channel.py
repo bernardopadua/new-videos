@@ -35,7 +35,7 @@ class ChannelMetadata(
     BaseMetadataAuditMixin
 ):
     _table_name: str = "channel"
-    _model_data: Type[Channel] = Channel
+    _model_data: type[Channel] = Channel
     _use_prefix: str = "ch"
     #Columns
     channelId: ModelField = ModelField("channel_id")

@@ -5,7 +5,6 @@ from typing import (
     Callable, Optional, Any,
     cast
 )
-from mypy_extensions import DefaultNamedArg
 
 AVOID_PREFIX_REPETITION = []
 
@@ -20,13 +19,13 @@ class ModelField:
         self,
         fieldName: str, /, *, 
         attrName: str = "",
-        owner: Type["MetadataClass"] | "MetadataClass" | None = None,
+        owner: type["MetadataClass"] | None = None,
         isInstance: bool = False
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
         self.isInstance: bool = isInstance
-        self.owner: Type["MetadataClass"] | "MetadataClass" | None = owner
+        self.owner: type["MetadataClass"] | None = owner
 
     def getWithPrefix(self) -> str:
         if self.getOwner() is None:
@@ -34,7 +33,7 @@ class ModelField:
         prefix: str = self.getOwner()._use_prefix
         return f"{prefix}.{self.field}"
 
-    def getOwner(self) -> Type["MetadataClass"] | "MetadataClass":
+    def getOwner(self) -> "MetadataClass":
         if not self.owner:
             raise Exception("Owner cannot be None at this step. Investigate.")
         return self.owner
@@ -107,9 +106,9 @@ class GetTableNamePrefix(Generic[TMetadata]):
             return self._method.__get__(classCaller, classCaller)
         return self._method.__get__(instance, classCaller)
 
-class MetadataClass(Generic[TModel]):
+class MetadataClass():
     _table_name: str
-    _model_data: Type[TModel] | None
+    _model_data: type[TModel] | None
     _use_prefix: str
 
     _all_fields: list[ModelField | ModelFieldKeyWord]

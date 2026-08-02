@@ -4,7 +4,7 @@ from psycopg.rows import RowMaker
 
 # TYPING
 from typing import (
-    Any, Sequence, Type, Union
+    Any, Sequence
 )
 
 # ENTITY
@@ -20,7 +20,7 @@ class ModelRowFactory(RowMaker):
     def __call__(
         self, 
         *args: Sequence[Any]
-    ) -> Union[dict[int, Any], "ModelRowFactory"]:
+    ) -> dict[int, Any] | "ModelRowFactory":
         if len(args) == 0:
             raise Exception("RowFactory is been called with no parameters.")
         if len(args) > 0 and isinstance(args[0], Cursor):
@@ -64,7 +64,7 @@ class ModelRowFactory(RowMaker):
 
     @classmethod
     def getRowFactory(
-        cls: Type["ModelRowFactory"], 
+        cls: type["ModelRowFactory"], 
         listOrderFields: list[ModelField]
     ) -> "ModelRowFactory":
         return cls(listOrderFields)
