@@ -58,39 +58,3 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
     @override
     def delete(self, videoId: int, auditData: AuditData) -> Video: 
         pass
-
-class PgUserRepository(PgRepositoryBase, UserRepository):
-    def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
-        super().__init__(dbContext=dbContext)
-    
-    @override
-    def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
-        if not userInputData or not auditInputData:
-            raise PgRepositoryMissingParameter(
-                "Missing parameter. InputData or AuditData."
-            )
-        inputFields, inputParams, _ = NvSql.insertFieldsOrder(UserMetadata, userInputData)
-        auditFields, auditParams, _ = NvSql.insertFieldsOrder(UserMetadata, auditInputData)
-        _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
-
-        stmt = NvSql.formatStmt(
-            """
-            insert into {table_name}
-            ({input_fields},{audit_fields})
-            values
-            ({input_params},{audit_params})
-            returning *;
-            """,
-            table_name=UserMetadata.tableName(),
-            input_fields=inputFields,
-            audit_fields=auditFields,
-            input_params=inputParams,
-            audit_params=auditParams
-        )
-        paramsInsert = NvSql.parseSqlParams(stmt, inputObject=userInputData, auditObject=auditInputData)
-        with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(allFieldsOrder))
-            cur.execute(stmt, params=paramsInsert)
-            result = cur.fetchone()
-            conn.commit()
-            return UserMetadata.row(result)
