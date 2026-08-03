@@ -11,12 +11,11 @@ from nvideos_web.core.entity.base.base_entity import AuditData
 TInputData = TypeVar("TInputData")
 
 class BaseService(ABC, Generic[TInputData]):
-    self._filledInputData: TInputData | None = None
+    _filledInputData: TInputData | None = None
 
     def __init__(self, currentUser: int | None) -> None:
         self._currentUser: int | None = currentUser
-        
-        
+
         self._filledAudit: AuditData | None = None
 
         self._insertingMode: bool = False
