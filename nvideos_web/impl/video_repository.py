@@ -15,9 +15,6 @@ from nvideos_web.impl.base_repository import PgRepositoryBase
 # SQL BUILDER
 from nvideos_web.impl.base.sql_builder import NvSql
 
-# ERRORS
-from nvideos_web.impl.error.base import PgRepositoryMissingParameter
-
 class PgVideoRepository(PgRepositoryBase, VideoRepository):
     @override
     def create(self, videoInputData: VideoInput, auditInputData: AuditData) -> Video: 
