@@ -1,5 +1,5 @@
-from typing import Protocol
-from abc import abstractmethod
+# BUILT-IN
+from abc import ABC, abstractmethod
 
 from nvideos_web.core.entity.user import (
     User,
@@ -7,7 +7,7 @@ from nvideos_web.core.entity.user import (
 )
 from nvideos_web.core.entity.base.base_entity import AuditData
 
-class UserRepository(Protocol):
+class UserRepository(ABC):
     @abstractmethod
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User: 
         ...
@@ -21,7 +21,7 @@ class UserRepository(Protocol):
     def delete(self, userId: int, auditData: AuditData) -> User: 
         ...
 
-class UserPasswordHasher(Protocol):
+class UserPasswordHasher(ABC):
     @abstractmethod
     def hashPassword(self, password: str) -> str:
         ...

@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 
 # TYPING
-from typing import Type
+from typing import final
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import (
@@ -24,13 +24,14 @@ class SubscriberInput(BaseInput):
     userId: int | None = field(default=None)
     subscriberIsActive: bool | None = field(default=None)
 
+@final
 class SubscriberMetadata(
     MetadataClass[Subscriber],
     BaseMetadataAuditMixin
 ):
-    _table_name: str = "subscriber"
-    _model_data: Type[Subscriber] = Subscriber
-    _use_prefix: str = "su"
+    _table_name = "subscriber"
+    _model_data = Subscriber
+    _use_prefix = "su"
     #Columns
     subscriberId: ModelField = ModelField("subscriber_id")
     channelId: ModelField = ModelField("channel_id")

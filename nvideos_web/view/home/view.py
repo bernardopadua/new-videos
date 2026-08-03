@@ -3,6 +3,7 @@ from flask import url_for, Blueprint, make_response, render_template
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
+from nvideos_web.services.user.service import UserService
 
 homeBp = Blueprint(
     "home", __name__, 
@@ -61,11 +62,14 @@ def abc(seconds: int = 0):
     from nvideos_web.services.channel.service import ChannelService
     from nvideos_web.services.subscriber.service import SubscriberService
 
+    # cc = ChannelService()
+    # _ = cc.fillInputData(channelName="New Channel 2")
+
     # us = UserService()
     # user = us.fillInputData(
-    #     userName="New Test",
-    #     userEmail="newtest@test.com.br",
-    #     userSurname="Test",
+    #     userName="New Test1",
+    #     userEmail="newtest1@test.com.br",
+    #     userSurname="Test1",
     #     userPassword="123456",
     #     userIsActive=True,
     #     createSystemUser=True
@@ -83,6 +87,6 @@ def abc(seconds: int = 0):
     #     channelName="Testing channel 1"
     # ).createNewChannel()
 
-    sub = SubscriberService(userId=49).subscribeToChannel(channelId=4)
+    sub = SubscriberService(userId=3).subscribeToChannel(channelId=3)
 
     return "<h1>Hello</h1>"

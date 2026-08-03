@@ -1,5 +1,5 @@
 # TYPING
-from typing import Type
+from typing import override
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
@@ -21,9 +21,10 @@ from nvideos_web.impl.base.row_factory import ModelRowFactory
 from nvideos_web.impl.base_repository import PgRepositoryBase
 
 class PgSubscriberRepository(PgRepositoryBase, SubscriberRepository):
-    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
+    def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
         super().__init__(dbContext=dbContext)
     
+    @override
     def create(self, subscriberInputData: SubscriberInput, auditInputData: AuditData) -> UserSubscriber:
         inputFields, inputParams, _ = NvSql.insertFieldsOrder(SubscriberMetadata, subscriberInputData)
         auditFields, auditParams, _ = NvSql.insertFieldsOrder(SubscriberMetadata, auditInputData)
@@ -79,14 +80,17 @@ class PgSubscriberRepository(PgRepositoryBase, SubscriberRepository):
                 subscriber=usuSub
             )
 
+    @override
     def updateById(self, subscriberId: int, newSubscriberData: SubscriberInput, auditData: AuditData) -> Subscriber:
         raise NotImplementedError()
         return super().updateById(subscriberId, newSubscriberData, auditData)
 
+    @override
     def delete(self, subscriberId: int, auditData: AuditData) -> Subscriber:
         raise NotImplementedError()
         return super().delete(subscriberId, auditData)
 
+    @override
     def checkIdExists(self, subscriberId: int) -> bool:
         raise NotImplementedError()
         return super().checkIdExists(subscriberId)

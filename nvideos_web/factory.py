@@ -17,7 +17,7 @@ from nvideos_web.view.channel_details.view import channelDetailsBp
 def createApp() -> Flask:
     NewVideosDBContext.initDBContext()
     app = Flask(__name__)
-    app.config.from_file(".env.flask", loadDotEnv)
+    _ = app.config.from_file(".env.flask", loadDotEnv)
 
     app.register_blueprint(baseBp)
     app.register_blueprint(homeBp)

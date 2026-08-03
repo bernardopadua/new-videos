@@ -2,7 +2,7 @@
 from datetime import date
 
 # TYPING
-from typing import Any, Type
+from typing import Self, override, final
 
 # SERVICES
 from nvideos_web.services.base.service import BaseService
@@ -23,19 +23,23 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 # ERROR
 from nvideos_web.services.base.error import InputDataIsNone
 
-class UserService(BaseService["UserService", UserInput]):
+@final
+class UserService(BaseService[UserInput]):
     def __init__(
         self, 
         *,
         userId: int | None = None, 
-        dbContext: Type[NewVideosDBContext] | None = None
+        dbContext: type[NewVideosDBContext] | None = None
     ) -> None:
         super().__init__(currentUser=userId)
         #mypy doesn't understand inline if
         if dbContext is None:
             dbContext=NewVideosDBContext
             
-        self._usuRep = PgUserRepository(dbContext=dbContext)
+        self._usuRep: PgUserRepository = PgUserRepository(dbContext=dbContext)
+
+    def selectByUserId(self, userId: int):
+        pass
 
     def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()
@@ -54,8 +58,9 @@ class UserService(BaseService["UserService", UserInput]):
         finally:
             self.resetData()
 
-    def checkIdExists(self, userId: int) -> "UserService":
-        self._checkExists = self._usuRep.checkIdExists(userId=userId)
+    @override
+    def checkIdExists(self, idRegistry: int) -> Self:
+        self._checkExists: bool = self._usuRep.checkIdExists(userId=idRegistry)
         return self
 
     def updateUserById(
@@ -92,11 +97,13 @@ class UserService(BaseService["UserService", UserInput]):
         finally:
             self.resetData()
 
+    @override
     def getInputData(self) -> UserInput:
         if self._filledInputData is None:
             raise InputDataIsNone(InputDataIsNone.genericError())
         return self._filledInputData
 
+    @override
     def fillInputData(
         self, 
         /, *,
