@@ -1,13 +1,14 @@
-from typing import Protocol
-from abc import abstractmethod
+# BUILT-IN
+from abc import ABC, abstractmethod
 
+# ENTITY
 from nvideos_web.core.entity.channel import (
     Channel, ChannelInput
 )
 
 from nvideos_web.core.entity.base.base_entity import AuditData
 
-class ChannelRepository(Protocol):
+class ChannelRepository(ABC):
     @abstractmethod
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel: 
         ...

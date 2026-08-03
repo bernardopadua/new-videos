@@ -62,19 +62,19 @@ def abc(seconds: int = 0):
     from nvideos_web.services.channel.service import ChannelService
     from nvideos_web.services.subscriber.service import SubscriberService
 
-    cc = ChannelService()
-    _ = cc.fillInputData(channelName="New Channel 2")
+    # cc = ChannelService()
+    # _ = cc.fillInputData(channelName="New Channel 2")
 
-    us = UserService()
-    user = us.fillInputData(
-        userName="New Test",
-        userEmail="newtest@test.com.br",
-        userSurname="Test",
-        userPassword="123456",
-        userIsActive=True,
-        createSystemUser=True
-    )#.createNewUser()
-    print(user)
+    # us = UserService()
+    # user = us.fillInputData(
+    #     userName="New Test1",
+    #     userEmail="newtest1@test.com.br",
+    #     userSurname="Test1",
+    #     userPassword="123456",
+    #     userIsActive=True,
+    #     createSystemUser=True
+    # ).createNewUser()
+    # print(user)
 
     # us = UserService(userId=9)
     # user = us.fillInputData(userName="Changing name 1").updateUserById(44)

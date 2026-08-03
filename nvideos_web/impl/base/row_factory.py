@@ -64,7 +64,7 @@ class ModelRowFactory(RowMaker):
 
     @classmethod
     def getRowFactory(
-        cls: type["ModelRowFactory"], 
+        cls, 
         listOrderFields: list[ModelField]
     ) -> "ModelRowFactory":
         return cls(listOrderFields)

@@ -1,6 +1,9 @@
 # BUILT-IN
 from hashlib import scrypt
 
+# TYPING
+from typing import override
+
 # THIRD-PARTY
 from psycopg import Cursor
 
@@ -34,6 +37,7 @@ class PasswordHasher(UserPasswordHasher):
     def __init__(self) -> None:
         self._constants:PasswordConstantsCrypt = getPasswordConstants()
     
+    @override
     def hashPassword(self, password: str) -> str:
         return scrypt(
             bytes(password.encode('utf-8')),
@@ -47,6 +51,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
     def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
         super().__init__(dbContext=dbContext)
     
+    @override
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
         if not userInputData or not auditInputData:
             raise PgRepositoryMissingParameter(
@@ -78,6 +83,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             conn.commit()
             return UserMetadata.row(result)
 
+    @override
     def checkIdExists(self, userId: int) -> bool:
         stmt = NvSql.formatStmt(
             "select 1 from {table_name} where {user_id} = {user_id_value};",
@@ -89,6 +95,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             r: Cursor = conn.execute(stmt)
             return r.rowcount > 0
 
+    @override
     def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:
         if newUserData.isNone():
             raise Exception("You cant update a record with an empty input.")
@@ -119,6 +126,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             conn.commit()
         return UserMetadata.row(result)
 
+    @override
     def delete(self, userId: int, auditData: AuditData) -> User:
         auditFields = NvSql.updateFields(UserMetadata, auditData)
         fieldsStr, fieldsOder = NvSql.selectOder(UserMetadata.all)

@@ -8,7 +8,7 @@ from dataclasses import is_dataclass, fields
 from typing import TypeVar, Self, cast, Generic, TypeAlias
 
 # BASE ENTITY
-from nvideos_web.core.entity.base.base_entity import ModelField, ModelFieldKeyWord
+from nvideos_web.core.entity.base.base_entity import MetadataClass, TModel, ModelField, ModelFieldKeyWord
 
 # IMPL
 from nvideos_web.impl.error.base import (
@@ -16,7 +16,7 @@ from nvideos_web.impl.error.base import (
     PgRepositoryMissingSqlParameter
 )
 
-TMetaData = TypeVar("TMetaData")
+TMetaData = TypeVar("TMetaData", bound=MetadataClass[ModelField])
 FieldsCommaStr: TypeAlias = str
 ParamsCommaStr: TypeAlias = str
 
@@ -63,7 +63,7 @@ class NvSql(Generic[TMetaData]):
     def build(self) -> None:
         pass
 
-    #TODO: 2 years doing not messing with this project.
+    #TODO: 2 years not messing with this project.
     # I just comment this for now to avoid problems with basedpyright
     # @staticmethod
     # def literal(*args):
@@ -74,10 +74,10 @@ class NvSql(Generic[TMetaData]):
 
     @staticmethod
     def selectOder(
-        *args: ModelField | ModelFieldKeyWord,
+        *args: ModelField | ModelFieldKeyWord | None,
         usePrefix: bool = False
     ) -> tuple[FieldsCommaStr, list[ModelField]]:
-        newArgs: list[ModelField | ModelFieldKeyWord] = [*args]
+        newArgs: list[ModelField | ModelFieldKeyWord] | None = [*args]
         concat: list[str] = []
         listRowFactory: list[ModelField] = []
         
@@ -164,7 +164,7 @@ class NvSql(Generic[TMetaData]):
         return ', '.join(retMapValue)
 
     @staticmethod
-    def insertFieldsOrder(_metaData: type[TMetaData], inputData: object) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
+    def insertFieldsOrder(_metaData: type[MetadataClass[ModelField]], inputData: object) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
         retFieds: list[str] = []
         retParams: list[str] = []
         retListOrder: list[ModelField] = []
