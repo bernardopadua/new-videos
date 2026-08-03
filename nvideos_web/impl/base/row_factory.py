@@ -4,7 +4,7 @@ from psycopg.rows import RowMaker
 
 # TYPING
 from typing import (
-    Any, Sequence
+    Any, Self
 )
 
 # ENTITY
@@ -19,14 +19,14 @@ class ModelRowFactory(RowMaker):
 
     def __call__(
         self, 
-        *args: Sequence[Any]
-    ) -> dict[int, Any] | "ModelRowFactory":
+        *args: object
+    ) -> dict[int, Any] | Self:
         if len(args) == 0:
             raise Exception("RowFactory is been called with no parameters.")
         if len(args) > 0 and isinstance(args[0], Cursor):
             return self
 
-        values: Sequence[Any] = args[0]
+        values: object = args[0]
         eachModel: dict[int, dict[str, Any]] = {}
         instancesModel: dict[int, object] = {}
         

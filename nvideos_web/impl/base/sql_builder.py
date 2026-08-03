@@ -32,7 +32,7 @@ class NvSql(Generic[TMetaData]):
         self._isSelecting: bool = False
         self._isInserting: bool = False
 
-        self._insertTable: str = ""
+        self._insertTable: str | None = ""
 
     def selectFields(self, *args: ModelField | ModelFieldKeyWord) -> Self:
         if len(args) == 1 and args[0].field == "*":
@@ -57,7 +57,7 @@ class NvSql(Generic[TMetaData]):
     def insert(self, *args: ModelField | ModelFieldKeyWord) -> Self:
         self._isInserting = True
         _ = self.selectFields(*args)
-        self._insertTable = self._fieldsListOrder[0].getOwner()._table_name
+        self._insertTable = self._fieldsListOrder[0].getOwner().getTableName()
         return self
 
     def build(self) -> None:

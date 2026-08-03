@@ -181,6 +181,10 @@ class MetadataClass(Generic[TModel]):
     def getPrefix(cls) -> str:
         return cls._use_prefix
 
+    @classmethod
+    def getTableName(cls) -> str | None:
+        return cls._table_name
+
     @GetTableNamePrefix
     def tableNamePrefix(clsSelf) -> str:
         return f"{clsSelf._table_name} {clsSelf._use_prefix}"

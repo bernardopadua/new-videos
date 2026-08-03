@@ -1,8 +1,8 @@
 # BUILT-IN
 from hashlib import scrypt
 
-# TYPING
-from typing import Type
+# THIRD-PARTY
+from psycopg import Cursor
 
 # CONFIG
 from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
@@ -86,7 +86,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             user_id_value=userId
         )
         with self._db.getConn() as conn:
-            r = conn.execute(stmt)
+            r: Cursor = conn.execute(stmt)
             return r.rowcount > 0
 
     def updateById(self, userId: int, newUserData: UserInput, auditData: AuditData) -> User:

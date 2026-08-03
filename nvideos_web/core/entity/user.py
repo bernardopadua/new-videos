@@ -3,7 +3,7 @@ from datetime import date
 from dataclasses import dataclass, field
 
 # TYPING
-from typing import Type
+from typing import final
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import (
@@ -35,13 +35,14 @@ class UserInput(BaseInput):
     userPermission: str | None = field(default=None)
     userIsActive: bool | None = field(default=None)
 
+@final
 class UserMetadata(
     MetadataClass[User],
     BaseMetadataAuditMixin
 ):
-    _table_name: str = "nvideo_user"
-    _model_data: Type[User] = User
-    _use_prefix: str = "uu"
+    _table_name = "nvideo_user"
+    _model_data = User
+    _use_prefix = "uu"
     #Columns
     userId: ModelField = ModelField("user_id")
     userName: ModelField = ModelField("user_name")

@@ -18,6 +18,3 @@ class PgRepositoryBase:
 
     def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
         self._db: type[NewVideosDBContext] = dbContext
-
-        #Guarantee that the connection started
-        _ = self._db.getDbConn()
