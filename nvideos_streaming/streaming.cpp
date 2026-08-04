@@ -8,6 +8,9 @@
 
 #include <filesystem>
 
+std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
+std::filesystem::path MEDIA_SERVER_TEMP_PATH = "/tmp/";
+
 std::string generateHashFileName(std::string ext){
     auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     uint32_t hash = static_cast<uint32_t>(std::hash<std::string>{}(std::to_string(timestamp)));
@@ -20,6 +23,33 @@ std::string generateHashFileName(std::string ext){
 
 int main(int regv, char** regc){
     httplib::Server srv;
+
+    //Allowing domains
+    srv.set_post_routing_handler([](const httplib::Request &req, httplib::Response &res){
+        res.set_header("Access-Control-Allow-Origin", "http://localhost:8080");
+    });
+
+    srv.Post("/upload/move/avatar/user/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        const std::string fileName = req.matches[1];
+        const std::string userId = req.matches[0];
+        
+        if (!std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / fileName)) {
+            res.status = 404;
+            res.set_content("{\"error\":\"File not found.\"}", "application/json");
+            return;
+        }
+
+        //If file exists, move
+        if (!std::filesystem::exists(MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/")) {
+            std::filesystem::create_directories(MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/");
+        }   
+        std::filesystem::rename(
+            MEDIA_SERVER_TEMP_PATH.string()+fileName, 
+            MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/"+fileName
+        );
+
+        res.set_content("{\"success\":\"File moved successfully.\"}", "application/json");
+    });
 
     srv.Post("/upload/avatar/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
         std::ofstream fileUpload;
@@ -54,7 +84,7 @@ int main(int regv, char** regc){
         std::string videoId = req.matches[1];
         std::string fileLoad = req.matches[2];
 
-        std::string fileFolderLoad = "/usr/videos_data/"+videoId+"/"+fileLoad;
+        std::string fileFolderLoad = MEDIA_SERVER_BASE_PATH.string()+"videos/"+videoId+"/"+fileLoad;
         std::ifstream fileLoadOpen(fileFolderLoad, std::ios::ate | std::ios::binary);
         
         if (!fileLoadOpen.is_open()){
@@ -68,8 +98,6 @@ int main(int regv, char** regc){
         
         fileLoadOpen.seekg(0, std::ios::beg);
         fileLoadOpen.read(fileBuffer.data(), sizeFile);
-
-        res.set_header("Access-Control-Allow-Origin", "http://localhost:8080");
         
         if (fileFolderLoad.substr(fileFolderLoad.length()-2) == "ts"){
             std::cout << "sending-MP2T: << " << fileFolderLoad << std::endl;

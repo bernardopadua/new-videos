@@ -1,33 +1,35 @@
 export default class AvatarUploadMediaServer {
     constructor() {
         this._avatar = document.getElementById("userAvatar");
+        this._responseUploadJson = {};
     }
 
     async uploadMedia(formData) {
         const urlToUpload = import.meta.env.VITE_URL_MEDIA_SERVER;
         
-        const response = await fetch(urlToUpload+"upload/avatar/temp", {
-            method: "POST",
-            body: formData
-        }).then(
-            response => {
-                return response.json();
+        try {
+            const response = await fetch(urlToUpload + "upload/avatar/temp", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.status != 200) {
+                return false;
             }
-        );
 
-        if (response.status != 200) {
-            return;
+            return response.json();
+        } catch (error) {
+            return false;
         }
-
-        return response.data;
     }
 
     doUploadAvatar() {
         if (this.checkFilesSelected()) {
             const formData = new FormData();
             formData.append("avatarImage", this._avatar.files[0]);
-            this.uploadMedia(formData);
+            return this.uploadMedia(formData);
         }
+        return false;
     }
 
     checkFilesSelected() {

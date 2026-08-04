@@ -26,6 +26,14 @@ def index_home():
 @homeBp.route("/register", methods=["GET", "POST"])
 def user_registration():
     if flaskRequest.method == "POST":
+        UserService().fillInputData(
+            userName=flaskRequest.form.get("userName"),
+            userSurname=flaskRequest.form.get("userSurname"),
+            userEmail=flaskRequest.form.get("userEmail"),
+            birthDate=flaskRequest.form.get("birthDate"),
+            userPassword=flaskRequest.form.get("userPassword"),
+            userIsActive=True
+        ).checkInputData() #Make a check to input data.
         
         return "POST"
 

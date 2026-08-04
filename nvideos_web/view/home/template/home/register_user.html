@@ -26,6 +26,7 @@
 
             <!-- AVATAR UPLOAD REACT COMPONENT -->
             <div id="avatar-root"></div>
+            <input type="hidden" id="avatarFileNameMediaServer" name="avatarFileNameMediaServer" value="">
             <script type="module" src="{{ url_for('home.static', filename='dist/avatar_entry.js') }}"></script>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -99,9 +100,15 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-sm font-medium text-gray-300">Uploading avatar, please wait...</span>
+                <span id="text-uploading-avatar" class="text-sm font-medium text-gray-300">Uploading avatar, please wait...</span>
             </div>
-            <script type="module" src="{{ url_for('home.static', filename='dist/uavms.js') }}"></script>
+            <div id="avatar-upload-alert-error" class="hidden flex items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-brand shadow-lg" role="status">
+                <svg class="h-5 w-5 shrink-0 text-amber-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                <span id="text-failed-upload" class="text-sm font-medium text-red-300">Upload failed, retry...</span>
+            </div>
+            <script type="module" src="{{ url_for('home.static', filename='dist/ufrv.js') }}"></script>
 
             <div id="user-register-form-alert" class="hidden flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-lg" role="alert">
                 <!-- Icon -->

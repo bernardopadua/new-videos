@@ -63,6 +63,12 @@ class UserService(BaseService[UserInput]):
         self._checkExists: bool = self._usuRep.checkIdExists(userId=idRegistry)
         return self
 
+    def checkInputDataIsValid(self) -> Self:
+        if self._filledInputData.userPassword != self._filledInputData.confirmPassword:
+            raise UserServiceUserDontMatchPassword("The informed password doesn't match the user's password.")
+        
+        return self
+
     def updateUserById(
         self, 
         userId: int,

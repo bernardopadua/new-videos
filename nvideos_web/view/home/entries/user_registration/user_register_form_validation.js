@@ -130,18 +130,40 @@ class UserRegistrationValidator {
     }
 };
 
+const disableRegistrationButton = () => {
+    document.getElementById("btn-submit-register").classList.add("disabled:opacity-50", "disabled:cursor-not-allowed", "disabled:pointer-events-none");
+};
+
+const enableRegistrationButton = () => {
+    document.getElementById("btn-submit-register").classList.remove("disabled:opacity-50", "disabled:cursor-not-allowed", "disabled:pointer-events-none");
+};
+
 const formUserRegister = document.getElementById("register-form");
 formUserRegister.addEventListener("submit", (event) => {
+    event.preventDefault();
+    disableRegistrationButton();
+
     const userRegistrationValidator = new UserRegistrationValidator();
     const userAvatarUpload = new AvatarUploadMediaServer();
+    const allFieldsAreValidated = userRegistrationValidator.validateAllFields();
 
-    if (userAvatarUpload.checkFilesSelected()) {
-        userAvatarUpload.doUploadAvatar();
-    }
+    if (
+        userAvatarUpload.checkFilesSelected()
+        && allFieldsAreValidated
+        && document.getElementById("avatarFileNameMediaServer").value === ""
+    ) {
+        document.getElementById("avatar-upload-alert-error").classList.add("hidden");
+        document.getElementById("avatar-upload-alert").classList.remove("hidden");
 
-    const isFormValidated = userRegistrationValidator.validateAllFields();
-    
-    if (!isFormValidated) {
-        event.preventDefault();
+        userAvatarUpload.doUploadAvatar().then((result) => {
+            if (!result) {
+                document.getElementById("avatar-upload-alert-error").classList.remove("hidden");
+                document.getElementById("avatar-upload-alert").classList.add("hidden");
+            } else {
+                document.getElementById("avatarFileNameMediaServer").value = result;
+                formUserRegister.submit();
+            }
+            enableRegistrationButton();
+        });
     }
 });
