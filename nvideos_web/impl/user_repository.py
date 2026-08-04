@@ -2,7 +2,7 @@
 from hashlib import scrypt
 
 # TYPING
-from typing import override
+from typing import override, cast, LiteralString
 
 # THIRD-PARTY
 from psycopg import Cursor
@@ -12,7 +12,7 @@ from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
-from nvideos_web.core.entity.user import User, UserInput, UserMetadata
+from nvideos_web.core.entity.user import User, UserInput, UserMetadata, User
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
@@ -53,10 +53,6 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
     
     @override
     def create(self, userInputData: UserInput, auditInputData: AuditData) -> User:
-        if not userInputData or not auditInputData:
-            raise PgRepositoryMissingParameter(
-                "Missing parameter. InputData or AuditData."
-            )
         inputFields, inputParams, _ = NvSql.insertFieldsOrder(UserMetadata, userInputData)
         auditFields, auditParams, _ = NvSql.insertFieldsOrder(UserMetadata, auditInputData)
         _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)

@@ -1,66 +1,45 @@
 # PSYCOPG
-from psycopg import Cursor
 from psycopg.rows import RowMaker
+from psycopg.cursor import Cursor
 
 # TYPING
 from typing import (
-    Any, Self
+    Any
 )
+from collections.abc import Sequence
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import ModelField
 
-class ModelRowFactory(RowMaker):
+class ModelRowFactory:
     def __init__(
         self, 
         listOrderFields: list[ModelField],
     ):
-        self.fields = listOrderFields
+        self.fields: list[ModelField] = listOrderFields
 
     def __call__(
         self, 
-        *args: object
-    ) -> dict[int, Any] | Self:
-        if len(args) == 0:
-            raise Exception("RowFactory is been called with no parameters.")
-        if len(args) > 0 and isinstance(args[0], Cursor):
-            return self
+        cursor: Cursor
+    ) -> RowMaker[dict[int, Any]]:
 
-        values: object = args[0]
-        eachModel: dict[int, dict[str, Any]] = {}
-        instancesModel: dict[int, object] = {}
-        
-        #TODO: I dont know if I will be implementing this yet. 
-        #The idea is to return a different value-object and assemble this special case object at this step.
-        #>>>>>>>>> retObject: M = None
+        def make_row(values: Sequence[Any], /) -> dict[int, Any]:
+            eachModel: dict[int, dict[str, Any]] = {}
+            instancesModel: dict[int, object] = {}
 
-        for i in range(len(values)):
-            field: ModelField = self.fields[i]
-            modelIdentification: int = id(field.getOwner())
-            if modelIdentification not in eachModel:
-                eachModel[modelIdentification] = { "model": field.getOwner().modelData() , "row": {} }
-            eachModel[modelIdentification]["row"].update({ field.attr: values[i] })
+            for i in range(len(values)):
+                field: ModelField = self.fields[i]
+                modelIdentification: int = id(field.getOwner())
+                if modelIdentification not in eachModel:
+                    eachModel[modelIdentification] = { "model": field.getOwner().modelData() , "row": {} }
+                eachModel[modelIdentification]["row"][field.attr] = values[i]
 
-        #TODO: I don't know if I want to continue this. I think the default is working OK, at least for now.
-        # if self.returningModel:
-        #     retObject = self.returningModel()
+            for model in eachModel.keys():
+                modelData = eachModel[model]["model"]
+                instancesModel[model] = modelData(**eachModel[model]["row"])
 
-        #     for model in eachModel.keys():
-        #         if not retObject.__dict__.get(model):
-        #             raise Exception("Model assigned to return the query doesn't exists as a type of returned query.")
-
-        #         for attr in retObject.__dict__.keys():
-        #             if isinstance(retObject.__dict__[attr], model):
-        #                 setattr(retObject, attr, model(**eachModel[model])) 
-            
-        #    instancesModel[self.returningModel] = retObject
-        #    return instancesModel
-        
-        for model in eachModel.keys():
-            modelData = eachModel[model]["model"]
-            instancesModel[model] = modelData(**eachModel[model]["row"])
-
-        return instancesModel
+            return instancesModel
+        return make_row
 
     @classmethod
     def getRowFactory(
