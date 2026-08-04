@@ -2,7 +2,7 @@
 from hashlib import scrypt
 
 # TYPING
-from typing import override, cast, LiteralString
+from typing import override
 
 # THIRD-PARTY
 from psycopg import Cursor
@@ -12,7 +12,7 @@ from nvideos_web.config import getPasswordConstants, PasswordConstantsCrypt
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
-from nvideos_web.core.entity.user import User, UserInput, UserMetadata, User
+from nvideos_web.core.entity.user import User, UserInput, UserMetadata
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
@@ -29,9 +29,6 @@ from nvideos_web.core.repository.user import (
 # IMPL
 from nvideos_web.impl.base.row_factory import ModelRowFactory
 from nvideos_web.impl.base_repository import PgRepositoryBase
-
-# ERRORS
-from nvideos_web.impl.error.base import PgRepositoryMissingParameter
 
 class PasswordHasher(UserPasswordHasher):
     def __init__(self) -> None:
@@ -74,7 +71,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         paramsInsert = NvSql.parseSqlParams(stmt, inputObject=userInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(allFieldsOrder))
-            cur.execute(stmt, params=paramsInsert)
+            _ = cur.execute(stmt, params=paramsInsert)
             result = cur.fetchone()
             conn.commit()
             return UserMetadata.row(result)
@@ -114,10 +111,10 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             user_id=userId,
             returning_fields=allFields
         )
-        paramsUpdate: dict = NvSql.parseSqlParams(stmt, inputObject=newUserData, auditObject=auditData)
+        paramsUpdate: dict[str, object] = NvSql.parseSqlParams(stmt, inputObject=newUserData, auditObject=auditData)
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
-            cur.execute(stmt, params=paramsUpdate)
+            _ = cur.execute(stmt, params=paramsUpdate)
             result = cur.fetchone()
             conn.commit()
         return UserMetadata.row(result)
@@ -141,7 +138,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         paramsUpdate = NvSql.parseSqlParams(stmt, auditData)
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOder))
-            cur.execute(stmt, params=paramsUpdate)
+            _ = cur.execute(stmt, params=paramsUpdate)
             result = cur.fetchone()
             conn.commit()
             return UserMetadata.row(result)
