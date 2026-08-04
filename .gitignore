@@ -5,6 +5,7 @@
 
 node_modules
 
-**/build/streaming
+nvideos_streaming/build/*
+nvideos_streaming/build/**
 
 **/view/**/static/dist/*
