@@ -114,7 +114,7 @@ class MetadataClass(Generic[TModel]):
 
     _all_fields: list[ModelField | ModelFieldKeyWord]
 
-    all: ModelFieldKeyWord | None = None
+    all: ModelFieldKeyWord = ModelFieldKeyWord("*")
 
     def __init_subclass__(cls: type[TMetadata], **kwargs: object) -> None:
         attrsCheck = ["_use_prefix", "_model_data", "_table_name"]
@@ -176,7 +176,11 @@ class MetadataClass(Generic[TModel]):
                     owner=cast(type[MetadataClass[object]], self), isInstance=True
                 )
                 setattr(self, i, _m)
-    
+
+    @classmethod
+    def getAllFields(cls) -> list[ModelField | ModelFieldKeyWord]:
+        return cls._all_fields
+
     @classmethod
     def getPrefix(cls) -> str:
         return cls._use_prefix
