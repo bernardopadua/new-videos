@@ -142,3 +142,19 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             result = cur.fetchone()
             conn.commit()
             return UserMetadata.row(result)
+
+    @override
+    def selectByUserName(self, userName: str) -> User:
+        userName, userNameParam = NvSql.createParam("userName_value", userName)
+        stmt = NvSql.formatStmt(
+            "select * from {table_name} where {userName_field} = {userName_value};",
+            table_name=UserMetadata.tableName(),
+            userName_field=UserMetadata.userName.field,
+            userName_value=userName
+        )
+        _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            _ = cur.execute(stmt, params=userNameParam)
+            result = cur.fetchone()
+            return UserMetadata.row(result)

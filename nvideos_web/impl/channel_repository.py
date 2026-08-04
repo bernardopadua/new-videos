@@ -1,5 +1,5 @@
 # TYPING
-from typing import Type
+from typing import override
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
@@ -19,9 +19,10 @@ from nvideos_web.impl.base.row_factory import ModelRowFactory
 from nvideos_web.impl.base_repository import PgRepositoryBase
 
 class PgChannelRepository(PgRepositoryBase, ChannelRepository):
-    def __init__(self, dbContext: Type[NewVideosDBContext]) -> None:
+    def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
         super().__init__(dbContext=dbContext)
 
+    @override
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel:
         inputFieldsInsert, inputParamsFields, inputOrder = NvSql.insertFieldsOrder(ChannelMetadata, channelInputData)
         auditFieldsInsert, auditParamsFields, auditOrder = NvSql.insertFieldsOrder(ChannelMetadata, auditInputData)
@@ -45,11 +46,12 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
         paramsParsed = NvSql.parseSqlParams(stmt, inputObject=channelInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
-            cur.execute(stmt, params=paramsParsed)
+            _ = cur.execute(stmt, params=paramsParsed)
             result = cur.fetchone()
             conn.commit()
             return ChannelMetadata.row(result)
     
+    @override
     def checkIdExists(self, channelId: int) -> bool:
         stmt = NvSql.formatStmt(
             "select 1 from {table_name} where {channel_id} = {channel_id_value};",
@@ -61,6 +63,7 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             r = conn.execute(stmt)
             return r.rowcount > 0
 
+    @override
     def updateById(self, channelId: int, newChannelData: ChannelInput, auditData: AuditData) -> Channel:
         channelFields = NvSql.updateFields(ChannelMetadata, newChannelData)
         auditFields = NvSql.updateFields(ChannelMetadata, auditData)
@@ -90,6 +93,7 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             conn.commit()
             return ChannelMetadata.row(result)
 
+    @override
     def delete(self, channelId: int, auditData: AuditData) -> Channel:
         auditFields = NvSql.updateFields(ChannelMetadata, auditData)
         fieldsStr, fieldsOder = NvSql.selectOder(ChannelMetadata.all)

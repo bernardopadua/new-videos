@@ -17,7 +17,7 @@ from nvideos_web.tests.unit_tests.impl.base.test_row_factory import suite_row_fa
 from nvideos_web.tests.unit_tests.core.entity.test_entities import suite_entities_tests
 
 parser = ArgumentParser(description="Argument for tests")
-parser.add_argument("-v", 
+_ =parser.add_argument("-v", 
     "--verbosity", 
     action="store_true", help="Add verbosity to test runner."
 )
@@ -28,6 +28,6 @@ if __name__ == "__main__":
     if args.verbosity:
         _verbosity = 10
     runner = unittest.TextTestRunner(verbosity=_verbosity)
-    runner.run(suite_sql_builder_tests())
-    runner.run(suite_row_factory_tests())
-    runner.run(suite_entities_tests())
+    _ = runner.run(suite_sql_builder_tests())
+    _ = runner.run(suite_row_factory_tests())
+    _ = runner.run(suite_entities_tests())

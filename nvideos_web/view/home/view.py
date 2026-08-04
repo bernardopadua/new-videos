@@ -66,6 +66,8 @@ def abc(seconds: int = 0):
     # _ = cc.fillInputData(channelName="New Channel 2")
 
     us = UserService()
+    user = us.selectByUserName("User1")
+
     user = us.fillInputData(
         userName="New Test2",
         userEmail="newtest2@test.com.br",
