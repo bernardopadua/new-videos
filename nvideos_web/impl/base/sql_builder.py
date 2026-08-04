@@ -5,10 +5,10 @@ from psycopg import _queries
 from dataclasses import is_dataclass, fields
 
 # TYPING
-from typing import TypeVar, Self, cast, Generic, TypeAlias
+from typing import LiteralString, TypeVar, Self, cast, Generic, TypeAlias
 
 # BASE ENTITY
-from nvideos_web.core.entity.base.base_entity import MetadataClass, TModel, ModelField, ModelFieldKeyWord
+from nvideos_web.core.entity.base.base_entity import MetadataClass, ModelField, ModelFieldKeyWord
 
 # IMPL
 from nvideos_web.impl.error.base import (
@@ -16,11 +16,11 @@ from nvideos_web.impl.error.base import (
     PgRepositoryMissingSqlParameter
 )
 
-TMetaData = TypeVar("TMetaData", bound=MetadataClass[ModelField])
+TNvSqlModelField = TypeVar("TNvSqlModelField")
 FieldsCommaStr: TypeAlias = str
 ParamsCommaStr: TypeAlias = str
 
-class NvSql(Generic[TMetaData]):
+class NvSql:
     def __init__(self, *, usePrefix: bool = False) -> None:
         self._sql: str = ""
                 
@@ -59,9 +59,6 @@ class NvSql(Generic[TMetaData]):
         _ = self.selectFields(*args)
         self._insertTable = self._fieldsListOrder[0].getOwner().getTableName()
         return self
-
-    def build(self) -> None:
-        pass
 
     #TODO: 2 years not messing with this project.
     # I just comment this for now to avoid problems with basedpyright
@@ -144,13 +141,11 @@ class NvSql(Generic[TMetaData]):
         return paramAssigned
 
     @staticmethod
-    def formatStmt(_stmt: str, **kwargs: object):
-        return _stmt.format(
-            **kwargs
-        )
+    def formatStmt(_stmt: str, **kwargs: object) -> LiteralString:
+        return cast(LiteralString, _stmt.format(**kwargs))
 
     @staticmethod
-    def updateFields(_metaData: type[TMetaData], inputData: object) -> str:
+    def updateFields(_metaData: type[MetadataClass[TNvSqlModelField]], inputData: object) -> str:
         retMapValue: list[str] = []
         if not is_dataclass(inputData):
             raise Exception("Expecting a input of dataclass type.")
@@ -164,7 +159,7 @@ class NvSql(Generic[TMetaData]):
         return ', '.join(retMapValue)
 
     @staticmethod
-    def insertFieldsOrder(_metaData: type[MetadataClass[ModelField]], inputData: object) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
+    def insertFieldsOrder(_metaData: type[MetadataClass[TNvSqlModelField]], inputData: object) -> tuple[FieldsCommaStr, ParamsCommaStr, list[ModelField]]:
         retFieds: list[str] = []
         retParams: list[str] = []
         retListOrder: list[ModelField] = []
