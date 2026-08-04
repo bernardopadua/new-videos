@@ -70,7 +70,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         )
         paramsInsert = NvSql.parseSqlParams(stmt, inputObject=userInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(allFieldsOrder))
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             _ = cur.execute(stmt, params=paramsInsert)
             result = cur.fetchone()
             conn.commit()

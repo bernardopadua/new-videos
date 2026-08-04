@@ -67,9 +67,9 @@ def abc(seconds: int = 0):
 
     us = UserService()
     user = us.fillInputData(
-        userName="New Test1",
-        userEmail="newtest1@test.com.br",
-        userSurname="Test1",
+        userName="New Test2",
+        userEmail="newtest2@test.com.br",
+        userSurname="Test2",
         userPassword="123456",
         userIsActive=True,
         createSystemUser=True
