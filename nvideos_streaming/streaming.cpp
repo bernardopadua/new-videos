@@ -1,16 +1,53 @@
 #include "deps/httplib.h"
+#include <cstdint>
+#include <cstdlib>
+#include <iomanip>
+#include <ostream>
 #include <string>
+#include <chrono>
+
+#include <filesystem>
+
+std::string generateHashFileName(std::string ext){
+    auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    uint32_t hash = static_cast<uint32_t>(std::hash<std::string>{}(std::to_string(timestamp)));
+
+    std::stringstream strHash;
+    strHash << std::hex << std::setfill('0') << std::setw(11) << hash;
+
+    return strHash.str()+ext;
+}
 
 int main(int regv, char** regc){
     httplib::Server srv;
 
     srv.Post("/upload/avatar/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
-        auto formData = req.form.get_file(const std::string &fileName);
-        /*std::ofstream fileUpload("/tmp/", std::ios::binary);
-        reader([&fileUpload](const char* data, size_t size){
+        std::ofstream fileUpload;
+        std::string nameTempFile;
+
+        reader([&fileUpload, &nameTempFile](const httplib::FormData &fileForm){
+            int posDot = fileForm.filename.find_last_of(".");
+            do {
+                std::string ext = fileForm.filename.substr(posDot);
+                nameTempFile = "/tmp/"+generateHashFileName(ext);
+                std::cout << "FILENAME:" << nameTempFile << std::endl;
+            } while (std::filesystem::exists(nameTempFile));
+
+            fileUpload.open(nameTempFile, std::ios::binary);
+
+            /*std::cout << fileForm.filename << std::endl;
+            std::cout << fileForm.content << std::endl;
+            std::cout << fileForm.content_type << std::endl;*/
+
+            return true;
+        }, [&fileUpload](const char* data, size_t size){
             fileUpload.write(data, size);
+            return true;
         });
-        fileUpload.close();*/
+        fileUpload.close();
+
+        std::string jsonReturn = "{\"filename\":\""+nameTempFile+"\"}";
+        res.set_content(jsonReturn, "application/json");
     });
 
     srv.Get("/video/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){

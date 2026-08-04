@@ -1,4 +1,4 @@
-const formUserRegister = document.getElementById("register-form");
+import AvatarUploadMediaServer from "./user_avatar_upload_media_server.js"
 
 class UserRegistrationValidator {
     constructor() { 
@@ -19,7 +19,7 @@ class UserRegistrationValidator {
         liDefault.classList.add("flex", "items-center", "gap-2");
         liDefault.innerHTML = `
             <span class="text-xs text-amber-600/60">•</span>
-            <span>Attention: Please check the errors below.</span>
+            <span class="text-red-400">Attention: Please check the errors below.</span>
         `;
         ulAlert.innerHTML = "";
         ulAlert.appendChild(liDefault);
@@ -130,10 +130,17 @@ class UserRegistrationValidator {
     }
 };
 
-
+const formUserRegister = document.getElementById("register-form");
 formUserRegister.addEventListener("submit", (event) => {
     const userRegistrationValidator = new UserRegistrationValidator();
+    const userAvatarUpload = new AvatarUploadMediaServer();
+
+    if (userAvatarUpload.checkFilesSelected()) {
+        userAvatarUpload.doUploadAvatar();
+    }
+
     const isFormValidated = userRegistrationValidator.validateAllFields();
+    
     if (!isFormValidated) {
         event.preventDefault();
     }
