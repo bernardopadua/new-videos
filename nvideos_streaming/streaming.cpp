@@ -1,7 +1,17 @@
 #include "deps/httplib.h"
+#include <string>
 
 int main(int regv, char** regc){
     httplib::Server srv;
+
+    srv.Post("/upload/avatar/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
+        auto formData = req.form.get_file(const std::string &fileName);
+        /*std::ofstream fileUpload("/tmp/", std::ios::binary);
+        reader([&fileUpload](const char* data, size_t size){
+            fileUpload.write(data, size);
+        });
+        fileUpload.close();*/
+    });
 
     srv.Get("/video/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
         std::string videoId = req.matches[1];
