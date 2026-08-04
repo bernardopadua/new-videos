@@ -114,6 +114,19 @@ class TestSqlBuilder(unittest.TestCase):
         self.assertEqual(retSelectOrderToField, expFieldsComma)
         self.assertEqual(retSelectOrderToFieldPrefix, expFieldsCommaPrefix)
 
+    def test_createParam(self) -> None:
+        field, param = NvSql.createParam("name_attr", "value_test")
+        self.assertEqual(field, "name_attr")
+        self.assertEqual(param, {"name_attr": "%(name_attr)s"})
+
+    def test_concatParamWithDict(self) -> None:
+        _, param1 = NvSql.createParam("name_attr", "valueName_attr")
+        _, param2 = NvSql.createParam("name2_attr", "valueName2_attr")
+        
+        ret = NvSql.concatParams(param1, param2)
+        
+        self.assertEqual(ret, {"name_attr": "%(valueName_attr)s", "name2_attr": "%(valueName2_attr)s"})
+
 def suite_sql_builder_tests():
     suite = unittest.TestSuite()
     suite.addTest(TestSqlBuilder("test_insertFieldsOrder"))
@@ -122,4 +135,7 @@ def suite_sql_builder_tests():
     suite.addTest(TestSqlBuilder("test_formatStmt"))
     suite.addTest(TestSqlBuilder("test_parseSqlParams"))
     suite.addTest(TestSqlBuilder("test_selectOrderToFields"))
+    suite.addTest(TestSqlBuilder("test_createParam"))
+    suite.addTest(TestSqlBuilder("test_concatParamWithDict"))
+
     return suite
