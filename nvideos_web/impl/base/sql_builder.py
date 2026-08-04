@@ -5,7 +5,7 @@ from psycopg import _queries
 from dataclasses import is_dataclass, fields
 
 # TYPING
-from typing import LiteralString, TypeVar, Self, cast, Generic, TypeAlias
+from typing import LiteralString, TypeVar, Self, cast, TypeAlias
 
 # BASE ENTITY
 from nvideos_web.core.entity.base.base_entity import MetadataClass, ModelField, ModelFieldKeyWord
@@ -41,7 +41,7 @@ class NvSql:
                     self._fieldsListOrder.append(attr)
         for arg in args:
             if isinstance(arg, ModelFieldKeyWord) and arg.field == "*":
-                self.selectFields(arg)
+                _ = self.selectFields(arg)
             self._fieldsListOrder.append(arg)
 
         if len(self._fieldsListOrder) <= 0:
@@ -71,17 +71,17 @@ class NvSql:
 
     @staticmethod
     def selectOder(
-        *args: ModelField | ModelFieldKeyWord | None,
+        *args: ModelField | ModelFieldKeyWord,
         usePrefix: bool = False
     ) -> tuple[FieldsCommaStr, list[ModelField]]:
-        newArgs: list[ModelField | ModelFieldKeyWord] | None = [*args]
+        newArgs: list[ModelField | ModelFieldKeyWord] = [*args]
         concat: list[str] = []
         listRowFactory: list[ModelField] = []
         
         if len(newArgs) == 1 and isinstance(args[0], ModelFieldKeyWord) and \
         args[0].field == "*":
             attr: ModelFieldKeyWord = args[0]
-            newArgs = attr.getOwner()._all_fields
+            newArgs = attr.getOwner().getAllFields()
 
         for arg in newArgs:
             if usePrefix:
