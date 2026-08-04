@@ -38,8 +38,8 @@ class UserService(BaseService[UserInput]):
             
         self._usuRep: PgUserRepository = PgUserRepository(dbContext=dbContext)
 
-    def selectByUserId(self, userId: int):
-        pass
+    def selectByUserName(self, userName: str) -> User:
+        return self._usuRep.selectByUserName(userName)
 
     def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()

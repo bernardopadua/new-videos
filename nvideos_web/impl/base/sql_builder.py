@@ -20,6 +20,9 @@ TNvSqlModelField = TypeVar("TNvSqlModelField")
 FieldsCommaStr: TypeAlias = str
 ParamsCommaStr: TypeAlias = str
 
+ParamPgSQL: TypeAlias = str
+ParamPgMapObject: TypeAlias = dict[str, object]
+
 class NvSql:
     def __init__(self, *, usePrefix: bool = False) -> None:
         self._sql: str = ""
@@ -68,6 +71,24 @@ class NvSql:
     #     for i in args:
     #         concat.append(i)
     #     return ''.join(concat)
+
+    @staticmethod
+    def createParam(paramName: str, paramValue: object) -> tuple[ParamPgSQL, ParamPgMapObject]:
+        parsedParam: object = ""
+        
+        if paramValue is str:
+            parsedParam = f"'{paramValue}'"
+        else:
+            parsedParam = paramValue
+
+        return f"%({paramName})s", {paramName: parsedParam}
+
+    @staticmethod
+    def concatParams(*args: ParamPgMapObject) -> ParamPgMapObject:
+        concatParams: ParamPgMapObject = {}
+        for i in args:
+            concatParams = {**i, **concatParams}
+        return concatParams
 
     @staticmethod
     def selectOder(

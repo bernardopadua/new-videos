@@ -20,6 +20,9 @@ class UserRepository(ABC):
     @abstractmethod
     def delete(self, userId: int, auditData: AuditData) -> User: 
         ...
+    @abstractmethod
+    def selectByUserName(self, userName: str) -> User:
+        ...
 
 class UserPasswordHasher(ABC):
     @abstractmethod
