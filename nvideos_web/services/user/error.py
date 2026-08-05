@@ -33,3 +33,7 @@ class UserServiceUserHasInvalidPermission(Exception):
 class UserServiceFailedToMoveTempAvatarToMedia(Exception):
     """Failed to move temp avatar to media."""
     pass
+
+class UserServiceUserHasInvalidBirthDate(Exception):
+    """User has invalid birth date."""
+    pass

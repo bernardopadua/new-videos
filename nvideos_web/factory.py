@@ -14,15 +14,22 @@ from nvideos_web.view.home.view import homeBp
 from nvideos_web.view.video_details.view import videoDetailsBp
 from nvideos_web.view.channel_details.view import channelDetailsBp
 
+# GLOBALS
+from nvideos_web.view.template_context import register_globals_app
+
+nvideosApp: Flask
+
 def createApp() -> Flask:
     NewVideosDBContext.initDBContext()
-    app = Flask(__name__)
-    _ = app.config.from_file(".env.flask", loadDotEnv)
+    nvideosApp = Flask(__name__)
+    _ = nvideosApp.config.from_file(".env.flask", loadDotEnv)
 
-    app.register_blueprint(baseBp)
-    app.register_blueprint(homeBp)
-    app.register_blueprint(userDetailsBp)
-    app.register_blueprint(videoDetailsBp)
-    app.register_blueprint(channelDetailsBp)
+    register_globals_app(nvideosApp)
 
-    return app
+    nvideosApp.register_blueprint(baseBp)
+    nvideosApp.register_blueprint(homeBp)
+    nvideosApp.register_blueprint(userDetailsBp)
+    nvideosApp.register_blueprint(videoDetailsBp)
+    nvideosApp.register_blueprint(channelDetailsBp)
+
+    return nvideosApp

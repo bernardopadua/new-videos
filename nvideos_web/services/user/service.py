@@ -14,7 +14,7 @@ from nvideos_web.services.user.error import (
     UserServiceUserDontMatchPassword, UserServiceUserNameTooShort,
     UserServiceUserHasInvalidPassword, UserServiceUserHasInvalidEmail,
     UserServiceDateIsInvalid, UserServiceUserHasInvalidPermission,
-    UserServiceFailedToMoveTempAvatarToMedia
+    UserServiceFailedToMoveTempAvatarToMedia, UserServiceUserHasInvalidBirthDate
 )
 
 # ENTITY
@@ -47,6 +47,7 @@ class UserService(BaseService[UserInput]):
             
         self._usuRep: PgUserRepository = PgUserRepository(dbContext=dbContext)
         self._userPerm: str | None = None
+        self._userAvatarUrl: str | None = None
 
     def selectByUserName(self, userName: str) -> User:
         return self._usuRep.selectByUserName(userName)
@@ -118,7 +119,9 @@ class UserService(BaseService[UserInput]):
         if self._filledInputData.userPermission is None:
             raise UserServiceUserHasInvalidPermission("The informed permission is invalid.")
 
-        #TODO: Check for birthday 18+ age
+        if self._filledInputData.userBirthDate is None or \
+            (datetime.now().year - self._filledInputData.userBirthDate.year) < 18:
+            raise UserServiceUserHasInvalidBirthDate("The informed user birth date is invalid. The user must be at least 18 years old.")
 
         return self
 
@@ -136,18 +139,21 @@ class UserService(BaseService[UserInput]):
         from urllib.request import Request, urlopen
         from urllib.error import HTTPError
         from typing import cast
-        
+        import json
+
         req: Request = Request(
             url=f"{app.config['DOMAIN_MEDIA_SERVER']}/upload/move/avatar/user/{userId}/{avatarTempName}", 
             method="POST"
         )
         try:
             with urlopen(req) as response:
-                #_: bytes = cast(bytes, response.read())
+                bResponse: bytes = cast(bytes, response.read())
+                jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
+                self._userAvatarUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("userAvatarUrl")
                 return self
-        except HTTPError as e:
+        except HTTPError:
             #add logger
-            _: bytes = e.read()
+            #_: bytes = e.read()
             raise UserServiceFailedToMoveTempAvatarToMedia("The media server couldn't move the temp avatar to media.")
 
     #TODO: implement method either to create user with avatar or update user with avatar
@@ -156,9 +162,11 @@ class UserService(BaseService[UserInput]):
         self, 
         userId: int,
         /, *, 
-        userInput: UserInput | None = None
+        updatedByUserId: int | None = None
     ) -> User:
-        auditData = self.fillAuditData().getAuditData()
+        auditData = self.fillAuditData(
+            updatedBy=updatedByUserId
+        ).getAuditData()
         inputData = self.getInputData()
 
         try:
@@ -220,6 +228,10 @@ class UserService(BaseService[UserInput]):
             userPerm = self._userPerm
             self._userPerm = None
         
+        if self._userAvatarUrl is not None:
+            userAvatarUrl = self._userAvatarUrl
+            self._userAvatarUrl = None
+
         passwordHash: str | None = userPassword
         if userPassword is not None:
             passwordHash = PasswordHasher().hashPassword(

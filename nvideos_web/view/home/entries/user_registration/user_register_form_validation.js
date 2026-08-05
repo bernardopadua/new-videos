@@ -47,6 +47,7 @@ class UserRegistrationValidator {
         const userPasswordValidated = this._validateUserPassword();
         const confirmPasswordValidated = this._validateConfirmPassword();
         const spacesInPasswordValidated = this._validateSpacesInPassword();
+        const ageValidation = this._validateAge();
 
         if (!(
             userNameValidated &&
@@ -55,13 +56,25 @@ class UserRegistrationValidator {
             birthDateValidated &&
             userPasswordValidated &&
             confirmPasswordValidated &&
-            spacesInPasswordValidated
+            spacesInPasswordValidated &&
+            ageValidation
         )) {
             this._alert.classList.remove("hidden");
             return false;
         }
 
         return true;
+    }
+
+    _validateAge() {
+        const birthDate = String(this._birthDate.value);
+        const age = new Date().getFullYear() - parseInt(birthDate.split('-')[0]);
+        if (age >= 18) {
+            return true;
+        }
+
+        this._addBulletAlert("You must be at least 18 years old.");
+        return false;
     }
 
     _validateUserName() {
@@ -149,7 +162,7 @@ formUserRegister.addEventListener("submit", (event) => {
 
     if (
         userAvatarUpload.checkFilesSelected()
-        //&& allFieldsAreValidated
+        && allFieldsAreValidated
         && document.getElementById("avatarFileNameMediaServer").value === ""
     ) {
         document.getElementById("avatar-upload-alert-error").classList.add("hidden");
@@ -165,5 +178,10 @@ formUserRegister.addEventListener("submit", (event) => {
             }
             enableRegistrationButton();
         });
+    } else if (allFieldsAreValidated) {
+        formUserRegister.submit();
+        enableRegistrationButton();
+    } else {
+
     }
 });

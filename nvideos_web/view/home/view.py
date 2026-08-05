@@ -26,20 +26,36 @@ def index_home():
 def user_registration():
     if flaskRequest.method == "POST":
         try:
-            uSrv = UserService()
-            uSrv.moveTempAvatarToMedia(17, flaskRequest.form.get("avatarFileNameMediaServer"))
-            # userCreated = uSrv.setUserPermission(normalUser=True).fillInputData(
-            #     userName=flaskRequest.form.get("userName"),
-            #     userSurname=flaskRequest.form.get("userSurname"),
-            #     userEmail=flaskRequest.form.get("userEmail"),
-            #     userBirthDate=uSrv.getDatetimeFromDate(flaskRequest.form.get("birthDate")),
-            #     userPassword=flaskRequest.form.get("userPassword"),
-            #     confirmPassword=flaskRequest.form.get("confirmPassword"),
-            #     userIsActive=True
-            # ).checkInputDataIsValid().createNewUser()
-            
+            #Create then update, for now I will maintain this way, but for large scale 
+            #one session with insert would be the best.
 
-        except Exception as e:
+            uSrv = UserService()
+            
+            userCreated = uSrv.setUserPermission(
+                normalUser=True
+            ).fillInputData(
+                userName=flaskRequest.form.get("userName"),
+                userSurname=flaskRequest.form.get("userSurname"),
+                userEmail=flaskRequest.form.get("userEmail"),
+                userBirthDate=uSrv.getDatetimeFromDate(flaskRequest.form.get("birthDate")),
+                userPassword=flaskRequest.form.get("userPassword"),
+                confirmPassword=flaskRequest.form.get("confirmPassword"),
+                userIsActive=True
+            ).checkInputDataIsValid().createNewUser()
+            
+            if flaskRequest.form.get("avatarFileNameMediaServer") != "":
+                userCreated = uSrv.moveTempAvatarToMedia(
+                    userCreated.userId, 
+                    flaskRequest.form.get("avatarFileNameMediaServer")
+                ).fillInputData().updateUserById(
+                    userCreated.userId,
+                    updatedByUserId=userCreated.userId
+                )
+
+            templateRender = render_template("home/user_registration_success.html", userName=userCreated.userName)
+            return templateRender
+
+        except Exception:
             #TODO: Add logger to log information of the exception
             return render_template("base/error.html")
         

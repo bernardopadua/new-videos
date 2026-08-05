@@ -16,7 +16,11 @@
         <!-- HEADER -->
         <div class="space-y-2">
             <h2 class="text-2xl font-extrabold text-white tracking-tight">Cadastro Realizado!</h2>
+            {% if userName %}
+            <p class="text-sm text-gray-400">Sua conta, {{ userName }}, foi criada com sucesso.</p>
+            {% else %}
             <p class="text-sm text-gray-400">Sua conta foi criada com sucesso.</p>
+            {% endif %}
         </div>
 
         <!-- SUCCESS INFO -->

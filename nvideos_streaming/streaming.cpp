@@ -8,6 +8,12 @@
 
 #include <filesystem>
 
+/*
+    This "media-server" has no intent or purpose to be safe at the moment
+    of this writting. So of course you can for example upload an ELF or something.
+    This whole project is just a FUN and learning project.
+*/
+
 std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
 std::filesystem::path MEDIA_SERVER_TEMP_PATH = "/tmp/";
 
@@ -25,6 +31,19 @@ std::string generateHashFileName(std::string ext){
 
 int main(int regv, char** regc){
     httplib::Server srv;
+    const char* sss = std::getenv("DOMAIN_MEDIA_SERVER");
+
+    if (sss == nullptr){
+        std::cerr << "DOMAIN_MEDIA_SERVER is not set." << std::endl;
+        return 1;
+    }
+
+    std::string thisDomain = std::string(sss);
+
+    if(thisDomain.empty()){
+        std::cerr << "DOMAIN_MEDIA_SERVER is not set." << std::endl;
+        return 1;
+    }
 
     srv.Post("/upload/move/avatar/user/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
         const std::string fileName = req.matches[2];
@@ -39,13 +58,18 @@ int main(int regv, char** regc){
         //If file exists, move
         if (!std::filesystem::exists(MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/")) {
             std::filesystem::create_directories(MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/");
-        }   
+        }
+        int dotPost = fileName.find_last_of('.');
+        std::string ext = fileName.substr(dotPost);
         std::filesystem::rename(
             MEDIA_SERVER_TEMP_PATH.string()+fileName, 
-            MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/"+fileName
+            MEDIA_SERVER_BASE_PATH.string()+"avatars/" + userId + "/user_" + userId + ext
         );
 
-        res.set_content("{\"success\":\"File moved successfully.\"}", "application/json");
+        res.set_content("{ \
+            \"success\":\"File moved successfully.\", \
+            \"userAvatarUrl\":\"/avatar/user/" + userId + "/" + "user_" + userId + ext + "\" \
+            }", "application/json");
     });
 
     srv.Post("/upload/avatar/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
@@ -78,6 +102,32 @@ int main(int regv, char** regc){
         std::string jsonReturn = "{\"filename\":\""+fileName+"\"}";
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content(jsonReturn, "application/json");
+    });
+
+    srv.Get("/avatar/user/([0-9]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        std::string userId = req.matches[1];
+        std::string fileName = req.matches[2];
+
+        std::string fileFolderLoad = MEDIA_SERVER_BASE_PATH.string()+"avatars/"+userId+"/"+fileName;
+        std::ifstream fileLoadOpen(fileFolderLoad, std::ios::ate | std::ios::binary);
+
+        int dotPos = fileName.find_last_of(".");
+        std::string ext = fileName.substr(dotPos+1);
+
+        if (!fileLoadOpen.is_open()){
+            res.status = 404;
+            res.set_content("<h1>This avatar does not exist.</h1>", "text/html");
+            return;
+        }
+
+        std::streamsize sizeFile = fileLoadOpen.tellg();
+        std::vector<char> fileBuffer(sizeFile);
+
+        fileLoadOpen.seekg(0, std::ios::beg);
+        fileLoadOpen.read(fileBuffer.data(), sizeFile);
+
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content(fileBuffer.data(), sizeFile, "image/"+ext);
     });
 
     srv.Get("/video/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){

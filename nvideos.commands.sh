@@ -55,7 +55,7 @@ wnvideos.build_media_server(){
     bash -c "cd ${NVIDEOS_PATH}/nvideos_streaming && g++ streaming.cpp -o build/streaming -std=c++17 -pthread"
 }
 wnvideos.run_media_server(){
-    bash -c "cd ${NVIDEOS_PATH}/nvideos_streaming && ./build/streaming"
+    bash -c "cd ${NVIDEOS_PATH}/nvideos_streaming && DOMAIN_MEDIA_SERVER='http://localhost:8099' ./build/streaming"
 }
 
 # Validations
