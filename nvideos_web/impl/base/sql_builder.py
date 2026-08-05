@@ -191,9 +191,14 @@ class NvSql:
         for field in fields(inputData):
             fieldInput: object = getattr(inputData, field.name)
             if fieldInput is not None:
-                metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
-                retFieds.append(f"{metadataAttr.field}")
-                retParams.append(f"%({field.name})s")
-                retListOrder.append(metadataAttr)
+                try:
+                    metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
+                    retFieds.append(f"{metadataAttr.field}")
+                    retParams.append(f"%({field.name})s")
+                    retListOrder.append(metadataAttr)
+                except AttributeError:
+                    continue
+                except Exception as e:
+                    raise e
 
         return (",".join(retFieds), ",".join(retParams), retListOrder)

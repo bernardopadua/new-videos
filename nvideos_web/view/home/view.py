@@ -7,8 +7,7 @@ from flask import (
     request as flaskRequest
 )
 
-# DB
-from nvideos_web.db.pgcontext import NewVideosDBContext
+# SERVICE
 from nvideos_web.services.user.service import UserService
 
 homeBp = Blueprint(
@@ -26,14 +25,23 @@ def index_home():
 @homeBp.route("/register", methods=["GET", "POST"])
 def user_registration():
     if flaskRequest.method == "POST":
-        UserService().fillInputData(
-            userName=flaskRequest.form.get("userName"),
-            userSurname=flaskRequest.form.get("userSurname"),
-            userEmail=flaskRequest.form.get("userEmail"),
-            birthDate=flaskRequest.form.get("birthDate"),
-            userPassword=flaskRequest.form.get("userPassword"),
-            userIsActive=True
-        ).checkInputData() #Make a check to input data.
+        try:
+            uSrv = UserService()
+            uSrv.moveTempAvatarToMedia(17, flaskRequest.form.get("avatarFileNameMediaServer"))
+            # userCreated = uSrv.setUserPermission(normalUser=True).fillInputData(
+            #     userName=flaskRequest.form.get("userName"),
+            #     userSurname=flaskRequest.form.get("userSurname"),
+            #     userEmail=flaskRequest.form.get("userEmail"),
+            #     userBirthDate=uSrv.getDatetimeFromDate(flaskRequest.form.get("birthDate")),
+            #     userPassword=flaskRequest.form.get("userPassword"),
+            #     confirmPassword=flaskRequest.form.get("confirmPassword"),
+            #     userIsActive=True
+            # ).checkInputDataIsValid().createNewUser()
+            
+
+        except Exception as e:
+            #TODO: Add logger to log information of the exception
+            return render_template("base/error.html")
         
         return "POST"
 

@@ -1,12 +1,21 @@
+# FLASK
+from flask import current_app as app
+
 # BUILT-IN
-from datetime import date
+from datetime import date, datetime
 
 # TYPING
 from typing import Self, override, final
 
 # SERVICES
 from nvideos_web.services.base.service import BaseService
-from nvideos_web.services.user.error import UserServiceNoUserInput, UserServiceUserDoesntExists
+from nvideos_web.services.user.error import (
+    UserServiceNoUserInput, UserServiceUserDoesntExists,
+    UserServiceUserDontMatchPassword, UserServiceUserNameTooShort,
+    UserServiceUserHasInvalidPassword, UserServiceUserHasInvalidEmail,
+    UserServiceDateIsInvalid, UserServiceUserHasInvalidPermission,
+    UserServiceFailedToMoveTempAvatarToMedia
+)
 
 # ENTITY
 from nvideos_web.core.entity.user import User, UserInput
@@ -37,6 +46,7 @@ class UserService(BaseService[UserInput]):
             dbContext=NewVideosDBContext
             
         self._usuRep: PgUserRepository = PgUserRepository(dbContext=dbContext)
+        self._userPerm: str | None = None
 
     def selectByUserName(self, userName: str) -> User:
         return self._usuRep.selectByUserName(userName)
@@ -63,11 +73,84 @@ class UserService(BaseService[UserInput]):
         self._checkExists: bool = self._usuRep.checkIdExists(userId=idRegistry)
         return self
 
+    def setUserPermission(self, *, systemUser: bool = False, normalUser: bool = False) -> Self:
+        if systemUser:
+            self._userPerm = UserPermissions.P_SYSTEM.value
+        elif normalUser:
+            self._userPerm = UserPermissions.P_COMMOM_USER.value
+        else:
+            self._userPerm = None
+        return self
+        
     def checkInputDataIsValid(self) -> Self:
-        if self._filledInputData.userPassword != self._filledInputData.confirmPassword:
+        if self._filledInputData is None:
+            raise UserServiceNoUserInput(
+                "No user input. Verify if you are setting the user input."
+            )
+
+        def checkForSpecialChars(text:str) -> bool:
+            import re
+            return bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", text))
+
+        def checkForValidEmail(email: str) -> bool:
+            import re
+            return bool(re.search(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email))
+            
+
+        if self._filledInputData.userPasswordPlain != self._filledInputData.confirmPassword:
             raise UserServiceUserDontMatchPassword("The informed password doesn't match the user's password.")
         
+        if self._filledInputData.userName is not None and len(self._filledInputData.userName) < 3:
+            raise UserServiceUserNameTooShort("The informed user name is too short or is None.")
+        
+        if self._filledInputData.userSurname is not None and len(self._filledInputData.userSurname) < 3:
+            raise UserServiceUserNameTooShort("The informed user surname is too short or is None.")
+
+        if self._filledInputData.userPasswordPlain is not None and \
+        checkForSpecialChars(self._filledInputData.userPasswordPlain):
+            raise UserServiceUserHasInvalidPassword("The informed password has invalid characters.")
+
+        if self._filledInputData.userEmail is not None and not checkForValidEmail(
+            self._filledInputData.userEmail
+        ):
+            raise UserServiceUserHasInvalidEmail("The informed email is invalid.")
+
+        if self._filledInputData.userPermission is None:
+            raise UserServiceUserHasInvalidPermission("The informed permission is invalid.")
+
+        #TODO: Check for birthday 18+ age
+
         return self
+
+    def getDatetimeFromDate(self, dateStr: str | None) -> datetime:
+        try:
+            if dateStr is None:
+                raise UserServiceDateIsInvalid("The date is None.")
+
+            return datetime.strptime(dateStr, "%Y-%m-%d")
+        except:
+            raise UserServiceDateIsInvalid(f"The date {dateStr} is invalid. Use format YYYY-MM-DD.")
+        
+
+    def moveTempAvatarToMedia(self, userId: int, avatarTempName: str | None) -> Self:
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from typing import cast
+        
+        req: Request = Request(
+            url=f"{app.config['DOMAIN_MEDIA_SERVER']}/upload/move/avatar/user/{userId}/{avatarTempName}", 
+            method="POST"
+        )
+        try:
+            with urlopen(req) as response:
+                #_: bytes = cast(bytes, response.read())
+                return self
+        except HTTPError as e:
+            #add logger
+            _: bytes = e.read()
+            raise UserServiceFailedToMoveTempAvatarToMedia("The media server couldn't move the temp avatar to media.")
+
+    #TODO: implement method either to create user with avatar or update user with avatar
 
     def updateUserById(
         self, 
@@ -79,7 +162,7 @@ class UserService(BaseService[UserInput]):
         inputData = self.getInputData()
 
         try:
-            if not self.checkIdExists(userId=userId).getCheckIdExists():
+            if not self.checkIdExists(idRegistry=userId).getCheckIdExists():
                 raise UserServiceUserDoesntExists("The user you trying to update doesn't exists")
 
             return self._usuRep.updateById(
@@ -119,6 +202,7 @@ class UserService(BaseService[UserInput]):
         userAvatarUrl: str | None = None,
         userBirthDate: date | None = None,
         userPassword: str | None = None,
+        confirmPassword: str | None = None,
         userPermission: str | None = None,
         userIsActive: bool | None = None,
         createSystemUser: bool = False,
@@ -132,6 +216,9 @@ class UserService(BaseService[UserInput]):
             userPerm = UserPermissions.P_SYSTEM.value
         elif userPermission:
             userPerm = userPermission
+        elif self._userPerm:
+            userPerm = self._userPerm
+            self._userPerm = None
         
         passwordHash: str | None = userPassword
         if userPassword is not None:
@@ -144,6 +231,8 @@ class UserService(BaseService[UserInput]):
             userSurname=userSurname,
             userEmail=userEmail,
             userPassword=passwordHash,
+            userPasswordPlain=userPassword,
+            confirmPassword=confirmPassword,
             userBirthDate=userBirthDate,
             userAvatarUrl=userAvatarUrl,
             userPermission=userPerm,

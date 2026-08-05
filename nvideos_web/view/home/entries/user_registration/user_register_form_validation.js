@@ -149,7 +149,7 @@ formUserRegister.addEventListener("submit", (event) => {
 
     if (
         userAvatarUpload.checkFilesSelected()
-        && allFieldsAreValidated
+        //&& allFieldsAreValidated
         && document.getElementById("avatarFileNameMediaServer").value === ""
     ) {
         document.getElementById("avatar-upload-alert-error").classList.add("hidden");
@@ -160,7 +160,7 @@ formUserRegister.addEventListener("submit", (event) => {
                 document.getElementById("avatar-upload-alert-error").classList.remove("hidden");
                 document.getElementById("avatar-upload-alert").classList.add("hidden");
             } else {
-                document.getElementById("avatarFileNameMediaServer").value = result;
+                document.getElementById("avatarFileNameMediaServer").value = result.filename;
                 formUserRegister.submit();
             }
             enableRegistrationButton();

@@ -13,3 +13,23 @@ class UserServiceUserDontMatchPassword(Exception):
 class UserServiceUserHasInvalidPassword(Exception):
     """Password has invalid characters."""
     pass
+
+class UserServiceUserNameTooShort(Exception):
+    """User name is too short."""
+    pass
+
+class UserServiceUserHasInvalidEmail(Exception):
+    """Email has invalid characters."""
+    pass
+
+class UserServiceDateIsInvalid(Exception):
+    """Date is invalid."""
+    pass
+
+class UserServiceUserHasInvalidPermission(Exception):
+    """User has invalid permission."""
+    pass
+
+class UserServiceFailedToMoveTempAvatarToMedia(Exception):
+    """Failed to move temp avatar to media."""
+    pass

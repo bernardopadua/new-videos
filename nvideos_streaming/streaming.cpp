@@ -11,6 +11,8 @@
 std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
 std::filesystem::path MEDIA_SERVER_TEMP_PATH = "/tmp/";
 
+#define DOMAIN_WEB_SERVER "http://localhost:8080"
+
 std::string generateHashFileName(std::string ext){
     auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     uint32_t hash = static_cast<uint32_t>(std::hash<std::string>{}(std::to_string(timestamp)));
@@ -24,14 +26,9 @@ std::string generateHashFileName(std::string ext){
 int main(int regv, char** regc){
     httplib::Server srv;
 
-    //Allowing domains
-    srv.set_post_routing_handler([](const httplib::Request &req, httplib::Response &res){
-        res.set_header("Access-Control-Allow-Origin", "http://localhost:8080");
-    });
-
     srv.Post("/upload/move/avatar/user/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
-        const std::string fileName = req.matches[1];
-        const std::string userId = req.matches[0];
+        const std::string fileName = req.matches[2];
+        const std::string userId = req.matches[1];
         
         if (!std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / fileName)) {
             res.status = 404;
@@ -53,13 +50,15 @@ int main(int regv, char** regc){
 
     srv.Post("/upload/avatar/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
         std::ofstream fileUpload;
+        std::string fileName;
         std::string nameTempFile;
 
-        reader([&fileUpload, &nameTempFile](const httplib::FormData &fileForm){
+        reader([&fileUpload, &nameTempFile, &fileName](const httplib::FormData &fileForm){
             int posDot = fileForm.filename.find_last_of(".");
             do {
                 std::string ext = fileForm.filename.substr(posDot);
-                nameTempFile = "/tmp/"+generateHashFileName(ext);
+                fileName = generateHashFileName(ext);
+                nameTempFile = "/tmp/"+fileName;
                 std::cout << "FILENAME:" << nameTempFile << std::endl;
             } while (std::filesystem::exists(nameTempFile));
 
@@ -76,7 +75,8 @@ int main(int regv, char** regc){
         });
         fileUpload.close();
 
-        std::string jsonReturn = "{\"filename\":\""+nameTempFile+"\"}";
+        std::string jsonReturn = "{\"filename\":\""+fileName+"\"}";
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content(jsonReturn, "application/json");
     });
 
@@ -105,6 +105,7 @@ int main(int regv, char** regc){
         }
 
         std::cout << "sending-mpegURL: << " << fileFolderLoad << std::endl;
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content(fileBuffer.data(), sizeFile, "application/x-mpegURL");
     });
 
