@@ -30,6 +30,9 @@ from nvideos_web.core.repository.user import (
 from nvideos_web.impl.base.row_factory import ModelRowFactory
 from nvideos_web.impl.base_repository import PgRepositoryBase
 
+# ERROR
+from nvideos_web.impl.error.base import PgRepositoryParameterValueNone
+
 class PasswordHasher(UserPasswordHasher):
     def __init__(self) -> None:
         self._constants:PasswordConstantsCrypt = getPasswordConstants()
@@ -172,6 +175,25 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             _ = cur.execute(stmt, params=userEmailParam)
+            result = cur.fetchone()
+            return UserMetadata.row(result)
+
+    @override
+    def selectByUserId(self, userId: int | None) -> User:
+        if userId is None:
+            raise PgRepositoryParameterValueNone("Parameter userId is None")
+
+        userIdParam, userIdParamObj = NvSql.createParam("userId_value", userId)
+        stmt = NvSql.formatStmt(
+            "select * from {table_name} where {userId_field} = {userId_value};",
+            table_name=UserMetadata.tableName(),
+            userId_field=UserMetadata.userId.field,
+            userId_value=userIdParam
+        )
+        _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            _ = cur.execute(stmt, params=userIdParamObj)
             result = cur.fetchone()
             return UserMetadata.row(result)
 

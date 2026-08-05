@@ -1,11 +1,11 @@
 class PgRepositoryMissingParameter(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
+    pass
 
 class PgRepositoryMissingSqlParameter(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
+    pass
 
 class PgRepositoryInputIsNotDataclass(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
+    pass
+
+class PgRepositoryParameterValueNone(Exception):
+    pass

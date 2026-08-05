@@ -55,6 +55,12 @@ class UserService(BaseService[UserInput]):
     def selectByUserEmail(self, userEmail: str) -> User:
         return self._usuRep.selectByUserEmail(userEmail)
     
+    def selectByUserId(self, userId: int | None = None) -> User:
+        if self.currentUser and userId is None:
+            userId = self.currentUser
+
+        return self._usuRep.selectByUserId(userId)
+
     def userEmailExists(self, userEmail: str) -> bool:
         return self._usuRep.userEmailExists(userEmail)
 

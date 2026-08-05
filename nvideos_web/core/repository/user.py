@@ -27,6 +27,9 @@ class UserRepository(ABC):
     def selectByUserEmail(self, userEmail: str) -> User:
         ...
     @abstractmethod
+    def selectByUserId(self, userId: int) -> User:
+        ...
+    @abstractmethod
     def userEmailExists(self, userEmail: str) -> bool: 
         ...
 

@@ -5,9 +5,9 @@ import AvatarUpload from '../components/AvatarUpload';
 const container = document.getElementById('avatar-root');
 
 if (container) {
-  ReactDOM.createRoot(container).render(
-    <React.StrictMode>
-      <AvatarUpload />
-    </React.StrictMode>
-  );
+    ReactDOM.createRoot(container).render(
+        <React.StrictMode>
+            <AvatarUpload />
+        </React.StrictMode>
+    );
 }
