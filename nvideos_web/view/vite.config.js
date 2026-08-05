@@ -29,7 +29,8 @@ export default defineConfig({
                 
                 //Home
                 'home/avatar_entry': './home/entries/avatar_entry.jsx',
-                'home/user_register_form_validation/ufrv': './home/entries/user_registration/user_register_form_validation.js'
+                'home/user_register_form_validation/ufrv': './home/entries/user_registration/user_register_form_validation.js',
+                'home/user_login/login': './home/entries/user_login/user_login.js',
             },
             output: {
                 entryFileNames: (chunkInfo) => {

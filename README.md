@@ -4,6 +4,10 @@ The hybrid solution that I came up with is using a variety of technologies, and 
 
 In this project, I'm just exploring possibilities, learning how to circumvent some problems when integrating technologies like React, Jinja2, Tailwind, and Vite. It's NOT conventional; it is an experiment to learn from, and a fast and clean (in my point of view) application.
 
+-
+
+If you are visualizing this README.md and want some feature for it, let me know. This is not a professional project, at least in the moment I'm writing this. So don't expect a high quality project, professional projects take a good amount of time.
+
 ---
 
 Update 2026-07-30:

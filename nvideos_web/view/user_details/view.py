@@ -1,5 +1,8 @@
 # FLASK
-from flask import Blueprint, session, render_template
+from flask import Blueprint, session, render_template, request as flaskRequest, jsonify
+
+# SERVICE
+from nvideos_web.services.user.service import UserService
 
 userDetailsBp = Blueprint(
     "user_details", __name__,
