@@ -32,7 +32,7 @@
                     <span class="sr-only">Open user menu</span>
                     <div class="h-8 w-8 rounded-full bg-brand text-white flex items-center justify-center overflow-hidden">
                         {% set userAvatarURL = getUserAvatar() %}
-                        {% if userAvatarURL is not None %}
+                        {% if userAvatarURL %}
                         <img src="{{ userAvatarURL }}" alt="Avatar" class="h-full w-full object-cover">
                         {% else %}
                         <svg class="h-full w-full p-1.5" fill="currentColor" viewBox="0 0 24 24">

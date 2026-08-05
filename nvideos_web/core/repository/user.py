@@ -23,6 +23,12 @@ class UserRepository(ABC):
     @abstractmethod
     def selectByUserName(self, userName: str) -> User:
         ...
+    @abstractmethod
+    def selectByUserEmail(self, userEmail: str) -> User:
+        ...
+    @abstractmethod
+    def userEmailExists(self, userEmail: str) -> bool: 
+        ...
 
 class UserPasswordHasher(ABC):
     @abstractmethod

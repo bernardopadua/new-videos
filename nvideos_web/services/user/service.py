@@ -1,5 +1,5 @@
 # FLASK
-from flask import current_app as app
+from flask import current_app as app, session
 
 # BUILT-IN
 from datetime import date, datetime
@@ -51,6 +51,12 @@ class UserService(BaseService[UserInput]):
 
     def selectByUserName(self, userName: str) -> User:
         return self._usuRep.selectByUserName(userName)
+    
+    def selectByUserEmail(self, userEmail: str) -> User:
+        return self._usuRep.selectByUserEmail(userEmail)
+    
+    def userEmailExists(self, userEmail: str) -> bool:
+        return self._usuRep.userEmailExists(userEmail)
 
     def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()
@@ -69,20 +75,6 @@ class UserService(BaseService[UserInput]):
         finally:
             self.resetData()
 
-    @override
-    def checkIdExists(self, idRegistry: int) -> Self:
-        self._checkExists: bool = self._usuRep.checkIdExists(userId=idRegistry)
-        return self
-
-    def setUserPermission(self, *, systemUser: bool = False, normalUser: bool = False) -> Self:
-        if systemUser:
-            self._userPerm = UserPermissions.P_SYSTEM.value
-        elif normalUser:
-            self._userPerm = UserPermissions.P_COMMOM_USER.value
-        else:
-            self._userPerm = None
-        return self
-        
     def checkInputDataIsValid(self) -> Self:
         if self._filledInputData is None:
             raise UserServiceNoUserInput(
@@ -123,40 +115,27 @@ class UserService(BaseService[UserInput]):
             (datetime.now().year - self._filledInputData.userBirthDate.year) < 18:
             raise UserServiceUserHasInvalidBirthDate("The informed user birth date is invalid. The user must be at least 18 years old.")
 
+        if self._filledInputData.userEmail is not None and self.userEmailExists(self._filledInputData.userEmail):
+            #This is dangerous as a point of check emails in this database.
+            #I could only register and confirm email and etc. But I will keep it. 
+            #This project is only a exercise. A service to check email is worst because of "ddos".
+            raise UserServiceUserHasInvalidEmail("The informed email already exists.")
+
         return self
 
-    def getDatetimeFromDate(self, dateStr: str | None) -> datetime:
-        try:
-            if dateStr is None:
-                raise UserServiceDateIsInvalid("The date is None.")
+    @override
+    def checkIdExists(self, idRegistry: int) -> Self:
+        self._checkExists: bool = self._usuRep.checkIdExists(userId=idRegistry)
+        return self
 
-            return datetime.strptime(dateStr, "%Y-%m-%d")
-        except:
-            raise UserServiceDateIsInvalid(f"The date {dateStr} is invalid. Use format YYYY-MM-DD.")
-        
-
-    def moveTempAvatarToMedia(self, userId: int, avatarTempName: str | None) -> Self:
-        from urllib.request import Request, urlopen
-        from urllib.error import HTTPError
-        from typing import cast
-        import json
-
-        req: Request = Request(
-            url=f"{app.config['DOMAIN_MEDIA_SERVER']}/upload/move/avatar/user/{userId}/{avatarTempName}", 
-            method="POST"
-        )
-        try:
-            with urlopen(req) as response:
-                bResponse: bytes = cast(bytes, response.read())
-                jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
-                self._userAvatarUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("userAvatarUrl")
-                return self
-        except HTTPError:
-            #add logger
-            #_: bytes = e.read()
-            raise UserServiceFailedToMoveTempAvatarToMedia("The media server couldn't move the temp avatar to media.")
-
-    #TODO: implement method either to create user with avatar or update user with avatar
+    def setUserPermission(self, *, systemUser: bool = False, normalUser: bool = False) -> Self:
+        if systemUser:
+            self._userPerm = UserPermissions.P_SYSTEM.value
+        elif normalUser:
+            self._userPerm = UserPermissions.P_COMMOM_USER.value
+        else:
+            self._userPerm = None
+        return self
 
     def updateUserById(
         self, 
@@ -252,3 +231,53 @@ class UserService(BaseService[UserInput]):
         )
 
         return self
+
+    def getDatetimeFromDate(self, dateStr: str | None) -> datetime:
+        try:
+            if dateStr is None:
+                raise UserServiceDateIsInvalid("The date is None.")
+
+            return datetime.strptime(dateStr, "%Y-%m-%d")
+        except:
+            raise UserServiceDateIsInvalid(f"The date {dateStr} is invalid. Use format YYYY-MM-DD.")
+
+    def moveTempAvatarToMedia(self, userId: int, avatarTempName: str | None) -> Self:
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from typing import cast
+        import json
+
+        req: Request = Request(
+            url=f"{app.config['DOMAIN_MEDIA_SERVER']}/upload/move/avatar/user/{userId}/{avatarTempName}", 
+            method="POST"
+        )
+        try:
+            with urlopen(req) as response:
+                bResponse: bytes = cast(bytes, response.read())
+                jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
+                self._userAvatarUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("userAvatarUrl")
+                return self
+        except HTTPError:
+            #add logger
+            #_: bytes = e.read()
+            raise UserServiceFailedToMoveTempAvatarToMedia("The media server couldn't move the temp avatar to media.")
+
+    def userLogin(self, email: str, password: str) -> User | None:
+        userData: User = self.selectByUserEmail(email)
+
+        if PasswordHasher().hashPassword(password) == userData.userPassword:
+            session["userId"] = userData.userId
+            session["userFullName"] = userData.userName
+            session["userAvatarUrl"] = userData.userAvatarUrl
+            session["user"] = {
+                "userId": userData.userId,
+                "userName": userData.userName,
+                "userSurname": userData.userSurname,
+                "userEmail": userData.userEmail,
+                "userAvatarUrl": userData.userAvatarUrl
+            }
+
+            return userData
+        
+        return None
+        

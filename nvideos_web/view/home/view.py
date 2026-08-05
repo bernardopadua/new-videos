@@ -1,14 +1,13 @@
 # FLASK
 from flask import (
-    url_for, 
-    Blueprint, 
-    make_response, 
-    render_template,
-    request as flaskRequest
+    url_for, Blueprint, make_response, 
+    render_template, request as flaskRequest,
+    redirect
 )
 
 # SERVICE
 from nvideos_web.services.user.service import UserService
+from nvideos_web.services.user.error import UserServiceUserHasInvalidEmail
 
 homeBp = Blueprint(
     "home", __name__, 
@@ -21,6 +20,34 @@ homeBp = Blueprint(
 def index_home():
     templateRender = render_template("home/home.html")
     return templateRender
+
+@homeBp.route("/login", methods=["GET", "POST"])
+def login():
+    if flaskRequest.method == "POST":
+        userEmail = flaskRequest.form.get("userEmail")
+        userPassword = flaskRequest.form.get("userPassword")
+    
+        if not userEmail or not userPassword:
+            return render_template("home/login.html", error="Email e senha são obrigatórios.")
+        
+        try:
+            uSrv = UserService()
+            if uSrv.userLogin(userEmail, userPassword):
+                return redirect("/")
+            else:
+                return render_template("home/login.html", error="Email ou senha incorretos.")
+        except Exception:
+            return render_template("home/login.html", error="Email ou senha incorretos.")
+            
+    templateRender = render_template("home/login.html")
+    return templateRender
+
+@homeBp.route("/logout")
+def logout():
+    from flask import session, redirect
+    session.clear()
+    return redirect("/")
+
 
 @homeBp.route("/register", methods=["GET", "POST"])
 def user_registration():
@@ -55,11 +82,11 @@ def user_registration():
             templateRender = render_template("home/user_registration_success.html", userName=userCreated.userName)
             return templateRender
 
+        except UserServiceUserHasInvalidEmail as e:
+            return render_template("base/error.html", error=str(e))
         except Exception:
             #TODO: Add logger to log information of the exception
             return render_template("base/error.html")
-        
-        return "POST"
 
     templateRender = render_template("home/register_user.html")
     return templateRender
@@ -91,21 +118,24 @@ def abc(seconds: int = 0):
     from nvideos_web.services.channel.service import ChannelService
     from nvideos_web.services.subscriber.service import SubscriberService
 
+    us = UserService()
+    print(us.userEmailExists("john.doe4@gmail.com"))
+
     # cc = ChannelService()
     # _ = cc.fillInputData(channelName="New Channel 2")
 
-    us = UserService()
-    user = us.selectByUserName("User1")
+    # us = UserService()
+    # user = us.selectByUserName("User1")
 
-    user = us.fillInputData(
-        userName="New Test2",
-        userEmail="newtest2@test.com.br",
-        userSurname="Test2",
-        userPassword="123456",
-        userIsActive=True,
-        createSystemUser=True
-    ).createNewUser()
-    print(user)
+    # user = us.fillInputData(
+    #     userName="New Test2",
+    #     userEmail="newtest2@test.com.br",
+    #     userSurname="Test2",
+    #     userPassword="123456",
+    #     userIsActive=True,
+    #     createSystemUser=True
+    # ).createNewUser()
+    # print(user)
 
     # us = UserService(userId=9)
     # user = us.fillInputData(userName="Changing name 1").updateUserById(44)
@@ -118,6 +148,6 @@ def abc(seconds: int = 0):
     #     channelName="Testing channel 1"
     # ).createNewChannel()
 
-    sub = SubscriberService(userId=3).subscribeToChannel(channelId=3)
+    # sub = SubscriberService(userId=3).subscribeToChannel(channelId=3)
 
     return "<h1>Hello</h1>"

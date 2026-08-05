@@ -102,6 +102,7 @@ class UserRegistrationValidator {
             this._addBulletAlert("Email is invalid.");
             return false;
         }
+
         return true;
     }
 

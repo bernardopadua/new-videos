@@ -158,3 +158,33 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             _ = cur.execute(stmt, params=userNameParam)
             result = cur.fetchone()
             return UserMetadata.row(result)
+
+    @override
+    def selectByUserEmail(self, userEmail: str) -> User:
+        userEmail, userEmailParam = NvSql.createParam("userEmail_value", userEmail)
+        stmt = NvSql.formatStmt(
+            "select * from {table_name} where {userEmail_field} = {userEmail_value};",
+            table_name=UserMetadata.tableName(),
+            userEmail_field=UserMetadata.userEmail.field,
+            userEmail_value=userEmail
+        )
+        _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            _ = cur.execute(stmt, params=userEmailParam)
+            result = cur.fetchone()
+            return UserMetadata.row(result)
+
+    @override
+    def userEmailExists(self, userEmail: str) -> bool:
+        userEmail, userEmailParam = NvSql.createParam("userEmail_value", userEmail)
+        stmt = NvSql.formatStmt(
+            "select 1 from {table_name} where {userEmail_field} = {userEmail_value};",
+            table_name=UserMetadata.tableName(),
+            userEmail_field=UserMetadata.userEmail.field,
+            userEmail_value=userEmail
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor()
+            _ = cur.execute(stmt, params=userEmailParam)
+            return cur.rowcount > 0
