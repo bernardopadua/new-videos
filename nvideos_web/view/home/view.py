@@ -1,8 +1,13 @@
 # FLASK
-from flask import url_for, Blueprint, make_response, render_template
+from flask import (
+    url_for, 
+    Blueprint, 
+    make_response, 
+    render_template,
+    request as flaskRequest
+)
 
-# DB
-from nvideos_web.db.pgcontext import NewVideosDBContext
+# SERVICE
 from nvideos_web.services.user.service import UserService
 
 homeBp = Blueprint(
@@ -17,8 +22,45 @@ def index_home():
     templateRender = render_template("home/home.html")
     return templateRender
 
-@homeBp.route("/register")
+@homeBp.route("/register", methods=["GET", "POST"])
 def user_registration():
+    if flaskRequest.method == "POST":
+        try:
+            #Create then update, for now I will maintain this way, but for large scale 
+            #one session with insert would be the best.
+
+            uSrv = UserService()
+            
+            userCreated = uSrv.setUserPermission(
+                normalUser=True
+            ).fillInputData(
+                userName=flaskRequest.form.get("userName"),
+                userSurname=flaskRequest.form.get("userSurname"),
+                userEmail=flaskRequest.form.get("userEmail"),
+                userBirthDate=uSrv.getDatetimeFromDate(flaskRequest.form.get("birthDate")),
+                userPassword=flaskRequest.form.get("userPassword"),
+                confirmPassword=flaskRequest.form.get("confirmPassword"),
+                userIsActive=True
+            ).checkInputDataIsValid().createNewUser()
+            
+            if flaskRequest.form.get("avatarFileNameMediaServer") != "":
+                userCreated = uSrv.moveTempAvatarToMedia(
+                    userCreated.userId, 
+                    flaskRequest.form.get("avatarFileNameMediaServer")
+                ).fillInputData().updateUserById(
+                    userCreated.userId,
+                    updatedByUserId=userCreated.userId
+                )
+
+            templateRender = render_template("home/user_registration_success.html", userName=userCreated.userName)
+            return templateRender
+
+        except Exception:
+            #TODO: Add logger to log information of the exception
+            return render_template("base/error.html")
+        
+        return "POST"
+
     templateRender = render_template("home/register_user.html")
     return templateRender
 
@@ -42,19 +84,6 @@ def index_player():
 
     resp.headers['Content-Security-Policy'] = cspPol
     return resp
-
-@homeBp.route("/home")
-def home():
-    return f"""
-        <h1>Index</h1>
-        <a href='{url_for("home.abc")}'>
-            Abc
-        </a>
-        <br>
-        <a href='{url_for("user_details.userIndex")}'>
-            User Det
-        </a>
-    """
 
 @homeBp.route("/abc/<int:seconds>")
 def abc(seconds: int = 0):

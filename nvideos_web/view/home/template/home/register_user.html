@@ -22,10 +22,11 @@
         </div>
 
         <!-- FORM -->
-        <form class="mt-8 space-y-5" action="/register" method="POST" enctype="multipart/form-data" id="register-form">
+        <form class="mt-8 space-y-5" action="{{ url_for('home.user_registration') }}" method="POST" enctype="multipart/form-data" id="register-form">
 
             <!-- AVATAR UPLOAD REACT COMPONENT -->
             <div id="avatar-root"></div>
+            <input type="hidden" id="avatarFileNameMediaServer" name="avatarFileNameMediaServer" value="">
             <script type="module" src="{{ url_for('home.static', filename='dist/avatar_entry.js') }}"></script>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -93,9 +94,41 @@
                 </label>
             </div>
 
+            <!-- AVATAR UPLOAD ALERT -->
+            <div id="avatar-upload-alert" class="hidden flex items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-brand shadow-lg" role="status">
+                <svg class="animate-spin h-5 w-5 text-brand shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span id="text-uploading-avatar" class="text-sm font-medium text-gray-300">Uploading avatar, please wait...</span>
+            </div>
+            <div id="avatar-upload-alert-error" class="hidden flex items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-brand shadow-lg" role="status">
+                <svg class="h-5 w-5 shrink-0 text-amber-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                <span id="text-failed-upload" class="text-sm font-medium text-red-300">Avatar upload failed, retry...</span>
+            </div>
+            <script type="module" src="{{ url_for('home.static', filename='dist/ufrv.js') }}"></script>
+
+            <div id="user-register-form-alert" class="hidden flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-lg" role="alert">
+                <!-- Icon -->
+                <svg class="h-5 w-5 shrink-0 text-amber-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+
+                <!-- List -->
+                <ul id="user-register-warning-list" class="space-y-1.5 text-sm font-medium">
+                    <li class="flex items-center gap-2">
+                        <span class="text-xs text-amber-500/60">•</span>
+                        <span class="text-red-400">Attention: Please check the errors below.</span>
+                    </li>
+                </ul>
+            </div>
+            <script type="module" src="{{ url_for('home.static', filename='dist/ufrv.js') }}"></script>
+
             <!-- SUBMIT BUTTON -->
             <div>
-                <button type="submit" id="btn-submit-register"
+                <button formnovalidate type="submit" id="btn-submit-register"
                     class="w-full flex justify-center py-3 px-4 rounded-xl shadow-lg text-sm font-semibold text-white bg-brand hover:bg-[#772ce8] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand">
                     Create Account
                 </button>

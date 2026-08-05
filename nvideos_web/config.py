@@ -54,6 +54,7 @@ def loadDotEnv(filename: IO[Any]) -> Mapping[str, Any]:
             line = filename.readline()
             continue
         k, v = line.strip().split("=")
+        v = v.strip().strip("'\"\n")
         configRet[k] = v
 
         line = filename.readline()

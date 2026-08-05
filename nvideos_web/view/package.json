@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "vite build",
+    "dbuild": "NODE_ENV=development vite build --mode development",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +13,8 @@
   "license": "ISC",
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.5",
+    "javascript-obfuscator": "^5.5.0",
+    "rollup-plugin-obfuscator": "^1.1.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.0"
   },

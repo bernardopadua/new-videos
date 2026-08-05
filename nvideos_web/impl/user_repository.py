@@ -96,7 +96,7 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         fieldsAudit = NvSql.updateFields(UserMetadata, inputData=auditData)
         fieldsTable = NvSql.updateFields(UserMetadata, inputData=newUserData)
 
-        allFields, allFieldsOrder = NvSql.selectOder(UserMetadata.all, usePrefix=True)
+        allFields, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
         stmt = NvSql.formatStmt(
             """
             update {table_name} 

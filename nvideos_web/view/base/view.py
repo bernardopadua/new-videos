@@ -1,5 +1,5 @@
 # FLASK
-from flask import url_for, Blueprint
+from flask import Blueprint
 
 baseBp = Blueprint(
     "base", __name__, 

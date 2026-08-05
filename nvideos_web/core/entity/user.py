@@ -30,6 +30,8 @@ class UserInput(BaseInput):
     userSurname: str | None = field(default=None)
     userEmail: str | None = field(default=None)
     userPassword: str | None = field(default=None)
+    userPasswordPlain: str | None = field(default=None)
+    confirmPassword: str | None = field(default=None)
     userBirthDate: date | None = field(default=None)
     userAvatarUrl: str | None = field(default=None)
     userPermission: str | None = field(default=None)
