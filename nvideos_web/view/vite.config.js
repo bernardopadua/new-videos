@@ -2,12 +2,29 @@ import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import obfuscator from 'rollup-plugin-obfuscator';
-import os from 'os';
+import fs from 'node:fs';
+
+const cleanSomeDirs = () => ({
+    name: 'clean-some-dirs',
+    buildStart: () => {
+        const dirs = [
+            'base/static/dist'
+        ];
+        dirs.forEach((dir) => {
+            fs.readdir(dir, (err, files) => {
+                files.forEach((file) => {
+                    fs.rmSync(dir + '/' + file);
+                });
+            });
+        });
+    }
+});
 
 export default defineConfig({
     plugins: [
         tailwindcss(),
-        react()
+        react(),
+        cleanSomeDirs()
     ],
     build: {
         sourcemap: process.env.NODE_ENV !== "production",

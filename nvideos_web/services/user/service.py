@@ -150,7 +150,7 @@ class UserService(BaseService[UserInput]):
         updatedByUserId: int | None = None
     ) -> User:
         auditData = self.fillAuditData(
-            updatedBy=updatedByUserId
+            updatedBy=self.currentUser if self.currentUser else updatedByUserId
         ).getAuditData()
         inputData = self.getInputData()
 

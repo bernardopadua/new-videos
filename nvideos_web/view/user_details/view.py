@@ -1,5 +1,6 @@
 # FLASK
 from flask import Blueprint, session, render_template, request as flaskRequest, jsonify
+import flask
 
 # SERVICE
 from nvideos_web.services.user.service import UserService
@@ -11,11 +12,23 @@ userDetailsBp = Blueprint(
     template_folder="template"
 )
 
-@userDetailsBp.route("/profile")
+@userDetailsBp.route("/profile", methods=["GET", "POST"])
 def user_edit():
-    us: User = UserService(userId=session["userId"]).selectByUserId()
+    if flaskRequest.method == "POST":
+        uSrv: UserService = UserService(userId=session["userId"])
 
+        _ = uSrv.fillInputData(
+            userName=flaskRequest.form.get("userName"),
+            userSurname=flaskRequest.form.get("userSurname"),
+            userEmail=flaskRequest.form.get("userEmail"),
+            userBirthDate=uSrv.getDatetimeFromDate(flaskRequest.form.get("birthDate")),
+            userPassword=flaskRequest.form.get("userPassword"),
+            confirmPassword=flaskRequest.form.get("confirmPassword"),
+            #avatarUrl=flaskRequest.form.get("avatarFileNameMediaServer")
+        ).checkInputDataIsValid().updateUserById(session["userId"])
+
+    us: User = UserService(userId=session["userId"]).selectByUserId()
     return render_template(
         "user_details_edit.html",
-        user=us
+        us=us
     )

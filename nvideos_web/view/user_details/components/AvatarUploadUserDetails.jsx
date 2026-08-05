@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-export default function AvatarUpload() {
-    const [imagePreview, setImagePreview] = useState(null);
+export default function AvatarUploadUserDetails({ userAvatarUrlValue, userAvatarUrl }) {
+    const [imagePreview, setImagePreview] = useState(userAvatarUrlValue);
 
     const handleImageChange = (event) => {
         const file = event.target.files[0];
@@ -9,6 +9,8 @@ export default function AvatarUpload() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result);
+                userAvatarUrl.setAttribute('changed', true);
+                userAvatarUrl.value = "";
             };
             reader.readAsDataURL(file);
         }
@@ -16,13 +18,12 @@ export default function AvatarUpload() {
 
     return (
         <div class="p-8 sm:p-10 rounded-3xl bg-surface/90 border border-white/10 backdrop-blur-md flex flex-col sm:flex-row items-center gap-8 shadow-xl">
-            <label for="userAvatarFile" class="relative group cursor-pointer shrink-0">
-                <input id="userAvatarFile" name="userAvatarFile" type="file" accept="image/*" class="sr-only" onChange={handleImageChange} />
-                <input type="hidden" id="userAvatarUrl" name="userAvatarUrl" value=""/>
+            <label for="userAvatar" class="relative group cursor-pointer shrink-0">
+                <input id="userAvatar" name="userAvatar" type="file" accept="image/*" class="sr-only" onChange={handleImageChange} />
 
                 <div class="w-36 h-36 rounded-full bg-[#121212] border-2 border-dashed border-white/20 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-brand group-hover:ring-4 group-hover:ring-brand/20 shadow-inner relative">
                     {imagePreview ?
-                        (<img id="userAvatarPreview" class="hidden w-full h-full object-cover rounded-full" alt="Avatar Preview"
+                        (<img id="userAvatarPreview" class="w-full h-full object-cover rounded-full" alt="Avatar Preview"
                             src={imagePreview}
                         />)
                     :
