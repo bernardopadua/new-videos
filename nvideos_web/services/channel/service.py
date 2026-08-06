@@ -1,3 +1,6 @@
+# FLASK
+from flask import current_app as app
+
 # TYPING
 from typing import Self
 from typing_extensions import override, final
@@ -16,7 +19,11 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # ERROR
 from nvideos_web.services.base.error import InputDataIsNone
-from nvideos_web.services.channel.error import ChannelServiceCurrentUserIsNone, ChannelServiceChannelDoesntExists
+from nvideos_web.services.channel.error import (
+    ChannelServiceCurrentUserIsNone, ChannelServiceChannelDoesntExists,
+    ChannelServiceNameIsInvalid, ChannelServiceChannelDescriptionIsInvalid,
+    ChannelServiceFailedToMoveTempImageToMedia
+)
 
 @final
 class ChannelService(BaseService[ChannelInput]):
@@ -32,6 +39,19 @@ class ChannelService(BaseService[ChannelInput]):
             dbContext=NewVideosDBContext
 
         self._chRep: PgChannelRepository = PgChannelRepository(dbContext=dbContext)
+        self._avatarImageUrl: str | None = None
+        self._coverImageUrl: str | None = None
+
+    def checkInputDataIsValid(self, /) -> Self:
+        _inputData = self.getInputData()
+        
+        if _inputData.channelName is None or len(_inputData.channelName) < 3:
+            raise ChannelServiceNameIsInvalid("The informed channel name is invalid or is lower than 3 chars.")
+        
+        if _inputData.channelDescription is None or len(_inputData.channelDescription) > 1000:
+            raise ChannelServiceChannelDescriptionIsInvalid("The informed channel description is invalid or is higher than 1000 chars.")
+
+        return self
 
     def createNewChannel(self, /, *, inputData: ChannelInput | None = None) -> Channel:
         self.insertingMode()
@@ -78,15 +98,63 @@ class ChannelService(BaseService[ChannelInput]):
         channelDescription: str | None = None,
         channelImageUrl: str | None = None,
         channelAvatarUrl: str | None = None,
+        channelIsActive: bool = True,
         userId: int | None = None
     ) -> Self:
         
+        if self._avatarImageUrl:
+            channelAvatarUrl = self._avatarImageUrl
+            self._avatarImageUrl = None
+
+        if self._coverImageUrl:
+            channelImageUrl = self._coverImageUrl
+            self._coverImageUrl = None
+
         self._filledInputData = ChannelInput(
             channelName=channelName,
             channelDescription=channelDescription,
             channelImageUrl=channelImageUrl,
             channelAvatarUrl=channelAvatarUrl,
+            channelIsActive=channelIsActive,
             userId=userId
         )
 
         return self
+
+    def moveTempImagesToMedia(self, channelId: int, avatarTempName: str | None = None, coverTempName: str | None = None) -> Self:
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from typing import cast
+        import json
+
+        if avatarTempName:
+            req: Request = Request(
+                url=f"{app.config['DOMAIN_MEDIA_SERVER']}/channel/{channelId}/move/image/avatar/{avatarTempName}", 
+                method="POST"
+            )
+            try:
+                with urlopen(req) as response:
+                    bResponse: bytes = cast(bytes, response.read())
+                    jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
+                    self._avatarImageUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("imageUrl")
+            except HTTPError as e:
+                #add logger
+                #_: bytes = e.read()
+                raise ChannelServiceFailedToMoveTempImageToMedia("The media server couldn't move the temp avatar image to media.")
+        if coverTempName:
+            req: Request = Request(
+                url=f"{app.config['DOMAIN_MEDIA_SERVER']}/channel/{channelId}/move/image/cover/{coverTempName}", 
+                method="POST"
+            )
+            try:
+                with urlopen(req) as response:
+                    bResponse: bytes = cast(bytes, response.read())
+                    jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
+                    self._coverImageUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("imageUrl")
+            except HTTPError as e:
+                #add logger
+                #_: bytes = e.read()
+                raise ChannelServiceFailedToMoveTempImageToMedia("The media server couldn't move the temp cover image to media.")
+
+        return self
+

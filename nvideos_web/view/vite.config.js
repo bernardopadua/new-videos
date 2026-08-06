@@ -55,7 +55,11 @@ export default defineConfig({
 
                 //UserDetails
                 'user_details/avatar_upload_user_details/ausd': './user_details/entries/avatar_upload_user_details.jsx',
-                'user_details/user_edit_details/ued': './user_details/entries/user_edit_details/user_edit_details.js'
+                'user_details/user_edit_details/ued': './user_details/entries/user_edit_details/user_edit_details.js',
+
+                //ChannelDetails
+                'channel_details/channel_editcreate_details/ced': './channel_details/entries/channel_editcreate_details_entry.jsx',
+                'channel_details/channel_image_upload_editcreate/ciec': './channel_details/entries/channel_image_upload_editcreate.js',
             },
             output: {
                 entryFileNames: (chunkInfo) => {

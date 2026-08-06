@@ -1,7 +1,14 @@
 class ChannelServiceCurrentUserIsNone(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
+    pass
 
 class ChannelServiceChannelDoesntExists(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
+    pass
+
+class ChannelServiceNameIsInvalid(Exception):
+    pass
+
+class ChannelServiceChannelDescriptionIsInvalid(Exception):
+    pass
+
+class ChannelServiceFailedToMoveTempImageToMedia(Exception):
+    pass
