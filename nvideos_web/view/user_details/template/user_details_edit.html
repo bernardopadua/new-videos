@@ -11,43 +11,22 @@
         <p class="text-sm text-gray-400 mt-2">Update your personal information, avatar, password, and account settings.</p>
     </div>
 
+    {% if success %}
+    <div class="mb-8 flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-400 shadow-lg animate-fade-in" role="status">
+        <svg class="h-5 w-5 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span class="text-sm font-medium text-gray-200">Your profile settings have been successfully updated!</span>
+    </div>
+    {% endif %}
+
     <!-- EDIT FORM -->
-    <form action="/user/edit" method="POST" enctype="multipart/form-data" class="space-y-10">
+    <form id="user-edit-details-form" action="{{ url_for('user_details.user_edit') }}" method="POST" enctype="multipart/form-data" class="space-y-10">
         
         <!-- SECTION 1: AVATAR UPLOAD COMPONENT -->
-        <div class="p-8 sm:p-10 rounded-3xl bg-surface/90 border border-white/10 backdrop-blur-md flex flex-col sm:flex-row items-center gap-8 shadow-xl">
-            <label for="user_avatar_file" class="relative group cursor-pointer shrink-0">
-                <input id="user_avatar_file" name="user_avatar_file" type="file" accept="image/*" class="sr-only" onchange="previewUserAvatar(event)">
-                <input type="hidden" id="user_avatar_url" name="user_avatar_url" value="">
-
-                <div class="w-36 h-36 rounded-full bg-[#121212] border-2 border-dashed border-white/20 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-brand group-hover:ring-4 group-hover:ring-brand/20 shadow-inner relative">
-                    <!-- Image Preview -->
-                    <img id="userAvatarPreview" class="hidden w-full h-full object-cover rounded-full" alt="Avatar Preview">
-
-                    <!-- Default Placeholder -->
-                    <div id="userAvatarPlaceholder" class="flex flex-col items-center justify-center p-3 text-center transition-transform duration-200 group-hover:scale-105">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 group-hover:text-brand transition duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span class="text-xs font-semibold text-gray-200 mt-2 group-hover:text-white">Upload Avatar</span>
-                    </div>
-                </div>
-
-                <!-- Floating Edit Badge -->
-                <div class="absolute bottom-1 right-1 bg-brand text-white p-2.5 rounded-full shadow-lg border-2 border-bg-dark transition-transform duration-200 group-hover:scale-110">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                </div>
-            </label>
-
-            <div class="space-y-2 text-center sm:text-left">
-                <h3 class="text-xl font-bold text-white">Profile Photo</h3>
-                <p class="text-xs sm:text-sm text-gray-400">Click on the image circle to upload a new profile picture.</p>
-                <span class="text-xs text-gray-500 block pt-1">Recommended size: 400x400 (PNG, JPG or WEBP).</span>
-            </div>
-        </div>
+        <div id="avatar-upload-root"></div>
+        <input type="hidden" id="avatarFileNameMediaServer" name="avatarFileNameMediaServer" value="{{ getUserAvatar() or '' }}">
+        <script type="module" src="{{ url_for('user_details.static', filename='dist/ausd.js') }}"></script>
 
         <!-- SECTION 2: PERSONAL INFORMATION FORM -->
         <div class="p-8 sm:p-10 rounded-3xl bg-surface/90 border border-white/10 backdrop-blur-md space-y-8 shadow-xl">
@@ -60,23 +39,23 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2">
                 <!-- FIRST NAME -->
                 <div class="space-y-2">
-                    <label for="user_name" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                    <label for="userName" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                         First Name <span class="text-brand">*</span>
                     </label>
-                    <input id="user_name" name="user_name" type="text" maxlength="100" required 
+                    <input id="userName" name="userName" type="text" maxlength="100" required 
                         placeholder="John" 
-                        value="John"
+                        value="{{ us.userName }}"
                         class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
                 </div>
 
                 <!-- SURNAME -->
                 <div class="space-y-2">
-                    <label for="user_surname" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                    <label for="userSurname" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                         Last Name <span class="text-brand">*</span>
                     </label>
-                    <input id="user_surname" name="user_surname" type="text" maxlength="150" required 
+                    <input id="userSurname" name="userSurname" type="text" maxlength="150" required 
                         placeholder="Doe" 
-                        value="Doe"
+                        value="{{ us.userSurname }}"
                         class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
                 </div>
             </div>
@@ -84,36 +63,62 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <!-- EMAIL -->
                 <div class="space-y-2">
-                    <label for="user_email" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                    <label for="userEmail" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                         Email Address <span class="text-brand">*</span>
                     </label>
-                    <input id="user_email" name="user_email" type="email" maxlength="150" required 
+                    <input id="userEmail" name="userEmail" type="email" maxlength="150" required 
                         placeholder="john.doe@example.com" 
-                        value="john.doe@example.com"
+                        value="{{ us.userEmail }}"
                         class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
                 </div>
 
                 <!-- BIRTH DATE -->
                 <div class="space-y-2">
-                    <label for="user_birth_date" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                    <label for="birthDate" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                         Date of Birth
                     </label>
-                    <input id="user_birth_date" name="user_birth_date" type="date" 
-                        value="1995-06-15"
+                    <input id="birthDate" name="birthDate" type="date" 
+                        value="{{ getDateToinput(us.userBirthDate) }}"
                         class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm [color-scheme:dark]">
                 </div>
             </div>
 
             <!-- PASSWORD -->
             <div class="space-y-2">
-                <label for="user_password" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <label for="userPassword" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                     Password <span class="text-brand">*</span>
                 </label>
-                <input id="user_password" name="user_password" type="password" maxlength="300" required 
-                    placeholder="••••••••" 
-                    value="12345678"
+                <input id="userPassword" name="userPassword" type="password" maxlength="300" 
+                    placeholder="" 
+                    value=""
                     class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
             </div>
+            <div class="space-y-2">
+                <label for="confirmPassword" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                    Confirm Password <span class="text-brand">*</span>
+                </label>
+                <input id="confirmPassword" name="confirmPassword" type="password" maxlength="300" 
+                    placeholder="" 
+                    value=""
+                    class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
+            </div>
+
+            <!-- ALERTS SECTION -->
+            <div id="user-register-form-alert" class="hidden flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-lg" role="alert">
+                <!-- Icon -->
+                <svg class="h-5 w-5 shrink-0 text-amber-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+
+                <!-- List -->
+                <ul id="user-register-warning-list" class="space-y-1.5 text-sm font-medium">
+                    <li class="flex items-center gap-2">
+                        <span class="text-xs text-amber-500/60">•</span>
+                        <span class="text-red-400">Attention: Please check the errors below.</span>
+                    </li>
+                </ul>
+            </div>
+            <script type="module" src="{{ url_for('user_details.static', filename='dist/ued.js') }}"></script>
 
         </div>
 
@@ -154,6 +159,21 @@
 
         </div>
 
+        <!-- AVATAR UPLOAD ALERT -->
+        <div id="avatar-upload-alert" class="hidden flex items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-brand shadow-lg" role="status">
+            <svg class="animate-spin h-5 w-5 text-brand shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="text-uploading-avatar" class="text-sm font-medium text-gray-300">Uploading avatar, please wait...</span>
+        </div>
+        <div id="avatar-upload-alert-error" class="hidden flex items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-brand shadow-lg" role="status">
+            <svg class="h-5 w-5 shrink-0 text-amber-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+            </svg>
+            <span id="text-failed-upload" class="text-sm font-medium text-red-300">Avatar upload failed, retry...</span>
+        </div>
+
         <!-- ACTION BUTTONS (GENEROUS PADDING AND VISIBLE CANCEL BUTTON) -->
         <div class="pt-4 flex items-center justify-end gap-4">
             <a href="/" class="px-6 py-3 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl transition shadow-sm">
@@ -166,21 +186,4 @@
 
     </form>
 </div>
-
-<script>
-function previewUserAvatar(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('userAvatarPreview');
-            const placeholder = document.getElementById('userAvatarPlaceholder');
-            preview.src = e.target.result;
-            preview.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-        }
-        reader.readAsDataURL(file);
-    }
-}
-</script>
 {% endblock %}

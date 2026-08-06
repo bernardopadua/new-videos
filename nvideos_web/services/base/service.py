@@ -31,6 +31,10 @@ class BaseService(ABC, Generic[TInputData]):
         self._insertingMode = True
     def updatingMode(self):
         self._updatingMode = True
+    def isInsertingMode(self) -> bool:
+        return self._insertingMode
+    def isUpdatingMode(self) -> bool:
+        return self._updatingMode
 
     @abstractmethod
     def checkIdExists(self, idRegistry: int) -> Self:

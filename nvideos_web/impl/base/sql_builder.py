@@ -174,8 +174,13 @@ class NvSql:
         for field in fields(inputData):
             fieldInput: object = getattr(inputData, field.name)
             if fieldInput is not None:
-                metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
-                retMapValue.append(f"{metadataAttr.field} = %({field.name})s")
+                try:
+                    metadataAttr: ModelField = cast(ModelField, getattr(_metaData, field.name))
+                    retMapValue.append(f"{metadataAttr.field} = %({field.name})s")
+                except AttributeError:
+                    continue
+                except Exception as e:
+                    raise e
 
         return ', '.join(retMapValue)
 
