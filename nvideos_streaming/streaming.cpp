@@ -45,6 +45,47 @@ int main(int regv, char** regc){
         return 1;
     }
 
+    /*
+        CHANNEL IMAGES
+    */
+    srv.Get("/channel/([0-9]+)/cover/image/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        std::string channelId = req.matches[1];
+        std::string fileName = req.matches[2];
+        std::string fileLoad = MEDIA_SERVER_BASE_PATH.string()+"channels/"+channelId+"/"+fileName;
+
+        int dotPos = fileName.find_last_of(".");
+        std::string ext = fileName.substr(dotPos+1);
+
+        if (!std::filesystem::exists(fileLoad)){
+            res.status = 404;
+            res.set_content("<h1>File not found.</h1>", "text/html");
+            return;
+        }
+
+        std::ifstream fileLoadOpen(fileLoad, std::ios::ate | std::ios::binary);
+
+        if (!fileLoadOpen.is_open()){
+            res.status = 404;
+            res.set_content("<h1>This file could not be opened.</h1>", "text/html");
+            return;
+        }
+
+        std::streamsize sizeFile = fileLoadOpen.tellg();
+        std::vector<char> fileBuffer(sizeFile);
+
+        fileLoadOpen.seekg(0, std::ios::beg);
+        fileLoadOpen.read(fileBuffer.data(), sizeFile);
+
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content(fileBuffer.data(), sizeFile, "image/"+ext);
+    });
+    /*
+        END CHANNEL IMAGES
+    */
+
+    /*
+        USER AVATAR
+    */
     srv.Post("/upload/move/avatar/user/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
         const std::string fileName = req.matches[2];
         const std::string userId = req.matches[1];
@@ -129,7 +170,13 @@ int main(int regv, char** regc){
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content(fileBuffer.data(), sizeFile, "image/"+ext);
     });
+    /*
+        END USER AVATAR
+    */
 
+    /*
+        VIDEO
+    */
     srv.Get("/video/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
         std::string videoId = req.matches[1];
         std::string fileLoad = req.matches[2];
@@ -158,6 +205,9 @@ int main(int regv, char** regc){
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content(fileBuffer.data(), sizeFile, "application/x-mpegURL");
     });
+    /*
+        END VIDEO
+    */
 
     std::cout << "Running..." << std::endl;
     srv.listen("0.0.0.0", 8099);
