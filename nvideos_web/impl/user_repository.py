@@ -32,6 +32,7 @@ from nvideos_web.impl.base_repository import PgRepositoryBase
 
 # ERROR
 from nvideos_web.impl.error.base import PgRepositoryParameterValueNone
+from nvideos_web.services import user
 
 class PasswordHasher(UserPasswordHasher):
     def __init__(self) -> None:
@@ -198,15 +199,36 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             return UserMetadata.row(result)
 
     @override
-    def userEmailExists(self, userEmail: str) -> bool:
+    def userEmailExists(self, userEmail: str, *, avoidMyself: int | None = None) -> bool:
         userEmail, userEmailParam = NvSql.createParam("userEmail_value", userEmail)
-        stmt = NvSql.formatStmt(
-            "select 1 from {table_name} where {userEmail_field} = {userEmail_value};",
-            table_name=UserMetadata.tableName(),
-            userEmail_field=UserMetadata.userEmail.field,
-            userEmail_value=userEmail
-        )
+        userIdParam: dict[str, object] = {}
+
+        if avoidMyself is not None:
+            userId, userIdParam = NvSql.createParam("userId_value", avoidMyself)
+            stmt = NvSql.formatStmt(
+                """
+                select 1 from {table_name} where {userEmail_field} = {userEmail_value}
+                and {userId_field} not in ({userId_value});""",
+                table_name=UserMetadata.tableName(),
+                userEmail_field=UserMetadata.userEmail.field,
+                userEmail_value=userEmail,
+                userId_field=UserMetadata.userId.field,
+                userId_value=userId
+            )
+        else:
+            stmt = NvSql.formatStmt(
+                "select 1 from {table_name} where {userEmail_field} = {userEmail_value};",
+                table_name=UserMetadata.tableName(),
+                userEmail_field=UserMetadata.userEmail.field,
+                userEmail_value=userEmail
+            )
+
+
+
         with self._db.getConn() as conn:
             cur = conn.cursor()
-            _ = cur.execute(stmt, params=userEmailParam)
+            _ = cur.execute(
+                stmt, 
+                params=(userEmailParam | userIdParam) if avoidMyself is not None else userEmailParam
+            )
             return cur.rowcount > 0

@@ -62,7 +62,10 @@ class UserService(BaseService[UserInput]):
         return self._usuRep.selectByUserId(userId)
 
     def userEmailExists(self, userEmail: str) -> bool:
-        return self._usuRep.userEmailExists(userEmail)
+        if self.currentUser:
+            return self._usuRep.userEmailExists(userEmail, avoidMyself=self.currentUser)
+        else:
+            return self._usuRep.userEmailExists(userEmail)
 
     def createNewUser(self, *, userInput: UserInput | None = None) -> User:
         self.insertingMode()
@@ -114,14 +117,17 @@ class UserService(BaseService[UserInput]):
         ):
             raise UserServiceUserHasInvalidEmail("The informed email is invalid.")
 
-        if self._filledInputData.userPermission is None:
+        if self._filledInputData.userPermission is None and self.isInsertingMode():
             raise UserServiceUserHasInvalidPermission("The informed permission is invalid.")
 
         if self._filledInputData.userBirthDate is None or \
             (datetime.now().year - self._filledInputData.userBirthDate.year) < 18:
             raise UserServiceUserHasInvalidBirthDate("The informed user birth date is invalid. The user must be at least 18 years old.")
 
-        if self._filledInputData.userEmail is not None and self.userEmailExists(self._filledInputData.userEmail):
+        if self._filledInputData.userEmail is None:
+            raise UserServiceUserHasInvalidEmail("User email cannot be None.")
+
+        if self.userEmailExists(self._filledInputData.userEmail):
             #This is dangerous as a point of check emails in this database.
             #I could only register and confirm email and etc. But I will keep it. 
             #This project is only a exercise. A service to check email is worst because of "ddos".
@@ -149,6 +155,7 @@ class UserService(BaseService[UserInput]):
         /, *, 
         updatedByUserId: int | None = None
     ) -> User:
+        self.updatingMode()
         auditData = self.fillAuditData(
             updatedBy=self.currentUser if self.currentUser else updatedByUserId
         ).getAuditData()
@@ -272,18 +279,20 @@ class UserService(BaseService[UserInput]):
         userData: User = self.selectByUserEmail(email)
 
         if PasswordHasher().hashPassword(password) == userData.userPassword:
-            session["userId"] = userData.userId
-            session["userFullName"] = userData.userName
-            session["userAvatarUrl"] = userData.userAvatarUrl
-            session["user"] = {
-                "userId": userData.userId,
-                "userName": userData.userName,
-                "userSurname": userData.userSurname,
-                "userEmail": userData.userEmail,
-                "userAvatarUrl": userData.userAvatarUrl
-            }
+            self.fillUserSession(userData)
 
             return userData
         
         return None
-        
+
+    def fillUserSession(self, userData: User):
+        session["userId"] = userData.userId
+        session["userFullName"] = userData.userName
+        session["userAvatarUrl"] = userData.userAvatarUrl
+        session["user"] = {
+            "userId": userData.userId,
+            "userName": userData.userName,
+            "userSurname": userData.userSurname,
+            "userEmail": userData.userEmail,
+            "userAvatarUrl": userData.userAvatarUrl
+        }

@@ -11,8 +11,17 @@
         <p class="text-sm text-gray-400 mt-2">Update your personal information, avatar, password, and account settings.</p>
     </div>
 
+    {% if success %}
+    <div class="mb-8 flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-400 shadow-lg animate-fade-in" role="status">
+        <svg class="h-5 w-5 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span class="text-sm font-medium text-gray-200">Your profile settings have been successfully updated!</span>
+    </div>
+    {% endif %}
+
     <!-- EDIT FORM -->
-    <form id="user-edit-details-form" action="/user/edit" method="POST" enctype="multipart/form-data" class="space-y-10">
+    <form id="user-edit-details-form" action="{{ url_for('user_details.user_edit') }}" method="POST" enctype="multipart/form-data" class="space-y-10">
         
         <!-- SECTION 1: AVATAR UPLOAD COMPONENT -->
         <div id="avatar-upload-root"></div>
@@ -79,16 +88,16 @@
                 <label for="userPassword" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                     Password <span class="text-brand">*</span>
                 </label>
-                <input id="userPassword" name="userPassword" type="password" maxlength="300" required 
+                <input id="userPassword" name="userPassword" type="password" maxlength="300" 
                     placeholder="" 
                     value=""
                     class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
             </div>
             <div class="space-y-2">
-                <label for="userConfirmPassword" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <label for="confirmPassword" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
                     Confirm Password <span class="text-brand">*</span>
                 </label>
-                <input id="userConfirmPassword" name="userConfirmPassword" type="password" maxlength="300" required 
+                <input id="confirmPassword" name="confirmPassword" type="password" maxlength="300" 
                     placeholder="" 
                     value=""
                     class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
@@ -109,6 +118,7 @@
                     </li>
                 </ul>
             </div>
+            <script type="module" src="{{ url_for('user_details.static', filename='dist/ued.js') }}"></script>
 
         </div>
 

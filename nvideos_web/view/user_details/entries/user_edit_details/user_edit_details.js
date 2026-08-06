@@ -48,16 +48,24 @@ class UserRegistrationValidator {
         const spacesInPasswordValidated = this._validateSpacesInPassword();
         const ageValidation = this._validateAge();
 
-        if (!(
+        const basicValidation = (
             userNameValidated &&
             userSurnameValidated &&
             userEmailValidated &&
             birthDateValidated &&
-            userPasswordValidated &&
-            confirmPasswordValidated &&
-            spacesInPasswordValidated &&
             ageValidation
-        )) {
+        );
+        let passwordValidation = true;
+
+        if (this._userPassword.value.length > 0) {
+            passwordValidation = (
+                userPasswordValidated &&
+                confirmPasswordValidated &&
+                spacesInPasswordValidated                 
+            );
+        }
+
+        if (!basicValidation || !passwordValidation) {
             this._alert.classList.remove("hidden");
             return false;
         }
@@ -157,8 +165,8 @@ formUserEditDetails.addEventListener("submit", (event) => {
         avatarMediUploadServer.checkFilesSelected() &&
         avatarMediaUploadInput.hasAttribute('changed')
     ) {
-        document.getElementById("avatar-upload-alert-error").classList.remove("hidden");
-        document.getElementById("avatar-upload-alert").classList.add("hidden");
+        document.getElementById("avatar-upload-alert-error").classList.add("hidden");
+        document.getElementById("avatar-upload-alert").classList.remove("hidden");
         
         avatarMediUploadServer.doUploadAvatar().then((r) => {
             if (!r) {

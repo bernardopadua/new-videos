@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react'
 import obfuscator from 'rollup-plugin-obfuscator';
 import fs from 'node:fs';
 
+console.log('----------------------------->');
+console.log(process.env.NODE_ENV);
+
 const cleanSomeDirs = () => ({
     name: 'clean-some-dirs',
     buildStart: () => {
@@ -27,7 +30,7 @@ export default defineConfig({
         cleanSomeDirs()
     ],
     build: {
-        sourcemap: process.env.NODE_ENV !== "production",
+        sourcemap: true,
         outDir: '.',
         emptyOutDir: false,
             rollupOptions: {
@@ -52,6 +55,7 @@ export default defineConfig({
 
                 //UserDetails
                 'user_details/avatar_upload_user_details/ausd': './user_details/entries/avatar_upload_user_details.jsx',
+                'user_details/user_edit_details/ued': './user_details/entries/user_edit_details/user_edit_details.js'
             },
             output: {
                 entryFileNames: (chunkInfo) => {
