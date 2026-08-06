@@ -1,6 +1,9 @@
 # TYPING
 from typing import override
 
+# PSYCOPG
+from psycopg import Cursor
+
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
 from nvideos_web.core.entity.channel import Channel, ChannelInput, ChannelMetadata
@@ -21,6 +24,25 @@ from nvideos_web.impl.base_repository import PgRepositoryBase
 class PgChannelRepository(PgRepositoryBase, ChannelRepository):
     def __init__(self, dbContext: type[NewVideosDBContext]) -> None:
         super().__init__(dbContext=dbContext)
+
+    @override
+    def selectMyChannel(self, userId: int) -> Channel | None:
+        selectFields, selectFieldsOrder = NvSql.selectOder(ChannelMetadata.all)
+        stmt = NvSql.formatStmt(
+            "select {select_fields} from {table_name} where {user_id_field} = {user_id_value};",
+            select_fields=selectFields,
+            table_name=ChannelMetadata.tableName(),
+            user_id_field=ChannelMetadata.userId.field,
+            user_id_value=userId
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(selectFieldsOrder))
+            r = cur.execute(stmt)
+            result = r.fetchone()
+            if result is None:
+                return None
+
+            return ChannelMetadata.row(result)
 
     @override
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel:

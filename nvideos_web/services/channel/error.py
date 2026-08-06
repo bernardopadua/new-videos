@@ -12,3 +12,7 @@ class ChannelServiceChannelDescriptionIsInvalid(Exception):
 
 class ChannelServiceFailedToMoveTempImageToMedia(Exception):
     pass
+
+class ChannelServiceNoCurrentUser(Exception):
+    """ No CurrentUser informed when created the service """
+    pass

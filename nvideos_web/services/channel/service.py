@@ -22,7 +22,7 @@ from nvideos_web.services.base.error import InputDataIsNone
 from nvideos_web.services.channel.error import (
     ChannelServiceCurrentUserIsNone, ChannelServiceChannelDoesntExists,
     ChannelServiceNameIsInvalid, ChannelServiceChannelDescriptionIsInvalid,
-    ChannelServiceFailedToMoveTempImageToMedia
+    ChannelServiceFailedToMoveTempImageToMedia, ChannelServiceNoCurrentUser
 )
 
 @final
@@ -67,11 +67,6 @@ class ChannelService(BaseService[ChannelInput]):
         finally:
             self.resetData()
 
-    @override
-    def checkIdExists(self, idRegistry: int) -> Self:
-        self._checkExists: bool = self._chRep.checkIdExists(channelId=idRegistry)
-        return self
-
     def updateChannelById(self, idRegistry: int, /, *, inputData: ChannelInput | None = None) -> Channel:
         _inputData = self.getInputData() if inputData is None else inputData
         _auditData = self.fillAuditData().getAuditData()
@@ -83,6 +78,17 @@ class ChannelService(BaseService[ChannelInput]):
             return self._chRep.updateById(channelId=idRegistry, newChannelData=_inputData, auditData=_auditData)
         finally:
             self.resetData()
+
+    def doIAlreadyHaveChannel(self, /) -> Channel | None:
+        if not self.currentUser:
+            raise ChannelServiceNoCurrentUser("No current user informed.")
+
+        return self._chRep.selectMyChannel(self.currentUser)
+
+    @override
+    def checkIdExists(self, idRegistry: int) -> Self:
+        self._checkExists: bool = self._chRep.checkIdExists(channelId=idRegistry)
+        return self
 
     @override
     def getInputData(self) -> ChannelInput:

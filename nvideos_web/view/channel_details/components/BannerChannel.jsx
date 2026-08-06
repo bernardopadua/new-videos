@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 export default function BannerChannel({ bannerCoverUrl }) {    
-    const [bannerPreview, setBannerPreview] = useState(null);
+    const [bannerPreview, setBannerPreview] = useState(bannerCoverUrl.value);
     
     const handleChange = (e) => {
         const file = e.target.files[0];

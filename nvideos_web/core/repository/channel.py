@@ -10,6 +10,10 @@ from nvideos_web.core.entity.base.base_entity import AuditData
 
 class ChannelRepository(ABC):
     @abstractmethod
+    def selectMyChannel(self, userId: int) -> Channel | None:
+        ...
+
+    @abstractmethod
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel: 
         ...
     @abstractmethod

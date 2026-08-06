@@ -50,10 +50,50 @@ def channel_create():
             return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
         except Exception as e:
             return render_template("base/error.html", error=str(e))
-    #if
+    
+    try:
+        cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+        channel: Channel | None = cSrv.doIAlreadyHaveChannel()
+        if channel:
+            return redirect(url_for("channel_details.channel_detail", channel_id=channel.channelId))
+    except:
+        return render_template("base/error.html")
 
     return render_template("channel_details_edit.html")
 
-@channelDetailsBp.route("/channel/<int:channel_id>/edit")
+@channelDetailsBp.route("/channel/<int:channel_id>/edit", methods=["GET", "POST"])
 def channel_edit(channel_id):
-    return render_template("channel_details_edit.html", channel_id=channel_id)
+    if flaskRequest.method == "POST":
+        formData:dict[str,str] = flaskRequest.form
+        cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+
+        try:
+            channelCreated: Channel = cSrv.fillInputData(
+                channelName=formData.get("channelName"),
+                channelDescription=formData.get("channelDescription"),
+                
+            ).checkInputDataIsValid().createNewChannel()
+
+            channelCreated = cSrv.moveTempImagesToMedia(
+                channelId=channelCreated.channelId,
+                avatarTempName=\
+                    formData.get("avatarFileNameMediaServer") \
+                    if formData.get("avatarFileNameMediaServer") != channelCreated.channelAvatarUrl \
+                    else None,
+                coverTempName=\
+                    formData.get("bannerCoverImageUrl") \
+                    if formData.get("bannerCoverImageUrl") != channelCreated.channelImageUrl \
+                    else None
+            ).fillInputData().updateChannelById(channelCreated.channelId)
+
+            return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
+        except Exception as e:
+            return render_template("base/error.html", error=str(e))
+
+    try:
+        cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+        channel: Channel | None = cSrv.doIAlreadyHaveChannel()
+        if channel:
+            return render_template("channel_details_edit.html", ch=channel)
+    except Exception as e:
+        return render_template("base/error.html")

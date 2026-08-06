@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 export default function AvatarUpload({ avatarFileNameMediaServer }) {
-    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(avatarFileNameMediaServer.value);
     
     const handleChange = (e) => {
         const file = e.target.files[0];
