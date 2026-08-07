@@ -62,38 +62,40 @@ def channel_create():
     return render_template("channel_details_edit.html")
 
 @channelDetailsBp.route("/channel/<int:channel_id>/edit", methods=["GET", "POST"])
+@loginRequired
 def channel_edit(channel_id):
+    cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+    channel: Channel | None = cSrv.doIAlreadyHaveChannel()
+    
+    if channel is None:
+        return render_template("base/error.html", error="You cant edit a channel that doesn't exists.")
+
     if flaskRequest.method == "POST":
         formData:dict[str,str] = flaskRequest.form
-        cSrv: ChannelService = ChannelService(userId=session.get("userId"))
-
         try:
-            channelCreated: Channel = cSrv.fillInputData(
+            channelUpdated: Channel = cSrv.fillInputData(
                 channelName=formData.get("channelName"),
-                channelDescription=formData.get("channelDescription"),
-                
-            ).checkInputDataIsValid().createNewChannel()
+                channelDescription=formData.get("channelDescription")                
+            #TODO: admin edit will use this same endpoint.
+            ).checkInputDataIsValid().updateChannelById(channel.channelId) 
 
-            channelCreated = cSrv.moveTempImagesToMedia(
-                channelId=channelCreated.channelId,
+            channelUpdated = cSrv.moveTempImagesToMedia(
+                channelId=channelUpdated.channelId,
                 avatarTempName=\
                     formData.get("avatarFileNameMediaServer") \
-                    if formData.get("avatarFileNameMediaServer") != channelCreated.channelAvatarUrl \
+                    if formData.get("avatarFileNameMediaServer") != channel.channelAvatarUrl \
                     else None,
                 coverTempName=\
                     formData.get("bannerCoverImageUrl") \
-                    if formData.get("bannerCoverImageUrl") != channelCreated.channelImageUrl \
+                    if formData.get("bannerCoverImageUrl") != channelUpdated.channelImageUrl \
                     else None
-            ).fillInputData().updateChannelById(channelCreated.channelId)
+            ).fillInputData().updateChannelById(channelUpdated.channelId)
 
-            return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
+            return redirect(url_for("channel_details.channel_detail", channel_id=channelUpdated.channelId))
         except Exception as e:
             return render_template("base/error.html", error=str(e))
 
     try:
-        cSrv: ChannelService = ChannelService(userId=session.get("userId"))
-        channel: Channel | None = cSrv.doIAlreadyHaveChannel()
-        if channel:
-            return render_template("channel_details_edit.html", ch=channel)
+        return render_template("channel_details_edit.html", ch=channel)
     except Exception as e:
         return render_template("base/error.html")

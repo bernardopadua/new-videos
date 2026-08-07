@@ -113,15 +113,15 @@ int main(int regv, char** regc){
         }
         int dotPost = fileName.find_last_of('.');
         std::string ext = fileName.substr(dotPost);
-        std::string newFilePath = MEDIA_SERVER_BASE_PATH.string()+"channel/" + channelId + "/" + typeImage + "_" + channelId + ext;
+        std::string newFilePath = MEDIA_SERVER_BASE_PATH.string()+"channels/" + channelId + "/" + typeImage + "_" + channelId + ext;
         std::filesystem::rename(
             MEDIA_SERVER_TEMP_PATH.string()+fileName, 
             newFilePath
-        );
+        );  
 
         res.set_content("{ \
             \"success\":\"File moved successfully.\", \
-            \"imageUrl\":\"/channels/" + channelId + "/image/" + typeImage + "/" + typeImage + "_" + channelId + ext + "\" \
+            \"imageUrl\":\"/channel/" + channelId + "/image/" + typeImage + "/" + typeImage + "_" + channelId + ext + "\" \
             }", "application/json");
     });
 
