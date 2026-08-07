@@ -38,7 +38,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
         )
         paramsInsert = NvSql.parseSqlParams(stmt, inputObject=videoInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(allFieldsOrder))
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             cur.execute(stmt, params=paramsInsert)
             result = cur.fetchone()
             conn.commit()
