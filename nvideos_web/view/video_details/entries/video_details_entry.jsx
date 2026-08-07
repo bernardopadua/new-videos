@@ -3,6 +3,8 @@ import ReactDom from 'react-dom/client';
 import ThumbnailUpload from '../components/ThumbnailUpload';
 import VideoUpload from '../components/VideoUpload';
 
+import { videoUploadService } from './video_details_registration_editing';
+
 const thumbnailRoot = ReactDom.createRoot(document.getElementById("thumbnail-root"));
 thumbnailRoot.render(
     <React.StrictMode>
@@ -13,6 +15,6 @@ thumbnailRoot.render(
 const videoRoot = ReactDom.createRoot(document.getElementById("video-root"));
 videoRoot.render(
     <React.StrictMode>
-        <VideoUpload />
+        <VideoUpload videoUploadService={videoUploadService} />
     </React.StrictMode>
 );

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
-export default function VideoUpload() {
+export default function VideoUpload({ videoUploadService }) {
     const [videoLoaded, setVideoLoaded] = useState(false);
     const [nameSpan, setNameSpan] = useState("");
     const [sizeSpan, setSizeSpan] = useState("");
+    const [progress, setProgress] = useState(0);
 
     const handleChange = (e) => {
         setVideoLoaded(false);
+        setProgress(0);
         const file = e.target.files[0];
 
         if (file) {
@@ -17,6 +19,11 @@ export default function VideoUpload() {
             setVideoLoaded(true);
         }
     };
+
+    const videoPercent = useSyncExternalStore(
+        videoUploadService.subscribe,
+        videoUploadService.getPercent
+    );
     
     return (
         <div class="p-8 sm:p-10 rounded-3xl bg-surface/90 border border-white/10 backdrop-blur-md space-y-6 shadow-xl">
@@ -42,15 +49,28 @@ export default function VideoUpload() {
                             <span class="text-xs text-gray-500 mt-1">MP4, MKV, AVI, MOV or WEBM</span>
                         </div>)
                         :
-                        (<div id="videoInfo" class="flex flex-col items-center justify-center p-6 text-center">
+                        (<div id="videoInfo" class="w-full flex flex-col items-center justify-center p-6 text-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span class="text-sm font-semibold text-gray-200 mt-3 break-all">{nameSpan}</span>
-                            <span class="text-xs text-gray-500 mt-1 text-center">{sizeSpan}</span>
+                            <span class="text-xs text-gray-500 mt-1 text-center mb-4">{sizeSpan}</span>
+                            
+                            {videoPercent > 0 && (
+                            <div class="w-full mt-4 space-y-2">
+                                <div class="flex justify-between text-xs text-gray-400 font-semibold">
+                                    <span>Uploading...</span>
+                                    <span>{videoPercent}%</span>
+                                </div>
+                                <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div class="bg-brand h-full transition-all duration-300 rounded-full" style={{ width: `${videoPercent}%` }}></div>
+                                </div>
+                            </div>
+                            )}
                         </div>)
                     }
                     </div>
+                    
             </label>
         </div>
     );

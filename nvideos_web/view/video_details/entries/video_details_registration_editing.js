@@ -1,14 +1,16 @@
-import { VideoUploadService } from "./video_upload/video_upload.js";
+import VideoUploadService from './video_upload/video_upload';
 
 const videoForm = document.getElementById("video-form");
+export const videoUploadService = new VideoUploadService();
 videoForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    const videoUploadService = new VideoUploadService();
-    videoUploadService.doVideoUpload((r) => {
+    
+    /*videoUploadService.doVideoUpload((r) => {
         console.log("video finished");
-    });
-    videoUploadService.getVideoUploadStatus(() => {
-        console.log("Update percent");
+    });*/
+    videoUploadService.initVideoUpload();
+    videoUploadService.getVideoUploadStatus((r) => {
+        console.log('finished percent:: ', r);
     });
 });

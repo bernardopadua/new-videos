@@ -1,10 +1,33 @@
-class VideoUploadService {
+export default class VideoUploadService {
     constructor() {
         this._videoFile = document.getElementById("video_file");
         this._videoUUID = null;
+
+        this._percent = 0;
+        this._listeners = new Set();
+    }
+
+    getPercent = () => {
+        return this._percent;
+    }
+
+    subscribe = (calllback) => {
+        this._listeners.add(calllback);
+        return () => { this._listeners.delete(calllback); }
+    }
+
+    setPercent(percent) {
+        this._percent = percent;
+        this._listeners.forEach(listener => {
+            listener(this._percent);
+        });
     }
 
     async initVideoUpload() {
+        if (!this._videoFile) {
+            this._videoFile = document.getElementById("video_file");
+        }
+
         const urlToUpload = import.meta.env.VITE_URL_MEDIA_SERVER;
         const file = this._videoFile.files[0];
 
@@ -54,7 +77,7 @@ class VideoUploadService {
         });
     }
 
-    async getVideoUploadStatus(funcCallback = null) {
+    async getVideoUploadStatus() {
         const urlGetStatus = import.meta.env.VITE_URL_MEDIA_SERVER + "/video/upload/status/" + this._videoUUID;
         const response = await fetch(urlGetStatus);
         
@@ -64,11 +87,13 @@ class VideoUploadService {
         }
 
         const r = await response.json();
-        if (r.percent != 100) {
-            if (funcCallback) {
-                funcCallback();
-            }
-            this.getVideoUploadStatus(funcCallback);
+        if (r.percent >= 0 && r.percent < 100) {
+            this.setPercent(r.percent);
+            return await this.getVideoUploadStatus();
+        } else if (r.percent == 100){
+            this.setPercent(r.percent);
+            return true;
         }
+        return false;
     }
-}
+};

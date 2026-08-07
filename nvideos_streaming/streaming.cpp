@@ -56,6 +56,14 @@ int main(int regv, char** regc){
     /*
         VIDEO
     */
+    //Damn security stuff...
+    srv.Options("/video/init/upload", [](const httplib::Request &req, httplib::Response &res){
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+        res.set_header("Access-Control-Allow-Headers", "Content-Type");
+        res.set_content("", "text/plain");
+    });
+    //Init video upload
     srv.Post("/video/init/upload", [](const httplib::Request &req, httplib::Response &res){
         sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
         nlohmann::json payload;
@@ -89,6 +97,7 @@ int main(int regv, char** regc){
         } while(redis.exists("video_upload:"+UUID));
 
         redis.set("video_upload:"+UUID, videoUpload.dump(), std::chrono::minutes(1));
+
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content("{\"uuid\":\""+UUID+"\"}", "application/json");
     });
@@ -123,7 +132,7 @@ int main(int regv, char** regc){
         [&fileUpload, &redis, &videoUUID](const char *data, size_t size){
             fileUpload.write(data, size);
             auto fileUploaded = redis.get("video_upload:"+videoUUID);
-            nlohmann::json j = nlohmann::json::parse(fileUploaded);
+            nlohmann::json j = nlohmann::json::parse(*fileUploaded);
             j["uploadedSize"] = j["uploadedSize"].get<int>() + size;
             redis.set("video_upload:"+videoUUID, j.dump(), std::chrono::minutes(1));
 
