@@ -8,7 +8,7 @@ export default class AvatarUploadMediaServer {
         const urlToUpload = import.meta.env.VITE_URL_MEDIA_SERVER;
         
         try {
-            const response = await fetch(urlToUpload + "upload/avatar/temp", {
+            const response = await fetch(urlToUpload + "/upload/avatar/temp", {
                 method: "POST",
                 body: formData
             });

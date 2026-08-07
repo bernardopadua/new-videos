@@ -1,6 +1,9 @@
 # TYPING
 from typing import override
 
+# PSYCOPG
+from psycopg import Cursor
+
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
 from nvideos_web.core.entity.channel import Channel, ChannelInput, ChannelMetadata
@@ -23,11 +26,29 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
         super().__init__(dbContext=dbContext)
 
     @override
-    def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel:
-        inputFieldsInsert, inputParamsFields, inputOrder = NvSql.insertFieldsOrder(ChannelMetadata, channelInputData)
-        auditFieldsInsert, auditParamsFields, auditOrder = NvSql.insertFieldsOrder(ChannelMetadata, auditInputData)
+    def selectMyChannel(self, userId: int) -> Channel | None:
+        selectFields, selectFieldsOrder = NvSql.selectOder(ChannelMetadata.all)
+        stmt = NvSql.formatStmt(
+            "select {select_fields} from {table_name} where {user_id_field} = {user_id_value};",
+            select_fields=selectFields,
+            table_name=ChannelMetadata.tableName(),
+            user_id_field=ChannelMetadata.userId.field,
+            user_id_value=userId
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(selectFieldsOrder))
+            r = cur.execute(stmt)
+            result = r.fetchone()
+            if result is None:
+                return None
 
-        fieldsOrder = inputOrder + auditOrder
+            return ChannelMetadata.row(result)
+
+    @override
+    def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel:
+        inputFieldsInsert, inputParamsFields, _ = NvSql.insertFieldsOrder(ChannelMetadata, channelInputData)
+        auditFieldsInsert, auditParamsFields, _ = NvSql.insertFieldsOrder(ChannelMetadata, auditInputData)
+        _, allFieldsOrder = NvSql.selectOder(ChannelMetadata.all)
 
         stmt = NvSql.formatStmt(
             """
@@ -35,7 +56,7 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             ({fields_input},{fields_audit})
             values
             ({input_params},{audit_params})
-            returning {fields_input},{fields_audit};
+            returning *;
             """,
             table_name=ChannelMetadata.tableName(),
             fields_input=inputFieldsInsert,
@@ -45,7 +66,7 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
         )
         paramsParsed = NvSql.parseSqlParams(stmt, inputObject=channelInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory(fieldsOrder))
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             _ = cur.execute(stmt, params=paramsParsed)
             result = cur.fetchone()
             conn.commit()
@@ -75,7 +96,7 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             update {table_name} 
                set {channel_fields}, {audit_fields} 
              where {channel_id} = {channel_id_value}
-             returning {sql_Fields_return};
+             returning {sql_fields_return};
             """,
             table_name=ChannelMetadata.tableName(),
             channel_fields=channelFields,
@@ -88,7 +109,7 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
     
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(sqlFieldsOrder))
-            cur.execute(stmt)
+            _ = cur.execute(stmt, params=paramsUpdate)
             result = cur.fetchone()
             conn.commit()
             return ChannelMetadata.row(result)
