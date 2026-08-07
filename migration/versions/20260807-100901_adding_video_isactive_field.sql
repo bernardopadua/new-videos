@@ -1,0 +1,1 @@
+ALTER TABLE video ADD COLUMN video_is_active bool NOT NULL DEFAULT true;

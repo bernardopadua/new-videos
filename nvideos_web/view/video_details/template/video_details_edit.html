@@ -22,14 +22,21 @@
 
     <!-- EDIT FORM -->
     {% set formUrl = url_for('video_details.video_detail_edit') if isCreating else url_for('video_details.video_detail_edit', video_key=vd.videoKey) %}
-    <form action="{{ formUrl }}" method="POST" enctype="multipart/form-data" class="space-y-10">
+    <form id="video-form" action="{{ formUrl }}" method="POST" enctype="multipart/form-data" class="space-y-10">
         
         <!-- SECTION 1: THUMBNAIL UPLOAD COMPONENT (16:9 RECTANGLE) -->
         <div id="thumbnail-root"></div>
         <input type="hidden" id="videoThumbUrl" name="videoThumbUrl" value="">
-        <script type="module" src="{{ url_for('video_details.static', filename='dist/te.js') }}"></script>
 
-        <!-- SECTION 2: FORM FIELDS -->
+        {% if isCreating %}
+        <!-- SECTION 2: VIDEO FILE UPLOAD -->
+        <div id="video-root"></div>
+        <input type="hidden" id="videoKey" name="videoKey" value="">
+        {% end %}
+
+        <script type="module" src="{{ url_for('video_details.static', filename='dist/vde.js') }}"></script>
+
+        <!-- SECTION 3: FORM FIELDS -->
         <div class="p-8 sm:p-10 rounded-3xl bg-surface/90 border border-white/10 backdrop-blur-md space-y-8 shadow-xl">
             
             <h3 class="text-lg font-bold text-white border-b border-white/10 pb-4 flex items-center gap-2">
@@ -81,6 +88,7 @@
                     <select id="videoPermission" name="videoPermission" 
                         class="w-full bg-[#121212] border border-white/10 px-5 py-3.5 rounded-xl text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm [color-scheme:dark]">
                         <option value="P" selected>Public (Everyone can search and view)</option>
+                        <option value="S">Subscriber (Only subscribers can view)</option>
                         <option value="U">Unlisted (Anyone with link can view)</option>
                         <option value="R">Private (Only you can view)</option>
                     </select>
@@ -103,21 +111,4 @@
 
     </form>
 </div>
-
-<script>
-function previewThumbnail(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('thumbPreview');
-            const placeholder = document.getElementById('thumbPlaceholder');
-            preview.src = e.target.result;
-            preview.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-        }
-        reader.readAsDataURL(file);
-    }
-}
-</script>
 {% endblock %}

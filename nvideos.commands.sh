@@ -17,6 +17,9 @@ wnvideos.export_env_vars(){
 wnvideos.start_postgres(){
     sudo bash -c "docker compose up postgres -d"
 }
+wnvideos.start_redis(){
+    sudo bash -c "docker compose up redis -d"
+}
 wnvideos.kill_any_pg_and_up_nvideo_pg(){
     PG_DB_CONTAINER_NAME="nvideos_postgres"
     PG_DB_PORT="5432"

@@ -62,7 +62,7 @@ export default defineConfig({
                 'channel_details/channel_image_upload_editcreate/ciec': './channel_details/entries/channel_image_upload_editcreate.js',
 
                 //VideoDetails
-                'video_details/thumbnail_entry/te': './video_details/entries/thumbnail_entry.jsx',
+                'video_details/video_details_entry/vde': './video_details/entries/video_details_entry.jsx',
             },
             output: {
                 entryFileNames: (chunkInfo) => {

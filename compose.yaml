@@ -12,6 +12,18 @@ services:
         networks:
             nvideos_net:
                 ipv4_address: 172.12.0.16
+    redis:
+        container_name: nvideos_redis
+        image: redis:alpine
+        restart: always
+        ports:
+            - "6379:6379"
+        volumes:
+            - ./.redis_data:/data
+        command: redis-server --save 60 1 --loglevel notice
+        networks:
+            nvideos_net:
+                ipv4_address: 172.12.0.17
 
 networks:
   nvideos_net:

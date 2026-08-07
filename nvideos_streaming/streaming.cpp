@@ -1,11 +1,18 @@
+// Deps
 #include "deps/httplib.h"
+#include "deps/json.hpp"
+
+// Libs
+#include <cstddef>
+#include <sw/redis++/redis++.h>
+
+// System
 #include <cstdint>
 #include <cstdlib>
 #include <iomanip>
 #include <ostream>
 #include <string>
 #include <chrono>
-
 #include <filesystem>
 
 /*
@@ -18,6 +25,7 @@ std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
 std::filesystem::path MEDIA_SERVER_TEMP_PATH = "/tmp/";
 
 #define DOMAIN_WEB_SERVER "http://localhost:8080"
+#define REDIS_ADDRESS "tcp://localhost:6379"
 
 std::string generateHashFileName(std::string ext){
     auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
@@ -44,6 +52,144 @@ int main(int regv, char** regc){
         std::cerr << "DOMAIN_MEDIA_SERVER is not set." << std::endl;
         return 1;
     }
+
+    /*
+        VIDEO
+    */
+    srv.Post("/video/init/upload", [](const httplib::Request &req, httplib::Response &res){
+        sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
+        nlohmann::json payload;
+
+        try {
+            payload = nlohmann::json::parse(req.body);
+        } catch(nlohmann::json::parse_error& e){
+            res.status = 400;
+            res.set_content("{\"error\": \"Failed to parse JSON body\"}", "application/json");
+            return;
+        }
+
+        std::string fileName = payload["fileName"];
+        int fileSize = payload["fileSize"];
+
+        if (fileName.empty() || !fileSize || fileSize <= 0){
+            res.status = 400;
+            res.set_content("{\"error\": \"JSON is not valid\"}", "application/json");
+            return;
+        }
+
+        nlohmann::json videoUpload = {
+            {"name", fileName},
+            {"totalSize", fileSize},
+            {"uploadedSize", 0}
+        };
+
+        std::string UUID;
+        do {
+            UUID = generateHashFileName("");
+        } while(redis.exists("video_upload:"+UUID));
+
+        redis.set("video_upload:"+UUID, videoUpload.dump(), std::chrono::minutes(1));
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content("{\"uuid\":\""+UUID+"\"}", "application/json");
+    });
+    
+    //Upload video file
+    srv.Post("/video/upload/([^/]+)", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
+        sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
+        const std::string videoUUID = req.matches[1];
+        std::ofstream fileUpload;
+
+        reader([&videoUUID, &res, &fileUpload](const httplib::FormData &fileForm){
+            int dotPos = fileForm.filename.find_last_of(".");
+            std::string ext = fileForm.filename.substr(dotPos+1);
+            
+            if (std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / (videoUUID + "." + ext))){
+                res.status = 400;
+                res.set_content("{\"error\":\"Video already exists\"}", "application/json");
+
+                return false;
+            }
+
+            fileUpload.open(MEDIA_SERVER_TEMP_PATH / (videoUUID + "." + ext), std::ios::binary);
+            if (!fileUpload.is_open()){
+                res.status = 500;
+                res.set_content("{\"error\":\"Failed to open file for writing\"}", "application/json");
+
+                return false;
+            }
+
+            return true;
+        },
+        [&fileUpload, &redis, &videoUUID](const char *data, size_t size){
+            fileUpload.write(data, size);
+            auto fileUploaded = redis.get("video_upload:"+videoUUID);
+            nlohmann::json j = nlohmann::json::parse(fileUploaded);
+            j["uploadedSize"] = j["uploadedSize"].get<int>() + size;
+            redis.set("video_upload:"+videoUUID, j.dump(), std::chrono::minutes(1));
+
+            return true;
+        });
+
+        fileUpload.close();
+        res.set_content("{\"success\":true}", "application/json");
+    });
+    srv.Get("/video/upload/status/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
+        const std::string videoUUID = req.matches[1];
+        auto fileUploaded = redis.get("video_upload:"+videoUUID);
+        
+        if (!fileUploaded.has_value()) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Video not found\"}", "application/json");
+            return;
+        }
+        
+        nlohmann::json j = nlohmann::json::parse(*fileUploaded);
+        int uploadedSize = j["uploadedSize"] = j["uploadedSize"].get<int>();
+        int totalSize = j["totalSize"].get<int>();
+        int percent = (uploadedSize / totalSize) * 100;
+
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content("{\"percent\":"+std::to_string(percent)+"}", "application/json");
+    });
+
+    //Upload video thumb to media server
+    srv.Post("/video/([^/]+)/upload/thumb/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
+        const std::string videoKey = req.matches[1];
+
+        std::ofstream fileUpload;
+        std::string fileName;
+        std::string nameTempFile;
+
+        reader([&fileUpload, &nameTempFile, &fileName](const httplib::FormData &fileForm){
+            int posDot = fileForm.filename.find_last_of(".");
+            do {
+                std::string ext = fileForm.filename.substr(posDot);
+                fileName = generateHashFileName(ext);
+                nameTempFile = "/tmp/"+fileName;
+                std::cout << "FILENAME:" << nameTempFile << std::endl;
+            } while (std::filesystem::exists(nameTempFile));
+
+            fileUpload.open(nameTempFile, std::ios::binary);
+
+            /*std::cout << fileForm.filename << std::endl;
+            std::cout << fileForm.content << std::endl;
+            std::cout << fileForm.content_type << std::endl;*/
+
+            return true;
+        }, [&fileUpload](const char* data, size_t size){
+            fileUpload.write(data, size);
+            return true;
+        });
+        fileUpload.close();
+
+        std::string jsonReturn = "{\"filename\":\""+fileName+"\"}";
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content(jsonReturn, "application/json");
+    });
+    /*
+        END VIDEO
+    */
 
     /*
         CHANNEL IMAGES
