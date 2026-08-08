@@ -31,12 +31,12 @@
 
         <!-- SECTION 1: THUMBNAIL UPLOAD COMPONENT (16:9 RECTANGLE) -->
         <div id="thumbnail-root"></div>
-        <input type="hidden" id="videoThumbUrl" name="videoThumbUrl" value="">
+        <input type="hidden" id="videoThumbTempFilename" name="videoThumbTempFilename" value="">
 
         {% if isCreating %}
         <!-- SECTION 2: VIDEO FILE UPLOAD -->
         <div id="video-root"></div>
-        <input type="hidden" id="videoKey" name="videoKey" value="">
+        <input type="hidden" id="videoTempFilename" name="videoTempFilename" value="">
         {% endif %}
 
         <script type="module" src="{{ url_for('video_details.static', filename='dist/vdre.js') }}"></script>

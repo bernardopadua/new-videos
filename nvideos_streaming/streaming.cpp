@@ -56,7 +56,7 @@ int main(int regv, char** regc){
     /*
         VIDEO
     */
-    //Damn security stuff...
+    //Damn security stuff... praise security stuff. :)
     srv.Options("/video/init/upload", [](const httplib::Request &req, httplib::Response &res){
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_header("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -101,16 +101,20 @@ int main(int regv, char** regc){
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content("{\"uuid\":\""+UUID+"\"}", "application/json");
     });
-    
     //Upload video file
     srv.Post("/video/upload/([^/]+)", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
         sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
         const std::string videoUUID = req.matches[1];
+        std::string ext;
         std::ofstream fileUpload;
 
-        reader([&videoUUID, &res, &fileUpload](const httplib::FormData &fileForm){
+
+        //Avoiding CORS
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+
+        reader([&videoUUID, &res, &fileUpload, &ext](const httplib::FormData &fileForm){
             int dotPos = fileForm.filename.find_last_of(".");
-            std::string ext = fileForm.filename.substr(dotPos+1);
+            ext = fileForm.filename.substr(dotPos+1);
             
             if (std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / (videoUUID + "." + ext))){
                 res.status = 400;
@@ -134,14 +138,16 @@ int main(int regv, char** regc){
             auto fileUploaded = redis.get("video_upload:"+videoUUID);
             nlohmann::json j = nlohmann::json::parse(*fileUploaded);
             j["uploadedSize"] = j["uploadedSize"].get<int>() + size;
+
             redis.set("video_upload:"+videoUUID, j.dump(), std::chrono::minutes(1));
 
             return true;
         });
 
         fileUpload.close();
-        res.set_content("{\"success\":true}", "application/json");
+        res.set_content("{\"success\":true, \"filename\": \""+(videoUUID + "." + ext)+"\"}", "application/json");
     });
+    //Get upload status
     srv.Get("/video/upload/status/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
         sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
         const std::string videoUUID = req.matches[1];
@@ -156,16 +162,14 @@ int main(int regv, char** regc){
         nlohmann::json j = nlohmann::json::parse(*fileUploaded);
         int uploadedSize = j["uploadedSize"] = j["uploadedSize"].get<int>();
         int totalSize = j["totalSize"].get<int>();
-        int percent = (uploadedSize / totalSize) * 100;
+        int percent = (uploadedSize*100) / totalSize;
 
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content("{\"percent\":"+std::to_string(percent)+"}", "application/json");
     });
 
     //Upload video thumb to media server
-    srv.Post("/video/([^/]+)/upload/thumb/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
-        const std::string videoKey = req.matches[1];
-
+    srv.Post("/video/upload/thumb/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
         std::ofstream fileUpload;
         std::string fileName;
         std::string nameTempFile;

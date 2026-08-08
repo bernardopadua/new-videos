@@ -1,3 +1,5 @@
+import { ssrModuleExportsKey } from "vite/module-runner";
+
 export default class VideoUploadService {
     constructor() {
         this._videoFile = document.getElementById("video_file");
@@ -70,14 +72,21 @@ export default class VideoUploadService {
     
     async doVideoUpload(funcCallback = null) {
         await this.initVideoUpload();
-        this.uploadVideo().then((r) => {
-            if (funcCallback) {
-                funcCallback(r);
-            }
-        });
+        const jsonReturn = await this.uploadVideo();
+
+        if (funcCallback) {
+            funcCallback(jsonReturn);
+        }
     }
 
     async getVideoUploadStatus() {
+        if (!this._videoUUID) {
+            await new Promise((resolve) => { setTimeout(resolve, 2000); });
+            console.error("Error getVideoUploadStatus: video uuid is null");
+            this.getVideoUploadStatus();
+            return;
+        }
+
         const urlGetStatus = import.meta.env.VITE_URL_MEDIA_SERVER + "/video/upload/status/" + this._videoUUID;
         const response = await fetch(urlGetStatus);
         
@@ -89,7 +98,7 @@ export default class VideoUploadService {
         const r = await response.json();
         if (r.percent >= 0 && r.percent < 100) {
             this.setPercent(r.percent);
-            return await this.getVideoUploadStatus();
+            await this.getVideoUploadStatus();
         } else if (r.percent == 100){
             this.setPercent(r.percent);
             return true;
