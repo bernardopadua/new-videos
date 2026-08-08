@@ -34,7 +34,7 @@ export default function VideoUpload({ videoUploadService }) {
                 <p className="text-xs sm:text-sm text-gray-400 mt-1">Select the video file you want to upload (.mp4, .mkv, .mov, etc.).</p>
             </div>
             
-            <label htmlFor="video_file" className="relative group cursor-pointer block">
+            <label id="video-upload-block" htmlFor="video_file" className="relative group cursor-pointer block">
                 <input id="video_file" name="video_file" type="file" accept="video/*" className="sr-only"
                     onChange={handleChange}
                 />
