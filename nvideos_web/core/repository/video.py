@@ -15,6 +15,9 @@ class VideoRepository(ABC):
     def checkIdExists(self, videoId: int) -> bool: 
         ...
     @abstractmethod
+    def checkKeyExists(self, videoKey: str) -> bool: 
+        ...
+    @abstractmethod
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 
         ...
     @abstractmethod

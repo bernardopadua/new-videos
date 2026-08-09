@@ -22,6 +22,8 @@ class Video(AuditData, BaseModelData):
     userId: int = field(default=0)
     videoKey: str = field(default="")
     videoIsActive: bool = field(default=True)
+    videoStatus: str = field(default="")
+    videoTempFilename: str = field(default="")
 
 @dataclass
 class VideoInput(BaseInput):
@@ -36,6 +38,8 @@ class VideoInput(BaseInput):
     userId: int | None = field(default=None)
     videoKey: str | None = field(default=None)
     videoIsActive: bool | None = field(default=None)
+    videoStatus: str | None = field(default=None)
+    videoTempFilename: str | None = field(default=None)
 
 @final
 class VideoMetadata(
@@ -58,3 +62,5 @@ class VideoMetadata(
     userId: ModelField = ModelField("user_id")
     videoKey: ModelField = ModelField("video_key")
     videoIsActive: ModelField = ModelField("video_is_active")
+    videoStatus: ModelField = ModelField("video_status")
+    videoTempFilename: ModelField = ModelField("video_temp_filename")

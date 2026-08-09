@@ -50,13 +50,28 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
     @override
     def checkIdExists(self, videoId: int) -> bool: 
         stmt = NvSql.formatStmt(
-            "select 1 from {table_name} where {video_column_name} = {value};",
+            "select 1 from {table_name} where {video_id} = {video_id_value};",
             table_name=VideoMetadata.tableName(),
-            video_column_name=VideoMetadata.videoId.field,
-            value=videoId
+            video_id=VideoMetadata.videoId.field,
+            video_id_value=videoId
         )
         with self._db.getConn() as conn:
             r: Cursor = conn.execute(stmt)
+            return r.rowcount > 0
+
+    @override
+    def checkKeyExists(self, videoKey: str) -> bool: 
+        paramVideoKey, videoKeyValue = NvSql.createParam("videoKey", videoKey)
+        stmt = NvSql.formatStmt(
+            """
+            select 1 from {table_name} where {videoKey_field} = {videoKey_value}; 
+            """,
+            table_name=VideoMetadata.tableName(),
+            videoKey_field=VideoMetadata.videoKey.field,
+            videoKey_value=paramVideoKey
+        )
+        with self._db.getConn() as conn:
+            r: Cursor = conn.execute(stmt, params=videoKeyValue)
             return r.rowcount > 0
 
     @override

@@ -1,3 +1,6 @@
+# FLASK
+from flask import current_app as app
+
 # TYPING
 from typing import Self, override, final, cast
 
@@ -5,15 +8,22 @@ from typing import Self, override, final, cast
 from nvideos_web.core.entity.video import VideoInput, Video
 
 # CONSTANTS
-from nvideos_web.core.entity.base.constants import UserPermissions
+from nvideos_web.core.entity.base.constants import UserPermissions,VideoStatus
 
 # SERVICES
 from nvideos_web.services.base.service import BaseService
 
 # ERROR
 from nvideos_web.services.video.error import (
-    VideoServiceNoVideoInput, VideoServiceVideoPermissionIsInvalid
+    VideoServiceNoVideoInput, VideoServiceVideoPermissionIsInvalid,
+    VideoServiceChannelIdIsNone, VideoServiceVideoKeyIsNone,
+    VideoServiceFailedToMoveTempVideoAndThumb, VideoServiceNoUserInput,
+    VideoServiceVideoTitleIsNone, VideoServiceVideoTitleIsInvalid,
+    VideoServiceVideoDescriptionIsInvalid, VideoServiceVideoDescriptionIsNone,
+    VideoServiceVideoTagsIsInvalid, VideoServiceVideoTagsIsNone,
+    VideoServiceVideoDoesntExists
 )
+from nvideos_web.services.base.error import InputDataIsNone
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
@@ -26,21 +36,71 @@ class VideoService(BaseService[VideoInput]):
     def __init__(
         self, 
         *,
-        userId: int | None = None, 
+        userId: int | None = None,
+        channelId: int | None = None,
         dbContext: type[NewVideosDBContext] | None = None
     ) -> None:
         super().__init__(currentUser=userId)
         #mypy doesn't understand inline if
         if dbContext is None:
             dbContext=NewVideosDBContext
-            
+        
+        self._channelId: int | None = channelId
+
         self._videoRep: PgVideoRepository = PgVideoRepository(dbContext=dbContext)
 
         self._videoKey: str | None = None
         self._videoPermission: str | None = None
 
-    def generateCheckVideoKey(self, videoKey: str) -> str:
-        ...
+        self._videoThumbnailUrl: str | None = None
+        self._videoTempFilename: str | None = None
+
+    def generateCheckVideoKey(self) -> Self:
+        import hashlib, datetime
+        if not self._channelId:
+            raise VideoServiceChannelIdIsNone("The channel service is missing channel id.")
+        
+        randomData: str = datetime.datetime.now().isoformat() + str(self._channelId)
+        
+        while True:
+            self._videoKey = hashlib.md5(randomData.encode("utf-8")).hexdigest()[:11]
+            if not self._videoRep.checkKeyExists(self._videoKey):
+                return self
+
+    def moveTempFilesToNewPath(self, *, 
+        videoThumbnailTempFilename: str | None, 
+        videoTempFilename: str | None,
+        channelId: int | None
+    ) -> Self:
+        # I'm maintaining this request because is a simple task, is not CPU bound, it's just a MOVE.
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from typing import cast
+        import json
+
+        if not channelId and not self._channelId:
+            raise VideoServiceChannelIdIsNone("The channel service is missing channel id.")
+        elif self._channelId:
+            channelId = self._channelId
+
+        if not self._videoKey:
+            raise VideoServiceVideoKeyIsNone("The video key is None.")
+
+        req: Request = Request(
+            url=f"{app.config['DOMAIN_MEDIA_SERVER']}/video/move/file/temp/{self._videoKey}/{videoTempFilename}/{videoThumbnailTempFilename}", 
+            method="POST"
+        )
+        try:
+            with urlopen(req) as response:
+                bResponse: bytes = cast(bytes, response.read())
+                jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
+                self._videoThumbnailUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("thumbnailfilename")
+                self._videoTempFilename = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("videofilename")
+                return self
+        except HTTPError:
+            #add logger
+            #_: bytes = e.read()
+            raise VideoServiceFailedToMoveTempVideoAndThumb("The media server couldn't move the temp video and thumbnail to media.")
 
     def translateVideoPermission(self, videoPermission: str | None) -> Self:
         options: list[str] = ["P", "S", "U", "R"]
@@ -61,19 +121,19 @@ class VideoService(BaseService[VideoInput]):
 
     @override
     def checkIdExists(self, idRegistry: int) -> Self:
-        ...
-
-    @override
-    def getInputData(self) -> VideoInput:
-        ...
+        self._checkExists: bool = self._videoRep.checkIdExists(videoId=idRegistry)
+        return self
 
     def createNewVideo(self, *, userInput: VideoInput | None = None) -> Video:
         self.insertingMode()
         auditData = self.fillAuditData().getAuditData()
-        userInput = userInput if userInput else self._filledInputData
+        userInput = userInput if userInput is not None else self._filledInputData
 
         if not userInput:
             raise VideoServiceNoVideoInput("No video input. Verify if you are setting the video input.")
+
+        if userInput.videoStatus is None:
+            userInput.videoStatus=VideoStatus.P_UPLOAD.value
 
         try:
             return self._videoRep.create(
@@ -82,6 +142,66 @@ class VideoService(BaseService[VideoInput]):
             )
         finally:
             self.resetData()
+
+    def updateVideoById(self, videoId: int, updatedByUserId: int | None = None) -> Video:
+        self.updatingMode()
+        auditData = self.fillAuditData(
+            updatedBy=self.currentUser if self.currentUser else updatedByUserId
+        ).getAuditData()
+        inputData = self.getInputData()
+
+        try:
+            if not self.checkIdExists(idRegistry=videoId).getCheckIdExists():
+                raise VideoServiceVideoDoesntExists("The user you trying to update doesn't exists")
+
+            return self._videoRep.updateById(
+                videoId=videoId,
+                auditData=auditData,
+                newVideoData=inputData
+            )
+        finally:
+            self.resetData()
+
+    def deleteVideoById(self, videoId: int, updatedByUserId: int | None = None) -> Video:
+        self.updatingMode()
+        auditData = self.fillAuditData(
+            updatedBy=self.currentUser if self.currentUser else updatedByUserId
+        ).getAuditData()
+
+        try:
+            if not self.checkIdExists(idRegistry=videoId).getCheckIdExists():
+                raise VideoServiceVideoDoesntExists("The user you trying to update doesn't exists")
+
+            return self._videoRep.delete(videoId, auditData)
+        finally:
+            self.resetData()
+
+    def checkInputDataIsValid(self) -> Self:
+        if not self._filledInputData:
+            raise VideoServiceNoUserInput("The input data is missing.")
+        
+        if self._filledInputData.videoTitle is None:
+            raise VideoServiceVideoTitleIsNone("The video title is missing.")
+        elif len(self._filledInputData.videoTitle) <= 3:
+            raise VideoServiceVideoTitleIsInvalid("The video title has less than 4 characters.")
+
+        if self._filledInputData.videoDescription is None:
+            raise VideoServiceVideoDescriptionIsNone("The video description is missing.")
+        elif len(self._filledInputData.videoDescription) < 20:
+            raise VideoServiceVideoDescriptionIsInvalid("The video description has less than 20 characters.")
+
+        if self._filledInputData.videoTags is None:
+            raise VideoServiceVideoTagsIsNone("The video tags is missing.")
+        elif len(self._filledInputData.videoTags) < 2:
+            raise VideoServiceVideoTagsIsInvalid("The video must have at least 1 tag.")
+
+        return self
+
+    @override
+    def getInputData(self) -> VideoInput:
+        if self._filledInputData is None:
+            raise InputDataIsNone(InputDataIsNone.genericError())
+        return self._filledInputData
 
     @override
     def fillInputData(self, 
@@ -96,7 +216,9 @@ class VideoService(BaseService[VideoInput]):
         channelId: int | None = None,
         userId: int | None = None,
         videoKey: str | None = None,
-        videoIsActive: bool | None = True
+        videoIsActive: bool | None = True,
+        videoStatus: str | None = None,
+        videoTempFilename: str | None = None
     ) -> Self:
         
         if self._videoPermission:
@@ -105,6 +227,17 @@ class VideoService(BaseService[VideoInput]):
 
         if self.currentUser:
             userId = self.currentUser
+
+        if self._channelId:
+            channelId = self._channelId
+
+        if self._videoThumbnailUrl:
+            videoThumbUrl=self._videoThumbnailUrl
+            self._videoThumbnailUrl=None
+
+        if self._videoTempFilename:
+            videoTempFilename=self._videoTempFilename
+            self._videoTempFilename=None
 
         self._filledInputData = VideoInput(
             videoTitle=videoTitle,
@@ -117,7 +250,42 @@ class VideoService(BaseService[VideoInput]):
             channelId=channelId,
             userId=userId,
             videoKey=videoKey,
-            videoIsActive=videoIsActive
+            videoIsActive=videoIsActive,
+            videoStatus=videoStatus,
+            videoTempFilename=videoTempFilename
+        )
+
+        return self
+    
+    def fillCleanInputData(self, 
+        /, *,
+        videoTitle: str | None = None,
+        videoDescription: str | None = None,
+        videoTimeDuration: int | None = None,
+        videoViewCount: int | None = None,
+        videoThumbUrl: str | None = None,
+        videoTags: list[str] | None = None,
+        videoPermission: str | None = None,
+        channelId: int | None = None,
+        userId: int | None = None,
+        videoKey: str | None = None,
+        videoIsActive: bool | None = True,
+        videoStatus: str | None = None
+    ) -> Self:
+
+        self._filledInputData = VideoInput(
+            videoTitle=videoTitle,
+            videoDescription=videoDescription,
+            videoTimeDuration=videoTimeDuration,
+            videoViewCount=videoViewCount,
+            videoThumbUrl=videoThumbUrl,
+            videoTags=videoTags,
+            videoPermission=videoPermission,
+            channelId=channelId,
+            userId=userId,
+            videoKey=videoKey,
+            videoIsActive=videoIsActive,
+            videoStatus=videoStatus
         )
 
         return self

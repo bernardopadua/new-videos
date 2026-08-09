@@ -39,6 +39,7 @@ std::string generateHashFileName(std::string ext){
 
 int main(int regv, char** regc){
     httplib::Server srv;
+    sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
     const char* sss = std::getenv("DOMAIN_MEDIA_SERVER");
 
     if (sss == nullptr){
@@ -65,7 +66,6 @@ int main(int regv, char** regc){
     });
     //Init video upload
     srv.Post("/video/init/upload", [](const httplib::Request &req, httplib::Response &res){
-        sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
         nlohmann::json payload;
 
         try {
@@ -102,8 +102,7 @@ int main(int regv, char** regc){
         res.set_content("{\"uuid\":\""+UUID+"\"}", "application/json");
     });
     //Upload video file
-    srv.Post("/video/upload/([^/]+)", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
-        sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
+    srv.Post("/video/upload/([^/]+)", [&redis](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
         const std::string videoUUID = req.matches[1];
         std::string ext;
         std::ofstream fileUpload;
@@ -147,27 +146,6 @@ int main(int regv, char** regc){
         fileUpload.close();
         res.set_content("{\"success\":true, \"filename\": \""+(videoUUID + "." + ext)+"\"}", "application/json");
     });
-    //Get upload status
-    srv.Get("/video/upload/status/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
-        sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
-        const std::string videoUUID = req.matches[1];
-        auto fileUploaded = redis.get("video_upload:"+videoUUID);
-        
-        if (!fileUploaded.has_value()) {
-            res.status = 404;
-            res.set_content("{\"error\":\"Video not found\"}", "application/json");
-            return;
-        }
-        
-        nlohmann::json j = nlohmann::json::parse(*fileUploaded);
-        int uploadedSize = j["uploadedSize"] = j["uploadedSize"].get<int>();
-        int totalSize = j["totalSize"].get<int>();
-        int percent = (uploadedSize*100) / totalSize;
-
-        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
-        res.set_content("{\"percent\":"+std::to_string(percent)+"}", "application/json");
-    });
-
     //Upload video thumb to media server
     srv.Post("/video/upload/thumb/temp", [](const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader){
         std::ofstream fileUpload;
@@ -199,6 +177,135 @@ int main(int regv, char** regc){
         std::string jsonReturn = "{\"filename\":\""+fileName+"\"}";
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content(jsonReturn, "application/json");
+    });
+    //Get upload status
+    srv.Get("/video/upload/status/([^/]+)", [&redis](const httplib::Request &req, httplib::Response &res){
+        const std::string videoUUID = req.matches[1];
+        auto fileUploaded = redis.get("video_upload:"+videoUUID);
+        
+        if (!fileUploaded.has_value()) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Video not found\"}", "application/json");
+            return;
+        }
+        
+        nlohmann::json j = nlohmann::json::parse(*fileUploaded);
+        int uploadedSize = j["uploadedSize"] = j["uploadedSize"].get<int>();
+        int totalSize = j["totalSize"].get<int>();
+        int percent = (uploadedSize*100) / totalSize;
+
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content("{\"percent\":"+std::to_string(percent)+"}", "application/json");
+    });
+    //Move thumbnail and video to video (video key) directory
+    srv.Post("/video/move/file/temp/([^/]+)/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        std::string videoKey = req.matches[1];
+        std::string videoFileNameTemp = req.matches[2];
+        std::string thumbnailFileNameTemp = req.matches[3];
+
+        if (videoFileNameTemp.size() > 0 && !std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / videoFileNameTemp)) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Video file not found.\"}", "application/json");
+            return;
+        }
+        if (thumbnailFileNameTemp.size() > 0 && !std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / thumbnailFileNameTemp)) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Thumbnail file not found.\"}", "application/json");
+            return;
+        }
+
+        //If file exists, move
+        if (!std::filesystem::exists(MEDIA_SERVER_BASE_PATH.string()+"videos/"+videoKey+"/")) {
+            std::filesystem::create_directories(MEDIA_SERVER_BASE_PATH.string()+"videos/"+videoKey+"/");
+        }
+        
+        int dotPost = videoFileNameTemp.find_last_of('.');
+        std::string extVideoFile = videoFileNameTemp.substr(dotPost);
+        
+        dotPost = thumbnailFileNameTemp.find_last_of('.');
+        std::string extThumbnailFile = thumbnailFileNameTemp.substr(dotPost);
+
+        std::string newPath = MEDIA_SERVER_BASE_PATH.string()+"videos/" + videoKey;
+
+        if(!std::filesystem::exists(newPath)) {
+            try {
+                std::filesystem::create_directories(newPath);
+            } catch (const std::exception &e) {
+                res.status = 500;
+                res.set_content("{\"error\":\"Failed to create directories\"}", "application/json");
+                return;
+            }
+        }
+        std::filesystem::rename(
+            MEDIA_SERVER_TEMP_PATH.string()+videoFileNameTemp, 
+            newPath + "/video" + extVideoFile
+        );
+        std::filesystem::rename(
+            MEDIA_SERVER_TEMP_PATH.string()+thumbnailFileNameTemp, 
+            newPath + "/thumbnail" + extThumbnailFile
+        );
+
+        res.set_content("{ \
+            \"success\":\"File moved successfully.\", \
+            \"videofilename\":\"/video/"+ videoKey +"/video"+ extVideoFile +"\",\
+            \"thumbnailfilename\":\"/video/thumbnail/"+ videoKey +"/thumbnail"+ extThumbnailFile +"\"\
+            }", "application/json");
+    });
+
+    //Get thumbnail from video key
+    srv.Get("/video/thumbnail/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        std::string videoKey = req.matches[1];
+        std::string fileName = req.matches[2];
+
+        std::string fileFolderLoad = MEDIA_SERVER_BASE_PATH.string()+"videos/"+videoKey+"/"+fileName;
+        std::ifstream fileLoadOpen(fileFolderLoad, std::ios::ate | std::ios::binary);
+
+        int dotPos = fileName.find_last_of(".");
+        std::string ext = fileName.substr(dotPos+1);
+
+        if (!fileLoadOpen.is_open()){
+            res.status = 404;
+            res.set_content("<h1>This video thumbnail does not exist.</h1>", "text/html");
+            return;
+        }
+
+        std::streamsize sizeFile = fileLoadOpen.tellg();
+        std::vector<char> fileBuffer(sizeFile);
+
+        fileLoadOpen.seekg(0, std::ios::beg);
+        fileLoadOpen.read(fileBuffer.data(), sizeFile);
+
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content(fileBuffer.data(), sizeFile, "image/"+ext);
+    });
+    //Get videos HLS streaming, send mpegURL to client
+    srv.Get("/video/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        std::string videoId = req.matches[1];
+        std::string fileLoad = req.matches[2];
+
+        std::string fileFolderLoad = MEDIA_SERVER_BASE_PATH.string()+"videos/"+videoId+"/"+fileLoad;
+        std::ifstream fileLoadOpen(fileFolderLoad, std::ios::ate | std::ios::binary);
+        
+        if (!fileLoadOpen.is_open()){
+            res.status = 404;
+            res.set_content("<h1>This video does not exist.</h1>", "text/html");
+            return;
+        }
+
+        std::streamsize sizeFile = fileLoadOpen.tellg();
+        std::vector<char> fileBuffer(sizeFile);
+        
+        fileLoadOpen.seekg(0, std::ios::beg);
+        fileLoadOpen.read(fileBuffer.data(), sizeFile);
+        
+        if (fileFolderLoad.substr(fileFolderLoad.length()-2) == "ts"){
+            std::cout << "sending-MP2T: << " << fileFolderLoad << std::endl;
+            res.set_content(fileBuffer.data(), sizeFile, "video/MP2T");    
+        }
+
+        std::cout << "sending-mpegURL: << " << fileFolderLoad << std::endl;
+        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
+        res.set_content(fileBuffer.data(), sizeFile, "application/x-mpegURL");
     });
     /*
         END VIDEO
@@ -410,41 +517,6 @@ int main(int regv, char** regc){
     });
     /*
         END USER AVATAR
-    */
-
-    /*
-        VIDEO
-    */
-    srv.Get("/video/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
-        std::string videoId = req.matches[1];
-        std::string fileLoad = req.matches[2];
-
-        std::string fileFolderLoad = MEDIA_SERVER_BASE_PATH.string()+"videos/"+videoId+"/"+fileLoad;
-        std::ifstream fileLoadOpen(fileFolderLoad, std::ios::ate | std::ios::binary);
-        
-        if (!fileLoadOpen.is_open()){
-            res.status = 404;
-            res.set_content("<h1>This video does not exist.</h1>", "text/html");
-            return;
-        }
-
-        std::streamsize sizeFile = fileLoadOpen.tellg();
-        std::vector<char> fileBuffer(sizeFile);
-        
-        fileLoadOpen.seekg(0, std::ios::beg);
-        fileLoadOpen.read(fileBuffer.data(), sizeFile);
-        
-        if (fileFolderLoad.substr(fileFolderLoad.length()-2) == "ts"){
-            std::cout << "sending-MP2T: << " << fileFolderLoad << std::endl;
-            res.set_content(fileBuffer.data(), sizeFile, "video/MP2T");    
-        }
-
-        std::cout << "sending-mpegURL: << " << fileFolderLoad << std::endl;
-        res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
-        res.set_content(fileBuffer.data(), sizeFile, "application/x-mpegURL");
-    });
-    /*
-        END VIDEO
     */
 
     std::cout << "Running..." << std::endl;
