@@ -41,10 +41,9 @@ def video_detail_create():
                 videoKey=form.get("videoKey")
             ).checkInputDataIsValid().createNewVideo()
 
-            _ = vSrv.generateCheckVideoKey().moveTempFilesToNewPath(
+            videoCreated = vSrv.generateCheckVideoKey().moveTempFilesToNewPath(
                 videoTempFilename=form.get("videoTempFilename"),
-                videoThumbnailTempFilename=form.get("videoThumbnailTempFilename"),
-                channelId=None
+                videoThumbnailTempFilename=form.get("videoThumbnailTempFilename")
             ).fillInputData().updateVideoById(
                 videoCreated.videoId
             )
@@ -55,6 +54,17 @@ def video_detail_create():
                 _ = vSrv.deleteVideoById(videoId=videoCreated.videoId)
 
             return render_template("base/error.html", error=str(e))
+
+    vSrv: VideoService = VideoService(
+        userId=session.get("userId"),
+        channelId=session.get("channelId")
+    )
+
+    vSrv.enqueueMessageToChannelRedis(
+        channelName="video_upload", 
+        message={"videoKey": "1234"}
+    ).processEnqueuedMessagesRedis()
+        
 
     return render_template("video_details_edit.html")
 

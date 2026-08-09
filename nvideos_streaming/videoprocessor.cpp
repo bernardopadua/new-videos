@@ -1,8 +1,9 @@
 #include <sw/redis++/redis++.h>
 
+#include "deps/json.hpp"
+
 #include <cstdio>
 #include <iostream>
-#include <thread>
 #include <string>
 #include <filesystem>
 #include <unistd.h>
@@ -78,7 +79,7 @@ double get_video_time_duration(std::string videoKey, std::string videoFile){
     return totalVideoTime;
 }
 
-void process_video_file(std::string videoKey, std::string videoFile) {
+void process_video_file(std::string videoKey, std::string videoFile, sw::redis::Redis redis) {
     double totalDuration = get_video_time_duration(videoKey, videoFile);
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
 
@@ -158,6 +159,7 @@ void process_video_file(std::string videoKey, std::string videoFile) {
                 cc.size() - cc.find_last_of("=")
             ));
             int currentPercent = round(((currentTime/1000000.0) / totalDuration) * 100);
+            redis.set("video:processing:" + videoKey, std::to_string(currentPercent));
         }
     }
 
@@ -166,25 +168,32 @@ void process_video_file(std::string videoKey, std::string videoFile) {
 }
 
 int main(int argc, char *argv[]) {
-    std::thread t(process_video_file, "aaa", "video.webm");
+    /*std::thread t(process_video_file, "aaa", "video.webm");
     
     if (t.joinable()){
         t.join();
     }
 
-    return 0;
+    return 0;*/
 
-    /*sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
+    sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
 
     auto sub = redis.subscriber();
 
-    sub.on_message([](std::string channel, std::string msg){ 
-        std::cout << channel << ":" << msg << std::endl;
-        
+    sub.on_message([&redis](std::string channel, std::string msg){ 
+        nlohmann::json j = nlohmann::json::parse(msg);
+        if(j.contains("videoKey") && j.contains("videoFilename")){
+            //std::thread t(process_video_file, 
+            // j["videoKey"].get<std::string>(), 
+            // j["videoFilename"].get<std::string>(),
+            // redis
+            //);
+            std::cout << j["videoKey"] << j["videoFilename"] << std::endl;
+        }
     });
     sub.subscribe("video_upload");
     
     while(1){
         sub.consume();
-    }*/
+    }
 }

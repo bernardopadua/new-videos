@@ -1,6 +1,9 @@
 # FLASK
 from flask import current_app as app
 
+# REDIS
+from redis import Redis
+
 # TYPING
 from typing import Self, override, final, cast
 
@@ -21,7 +24,8 @@ from nvideos_web.services.video.error import (
     VideoServiceVideoTitleIsNone, VideoServiceVideoTitleIsInvalid,
     VideoServiceVideoDescriptionIsInvalid, VideoServiceVideoDescriptionIsNone,
     VideoServiceVideoTagsIsInvalid, VideoServiceVideoTagsIsNone,
-    VideoServiceVideoDoesntExists
+    VideoServiceVideoDoesntExists,
+    VideoServiceChannelNameIsNone, VideoServiceMessageIsNone
 )
 from nvideos_web.services.base.error import InputDataIsNone
 
@@ -55,6 +59,9 @@ class VideoService(BaseService[VideoInput]):
         self._videoThumbnailUrl: str | None = None
         self._videoTempFilename: str | None = None
 
+        #Redis
+        self._enqueuedMessages: dict[str, list[dict[str, object]]] = {}
+
     def generateCheckVideoKey(self) -> Self:
         import hashlib, datetime
         if not self._channelId:
@@ -70,7 +77,7 @@ class VideoService(BaseService[VideoInput]):
     def moveTempFilesToNewPath(self, *, 
         videoThumbnailTempFilename: str | None, 
         videoTempFilename: str | None,
-        channelId: int | None
+        channelId: int | None = None
     ) -> Self:
         # I'm maintaining this request because is a simple task, is not CPU bound, it's just a MOVE.
         from urllib.request import Request, urlopen
@@ -94,8 +101,27 @@ class VideoService(BaseService[VideoInput]):
             with urlopen(req) as response:
                 bResponse: bytes = cast(bytes, response.read())
                 jResponse: dict[str, str] = json.loads(bResponse.decode("utf-8"))
-                self._videoThumbnailUrl = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("thumbnailfilename")
-                self._videoTempFilename = app.config['DOMAIN_MEDIA_SERVER']+jResponse.get("videofilename")
+                
+                videoTempFilename: str | None = jResponse.get("videofilename")
+                videoThumbnailFilename: str | None = jResponse.get("thumbnailfilename")
+
+                if not videoTempFilename:
+                    raise VideoServiceFailedToMoveTempVideoAndThumb("Mediserver didn't return the video filename.")
+                
+                if not videoThumbnailFilename:
+                    raise VideoServiceFailedToMoveTempVideoAndThumb("Mediserver didn't return the thumbnail filename.")
+                
+                self._videoThumbnailUrl = cast(str, app.config["DOMAIN_MEDIA_SERVER"]) + videoThumbnailFilename
+                self._videoTempFilename = cast(str, app.config["DOMAIN_MEDIA_SERVER"]) + videoTempFilename
+
+                _ = self.enqueueMessageToChannelRedis(
+                    channelName="video_upload",
+                    message={
+                        "videoKey": self._videoKey,
+                        "videoFilename": self._videoTempFilename
+                    }
+                )
+
                 return self
         except HTTPError:
             #add logger
@@ -289,3 +315,26 @@ class VideoService(BaseService[VideoInput]):
         )
 
         return self
+
+    
+    #Redis stuff - Maybe it will be part of baseService or a separeted module
+    def enqueueMessageToChannelRedis(self, channelName: str, message: dict[str, object]) -> Self:
+        if not channelName:
+            raise VideoServiceChannelNameIsNone("Channel name is missing.")
+        if not message:
+            raise VideoServiceMessageIsNone("Message is missing.")
+
+        if not self._enqueuedMessages.get(channelName):
+            self._enqueuedMessages[channelName] = []
+
+        self._enqueuedMessages[channelName].append(message)
+
+        return self
+
+    def processEnqueuedMessagesRedis(self):
+        import json
+        redis: Redis = Redis.from_url(app.config["REDIS_ADDRESS"])
+        
+        for channelName, messageList in self._enqueuedMessages.items():
+            for message in messageList:
+                _ = redis.publish(channelName.encode("utf-8"), json.dumps(message).encode("utf-8"))

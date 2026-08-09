@@ -22,6 +22,7 @@ class VideoServiceFailedToMoveTempVideoAndThumb(Exception):
     """The video and thumbnail files were not moved from temp to the media server."""
     pass
 
+# CHECK FOR INVALID FIELDS
 class VideoServiceNoUserInput(Exception):
     """No user input provided. Please provide user input."""
     pass
@@ -48,4 +49,13 @@ class VideoServiceVideoTagsIsNone(Exception):
 
 class VideoServiceVideoTagsIsInvalid(Exception):
     """The video tags is invalid."""
+    pass
+
+# REDIS ERRORS
+class VideoServiceChannelNameIsNone(Exception):
+    """The channel name is None."""
+    pass
+
+class VideoServiceMessageIsNone(Exception):
+    """The message is None."""
     pass
