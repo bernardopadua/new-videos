@@ -4,10 +4,12 @@ from flask import (
     request as flaskRequest, 
     session, jsonify
 )
-import flask
 
 # SERVICE
-from nvideos_web.services.video.service import VideoService, Video
+from nvideos_web.services.video.service import VideoService
+
+# ENTITY
+from nvideos_web.core.entity.video import Video
 
 # DECORATOR
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired, authKeyNeeded
@@ -67,12 +69,6 @@ def video_detail_create():
 
     return render_template("video/video_details_edit.html")
 
-@videoDetailsBp.route("/video/list", methods=["GET"])
-@loginRequired
-@channelRequired
-def video_list():
-    return render_template("video/video_list.html")
-
 @videoDetailsBp.route("/video/<string:video_key>/edit", methods=["GET", "POST"])
 @loginRequired
 @channelRequired
@@ -113,6 +109,12 @@ def video_detail_edit(video_key: str):
 
     return render_template("video/video_details_edit.html", vd=vd)
 
+@videoDetailsBp.route("/video/list", methods=["GET"])
+@loginRequired
+@channelRequired
+def video_list():
+    return render_template("video/video_list.html")
+
 @videoDetailsBp.route("/video/<string:video_key>")
 @loginRequired
 @channelRequired
@@ -120,6 +122,12 @@ def video_detail(video_key: str):
     #TODO: Select video to vd
     renderTemplate = render_template("video/video_detail.html", vd=None)
     return renderTemplate
+
+
+
+#
+# APIs (Auxiliar)
+#
 
 @videoDetailsBp.route("/video/status/<string:video_key>", methods=["GET"])
 @loginRequired

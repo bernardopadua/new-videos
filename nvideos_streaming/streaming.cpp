@@ -187,10 +187,6 @@ int main(int regv, char** regc){
         int totalSize = j["totalSize"].get<int>();
         int percent = (int)round((uploadedSize*100.0) / totalSize);
 
-        if(percent < 0){
-            std::cout << j.dump() << std::endl;
-        }
-
         res.set_header("Access-Control-Allow-Origin", DOMAIN_WEB_SERVER);
         res.set_content("{\"percent\":"+std::to_string(percent)+"}", "application/json");
     });
