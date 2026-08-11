@@ -32,7 +32,8 @@ class ModelRowFactory:
                 modelIdentification: int = id(field.getOwner())
                 if modelIdentification not in eachModel:
                     eachModel[modelIdentification] = { "model": field.getOwner().modelData() , "row": {} }
-                eachModel[modelIdentification]["row"][field.attr] = values[i]
+                if values[i] is not None and values[i] != "":
+                    eachModel[modelIdentification]["row"][field.attr] = values[i]
 
             for model in eachModel.keys():
                 modelData = eachModel[model]["model"]

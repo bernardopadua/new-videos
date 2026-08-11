@@ -2,6 +2,7 @@
 from typing import override
 
 # PSYCOPG
+from psycopg import Connection
 from psycopg.cursor import Cursor
 
 # REPOSITORY
@@ -98,6 +99,67 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
            _ = cur.execute(stmt, params=paramsToCursor)
            result = cur.fetchone()
            return VideoMetadata.row(result)
+
+    @override
+    def selectLimitVideosByChannelId(self, limit: int, 
+        channelId: int, *, offset: int = 0, 
+        conn: Connection | None = None
+    ) -> list[Video]:
+        vm: type[VideoMetadata] = VideoMetadata
+        paramChannelId, channelIdParam = NvSql.createParam("channel_id", channelId)
+        allFields, allFieldsOrder = NvSql.selectOder(
+            vm.videoId, vm.videoTitle, vm.videoDescription, vm.videoKey,
+            vm.videoStatus, vm.videoThumbUrl, vm.videoViewCount, 
+            vm.videoTimeDuration, vm.videoTags
+        )
+
+        stmt: str = NvSql.formatStmt(
+            f"""
+            select {allFields} from {vm.tableName()} 
+            where {vm.channelId.field} = {paramChannelId}
+            order by {vm.createdAt.field} desc
+            limit {limit} offset {offset};
+            """
+        )
+        if conn is None:
+            with self._db.getConn() as conn:
+                cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))            
+                r = cur.execute(stmt, params=channelIdParam)
+                return [ VideoMetadata.row(row) for row in r.fetchall() ]
+        else:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            r = cur.execute(stmt, params=channelIdParam)
+            return [ VideoMetadata.row(row) for row in r.fetchall() ]
+
+    @override
+    def selectCountAllVideoByChannelId(self, 
+        channelId: int, *,
+        conn: Connection | None = None
+    ) -> int: 
+        paramChannelId, channelIdParam = NvSql.createParam("channel_id", channelId)
+        stmt: str = NvSql.formatStmt(
+            f"""
+            select count(1) from {VideoMetadata.tableName()} 
+            where {VideoMetadata.channelId.field} = {paramChannelId};
+            """
+        )
+
+        if conn is None:
+            with self._db.getConn() as conn:
+                r = conn.execute(stmt, params=channelIdParam)
+                result = r.fetchone()
+                return result[0] if result else 0
+        else:
+            r = conn.execute(stmt, params=channelIdParam)
+            result = r.fetchone()
+            return result[0] if result else 0
+
+    @override
+    def selectLimitCountVideoByChannelId(self, *, limit: int, channelId: int, offset: int = 0) -> tuple[list[Video], int]:
+        with self._db.getConn() as conn:
+            resultCount = self.selectCountAllVideoByChannelId(channelId=channelId, conn=conn)
+            resultVideos = self.selectLimitVideosByChannelId(limit=limit, channelId=channelId, offset=offset, conn=conn)
+            return resultVideos, resultCount
 
     @override
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 

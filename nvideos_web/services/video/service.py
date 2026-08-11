@@ -221,6 +221,20 @@ class VideoService(BaseService[VideoInput]):
         videoData = self._videoRep.selectByVideoKey(videoKey, self.currentUser)
         return videoData
 
+    def selectLimitVideosByChannelId(self, limit: int = 10, *, page: int = 0) -> tuple[list[dict[str, object]] | None, int]:
+        offset: int = page * limit
+        
+        if not self._channelId:
+            raise VideoServiceChannelIdIsNone("Channel id is missing. Please provide a channel id.")
+        
+        videos, totalRows = self._videoRep.selectLimitCountVideoByChannelId(
+            limit=limit,
+            channelId=self._channelId,
+            offset=offset
+        )
+
+        return [i.toJson() for i in videos], totalRows
+
     def createNewVideo(self, *, userInput: VideoInput | None = None) -> Video:
         self.insertingMode()
         auditData = self.fillAuditData().getAuditData()
