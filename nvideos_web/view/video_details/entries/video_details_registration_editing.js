@@ -1,6 +1,6 @@
 import VideoUploadService from './video_upload/video_upload';
 import ThumbnailUploadService from './video_upload/thumbnail_upload';
-import VideoUploadFormValidation from './vide_details_form_validation';
+import VideoUploadFormValidation from './video_form_validation/vide_details_form_validation';
 
 class MediaUploadAlertService {
     constructor() {

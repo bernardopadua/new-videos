@@ -1,6 +1,10 @@
+# PSYCOPG
+from psycopg import Connection
+
 # BUILT-IN
 from abc import ABC, abstractmethod
 
+# ENTITY
 from nvideos_web.core.entity.video import (
     Video,
     VideoInput
@@ -19,6 +23,18 @@ class VideoRepository(ABC):
         ...
     @abstractmethod
     def selectByVideoKey(self, videoKey: str, userId: int) -> Video: 
+        ...
+    @abstractmethod
+    def selectLimitVideosByChannelId(self, limit: int, 
+        channelId: int, *, offset: int = 0, 
+        conn: Connection | None = None
+    ) -> list[Video]:
+        ...
+    @abstractmethod
+    def selectCountAllVideoByChannelId(self, channelId: int, *, conn: Connection | None = None) -> int: 
+        ...
+    @abstractmethod
+    def selectLimitCountVideoByChannelId(self, *, limit: int, channelId: int, offset: int = 0) -> tuple[list[Video], int]:
         ...
     @abstractmethod
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 

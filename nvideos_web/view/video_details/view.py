@@ -14,6 +14,12 @@ from nvideos_web.core.entity.video import Video
 # DECORATOR
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired, authKeyNeeded
 
+# CONSTANTS
+from nvideos_web.view.video_details.constants import VIDEO_SELF_CHANNEL_LIMIT
+
+# TYPING
+from typing import cast
+
 videoDetailsBp = Blueprint(
     "video_details", __name__,
     static_folder="static", static_url_path="/video_details/static",
@@ -113,7 +119,18 @@ def video_detail_edit(video_key: str):
 @loginRequired
 @channelRequired
 def video_list():
-    return render_template("video/video_list.html")
+    vSrv: VideoService = VideoService(
+        userId=session.get("userId"),
+        channelId=session.get("channelId")
+    )
+    videos, totalRows = vSrv.selectLimitVideosByChannelId(
+        limit=VIDEO_SELF_CHANNEL_LIMIT,
+        page=0
+    )
+
+    hasMore: bool = True if totalRows > VIDEO_SELF_CHANNEL_LIMIT else False
+
+    return render_template("video/video_list.html", videos=videos, has_more=hasMore)
 
 @videoDetailsBp.route("/video/<string:video_key>")
 @loginRequired
@@ -128,6 +145,26 @@ def video_detail(video_key: str):
 #
 # APIs (Auxiliar)
 #
+
+@videoDetailsBp.route("/video/list/paging/<int:page>", methods=["GET"])
+@loginRequired
+@channelRequired
+def video_load_more_self_channel(page: int):
+    vSrv: VideoService = VideoService(
+        userId=session.get("userId"),
+        channelId=session.get("channelId")
+    )
+
+    videos, totalRows = vSrv.selectLimitVideosByChannelId(
+        limit=VIDEO_SELF_CHANNEL_LIMIT,
+        page=page
+    )
+    hasMore: bool = True if totalRows > (page+1)*VIDEO_SELF_CHANNEL_LIMIT else False
+
+    if (page-1)*VIDEO_SELF_CHANNEL_LIMIT >= totalRows:
+        return jsonify({"videos": [], "hasMore": hasMore})
+
+    return jsonify({"videos": videos, "hasMore": hasMore})
 
 @videoDetailsBp.route("/video/status/<string:video_key>", methods=["GET"])
 @loginRequired

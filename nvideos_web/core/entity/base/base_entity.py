@@ -236,6 +236,14 @@ class AuditData:
 class BaseModelData:
     def print(self):
         print(self)
+    
+    def toJson(self):
+        data: dict[str, object] = {}
+        for i in fields(self):
+            attr = getattr(self, i.name)
+            if attr is not None and attr != "" and attr != 0:
+                data[i.name] = attr
+        return data
 
 @dataclass
 class BaseInput:
