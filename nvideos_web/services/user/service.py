@@ -255,6 +255,7 @@ class UserService(BaseService[UserInput]):
             raise UserServiceDateIsInvalid(f"The date {dateStr} is invalid. Use format YYYY-MM-DD.")
 
     def moveTempAvatarToMedia(self, userId: int, avatarTempName: str | None) -> Self:
+        # I maintaning this request because is a simple task, is not CPU bound is just a MOVE.
         from urllib.request import Request, urlopen
         from urllib.error import HTTPError
         from typing import cast

@@ -21,6 +21,9 @@ class Video(AuditData, BaseModelData):
     channelId: int = field(default=0)
     userId: int = field(default=0)
     videoKey: str = field(default="")
+    videoIsActive: bool = field(default=True)
+    videoStatus: str = field(default="")
+    videoTempFilename: str = field(default="")
 
 @dataclass
 class VideoInput(BaseInput):
@@ -34,13 +37,16 @@ class VideoInput(BaseInput):
     channelId: int | None = field(default=None)
     userId: int | None = field(default=None)
     videoKey: str | None = field(default=None)
+    videoIsActive: bool | None = field(default=None)
+    videoStatus: str | None = field(default=None)
+    videoTempFilename: str | None = field(default=None)
 
 @final
 class VideoMetadata(
     MetadataClass[Video],
     BaseMetadataAuditMixin
 ):
-    _table_name = "nvideo_video"
+    _table_name = "video"
     _model_data = Video
     _use_prefix = "vv"
     #Columns
@@ -55,3 +61,6 @@ class VideoMetadata(
     channelId: ModelField = ModelField("channel_id")
     userId: ModelField = ModelField("user_id")
     videoKey: ModelField = ModelField("video_key")
+    videoIsActive: ModelField = ModelField("video_is_active")
+    videoStatus: ModelField = ModelField("video_status")
+    videoTempFilename: ModelField = ModelField("video_temp_filename")

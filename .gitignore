@@ -1,6 +1,7 @@
 *__pycache__
 .vscode
 .data
+.redis_data
 .mypy_cache
 
 node_modules

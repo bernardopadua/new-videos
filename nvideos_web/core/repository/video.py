@@ -15,7 +15,16 @@ class VideoRepository(ABC):
     def checkIdExists(self, videoId: int) -> bool: 
         ...
     @abstractmethod
+    def checkKeyExists(self, videoKey: str) -> bool: 
+        ...
+    @abstractmethod
+    def selectByVideoKey(self, videoKey: str, userId: int) -> Video: 
+        ...
+    @abstractmethod
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 
+        ...
+    @abstractmethod
+    def updateStatusByVideoKey(self, videoKey: str, newVideoData: VideoInput, auditData: AuditData) -> Video: 
         ...
     @abstractmethod
     def delete(self, videoId: int, auditData: AuditData) -> Video: 

@@ -60,6 +60,10 @@ export default defineConfig({
                 //ChannelDetails
                 'channel_details/channel_editcreate_details/ced': './channel_details/entries/channel_editcreate_details_entry.jsx',
                 'channel_details/channel_image_upload_editcreate/ciec': './channel_details/entries/channel_image_upload_editcreate.js',
+
+                //VideoDetails
+                'video_details/video_details_entry/vde': './video_details/entries/video_details_entry.jsx',
+                'video_details/video_details_registration_editing/vdre': './video_details/entries/video_details_registration_editing.js'
             },
             output: {
                 entryFileNames: (chunkInfo) => {

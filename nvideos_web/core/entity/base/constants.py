@@ -9,3 +9,8 @@ class VideoPermissions(Enum):
     P_PRIVATE = '\x02'
     P_SUBSCRIBER_ONLY = '\x03'
     P_LINK_ONLY = '\x04'
+
+class VideoStatus(Enum):
+    P_UPLOAD = 'uploaded'
+    P_PROCESSING = 'processing'
+    P_PROCESSED = 'processed'

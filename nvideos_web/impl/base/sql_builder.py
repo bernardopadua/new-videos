@@ -130,7 +130,8 @@ class NvSql:
         _sql: str, 
         inputObject: object,
         *,
-        auditObject: object | None = None
+        auditObject: object | None = None,
+        additionalParams: dict[str, object] | None = None
     ) -> dict[str, object]:
         if not is_dataclass(inputObject):
             raise PgRepositoryInputIsNotDataclass(
@@ -148,10 +149,12 @@ class NvSql:
             paramAttr = _sql[param.span(0)[0]+2:param.span(0)[1]-2]
             
             try:
-                if not hasattr(inputObject, paramAttr) and auditObject:
-                    inputFieldValue = getattr(auditObject, paramAttr)
-                else:
+                if hasattr(inputObject, paramAttr):
                     inputFieldValue = getattr(inputObject, paramAttr)
+                elif auditObject and hasattr(auditObject, paramAttr):
+                    inputFieldValue = getattr(auditObject, paramAttr)
+                elif additionalParams and paramAttr in additionalParams:
+                    inputFieldValue = additionalParams[paramAttr]
             except AttributeError:
                 raise PgRepositoryMissingSqlParameter(
                     "Parameter has no input field. Please verify the input and audit objects."

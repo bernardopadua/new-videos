@@ -1,11 +1,16 @@
 # TYPING
 from typing import override
 
+# PSYCOPG
+from psycopg.cursor import Cursor
+
 # REPOSITORY
 from nvideos_web.core.repository.video import VideoRepository
 
 # ENTITY
 from nvideos_web.core.entity.video import Video, VideoInput, VideoMetadata
+from nvideos_web.core.entity.channel import ChannelMetadata
+from nvideos_web.core.entity.user import UserMetadata
 from nvideos_web.core.entity.base.base_entity import AuditData
 
 # IMPL
@@ -38,7 +43,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
         )
         paramsInsert = NvSql.parseSqlParams(stmt, inputObject=videoInputData, auditObject=auditInputData)
         with self._db.getConn() as conn:
-            cur = conn.cursor(row_factory=ModelRowFactory.getRowFactory(allFieldsOrder))
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             cur.execute(stmt, params=paramsInsert)
             result = cur.fetchone()
             conn.commit()
@@ -46,12 +51,144 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
 
     @override
     def checkIdExists(self, videoId: int) -> bool: 
-        pass
+        stmt = NvSql.formatStmt(
+            "select 1 from {table_name} where {video_id} = {video_id_value};",
+            table_name=VideoMetadata.tableName(),
+            video_id=VideoMetadata.videoId.field,
+            video_id_value=videoId
+        )
+        with self._db.getConn() as conn:
+            r: Cursor = conn.execute(stmt)
+            return r.rowcount > 0
+
+    @override
+    def checkKeyExists(self, videoKey: str) -> bool: 
+        paramVideoKey, videoKeyValue = NvSql.createParam("videoKey", videoKey)
+        stmt = NvSql.formatStmt(
+            """
+            select 1 from {table_name} where {videoKey_field} = {videoKey_value}; 
+            """,
+            table_name=VideoMetadata.tableName(),
+            videoKey_field=VideoMetadata.videoKey.field,
+            videoKey_value=paramVideoKey
+        )
+        with self._db.getConn() as conn:
+            r: Cursor = conn.execute(stmt, params=videoKeyValue)
+            return r.rowcount > 0
+
+    @override
+    def selectByVideoKey(self, videoKey: str, userId: int) -> Video:
+       paramVideoKey, videoKeyParam = NvSql.createParam("videoKey", videoKey)
+       paramUserId, userIdParam = NvSql.createParam("userId", userId)
+       videoFields, allFieldsOrder = NvSql.selectOder(VideoMetadata.all, usePrefix=True)
+       stmt = NvSql.formatStmt(
+           f"""
+           select {videoFields} from {VideoMetadata.tableNamePrefix()}, 
+           {ChannelMetadata.tableNamePrefix()},
+           {UserMetadata.tableNamePrefix()}
+           where {VideoMetadata.channelId.getWithPrefix()} = {ChannelMetadata.channelId.getWithPrefix()}
+           and {ChannelMetadata.userId.getWithPrefix()} = {UserMetadata.userId.getWithPrefix()}
+           and {UserMetadata.userId.getWithPrefix()} = {paramUserId}
+           and {VideoMetadata.videoKey.getWithPrefix()} = {paramVideoKey}
+           """,
+       )
+       paramsToCursor = NvSql.concatParams(videoKeyParam, userIdParam)
+       with self._db.getConn() as conn:
+           cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+           _ = cur.execute(stmt, params=paramsToCursor)
+           result = cur.fetchone()
+           return VideoMetadata.row(result)
 
     @override
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 
-        pass
+        if newVideoData.isNone():
+            raise Exception("You cant update a record with an empty input.")
+
+        fieldsAudit = NvSql.updateFields(VideoMetadata, inputData=auditData)
+        fieldsTable = NvSql.updateFields(VideoMetadata, inputData=newVideoData)
+
+        allFields, allFieldsOrder = NvSql.selectOder(VideoMetadata.all)
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} 
+               set {fields_table}, {fields_audit}
+             where {videoId_field} = {video_id}
+            returning {returning_fields};
+            """, 
+            table_name=VideoMetadata.tableName(),
+            fields_table=fieldsTable,
+            fields_audit=fieldsAudit,
+            videoId_field=VideoMetadata.videoId.field,
+            video_id=videoId,
+            returning_fields=allFields
+        )
+        paramsUpdate: dict[str, object] = NvSql.parseSqlParams(stmt, inputObject=newVideoData, auditObject=auditData)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            _ = cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+        return VideoMetadata.row(result)
+
+    @override
+    def updateStatusByVideoKey(self, videoKey: str, newVideoData: VideoInput, auditData: AuditData) -> Video: 
+        if newVideoData.isNone():
+            raise Exception("You cant update a record with an empty input.")
+
+        fieldsAudit = NvSql.updateFields(VideoMetadata, inputData=auditData)
+        fieldsTable = NvSql.updateFields(VideoMetadata, inputData=newVideoData)
+
+        allFields, allFieldsOrder = NvSql.selectOder(VideoMetadata.all)
+        
+        videoKeyParam, videoKeyParamValue = NvSql.createParam("videoKeyParam", videoKey)
+
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} 
+               set {fields_table}, {fields_audit}
+             where {videoKey_field} = {video_key}
+            returning {returning_fields};
+            """, 
+            table_name=VideoMetadata.tableName(),
+            fields_table=fieldsTable,
+            fields_audit=fieldsAudit,
+            videoKey_field=VideoMetadata.videoKey.field,
+            video_key=videoKeyParam,
+            returning_fields=allFields
+        )
+        paramsUpdate: dict[str, object] = NvSql.parseSqlParams(
+            stmt, 
+            inputObject=newVideoData, 
+            auditObject=auditData,
+            additionalParams=videoKeyParamValue
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            _ = cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+        return VideoMetadata.row(result)
 
     @override
     def delete(self, videoId: int, auditData: AuditData) -> Video: 
-        pass
+        auditFields = NvSql.updateFields(VideoMetadata, auditData)
+        fieldsStr, fieldsOder = NvSql.selectOder(VideoMetadata.all)
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} set {active_field} = false, {audit_fields} where {videoId_field} = {video_id_value}
+            returning {fields_str};
+            """,
+            table_name=VideoMetadata.tableName(),
+            active_field=VideoMetadata.videoIsActive.field,
+            audit_fields=auditFields,
+            videoId_field=VideoMetadata.videoId.field,
+            video_id_value=videoId,
+            fields_str=fieldsStr
+        )
+        paramsUpdate = NvSql.parseSqlParams(stmt, auditData)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(fieldsOder))
+            _ = cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+            return VideoMetadata.row(result)
