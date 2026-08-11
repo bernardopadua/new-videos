@@ -174,15 +174,19 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
             redis.set("video:processing:" + videoKey, std::to_string(currentPercent), std::chrono::seconds(60));
 
             if(currentPercent == 100){
-                httplib::Client cli(WEB_SERVER_DOMAIN);
-                httplib::Headers h({
-                    {"New-Videos-Auth", API_AUTH_KEY}
-                });
-                cli.Post(
-                    "/video/processing/finished/"+videoKey+"/"+std::to_string(round(totalDuration)), 
-                    h
-                );
-                
+                int totalDurationInt = (int)round(totalDuration);
+                try{
+                    httplib::Client cli(WEB_SERVER_DOMAIN);
+                    httplib::Headers h({
+                        {"New-Videos-Auth", API_AUTH_KEY}
+                    });
+                    cli.Post(
+                        "/video/processing/finished/"+videoKey+"/"+std::to_string(totalDurationInt), 
+                        h
+                    );
+                }catch (const std::exception& e){
+                    std::cerr << "ERROR ON FINISHED VIDEO PROCESSING POST REQUEST: " << e.what() << std::endl;
+                }
             }
         }
     }

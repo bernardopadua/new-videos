@@ -4,11 +4,9 @@ export default function VideoUpload({ videoUploadService }) {
     const [videoLoaded, setVideoLoaded] = useState(false);
     const [nameSpan, setNameSpan] = useState("");
     const [sizeSpan, setSizeSpan] = useState("");
-    const [progress, setProgress] = useState(0);
 
     const handleChange = (e) => {
         setVideoLoaded(false);
-        setProgress(0);
         const file = e.target.files[0];
 
         if (file) {

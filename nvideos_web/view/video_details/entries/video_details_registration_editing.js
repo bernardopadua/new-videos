@@ -73,6 +73,10 @@ videoForm.addEventListener("submit", (e) => {
                 }
                 if (r && r.filename) {
                     videoTempFileName.value = r.filename;
+                    //Fallback if the get status doesn't work in time.
+                    if (videoUploadService.getPercent() < 100) {
+                        videoUploadService.setPercent(100);
+                    }
                 } else {
                     mediaUploadAlert.showError();
                     return;
@@ -89,4 +93,12 @@ videoForm.addEventListener("submit", (e) => {
         videoForm.submit();
     }
     
+});
+
+//Event that signal when video processing is finished.
+window.addEventListener("video-processing-finished", () => {
+    const btnViewVideo = document.getElementById("btn-view-video");
+    if (btnViewVideo) { 
+        btnViewVideo.classList.remove("hidden");
+    }
 });

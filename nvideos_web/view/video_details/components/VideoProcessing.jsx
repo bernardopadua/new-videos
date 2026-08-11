@@ -26,6 +26,9 @@ export default function VideoProcessing({ videoKeyInput, videoStatusInput, video
                         clearTimeout(timer);
                         setVideoStatus('processed');
                         setProcessingPercent('100%');
+
+                        //Signal to other components that the video processing has finished.
+                        window.dispatchEvent(new CustomEvent('video-processing-finished'));
                     } else if (data?.percent == null) {
                         timer = setTimeout(() => {
                             fetchVideoStatus();
