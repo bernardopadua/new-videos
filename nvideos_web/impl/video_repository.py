@@ -9,6 +9,8 @@ from nvideos_web.core.repository.video import VideoRepository
 
 # ENTITY
 from nvideos_web.core.entity.video import Video, VideoInput, VideoMetadata
+from nvideos_web.core.entity.channel import ChannelMetadata
+from nvideos_web.core.entity.user import UserMetadata
 from nvideos_web.core.entity.base.base_entity import AuditData
 
 # IMPL
@@ -75,6 +77,29 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             return r.rowcount > 0
 
     @override
+    def selectByVideoKey(self, videoKey: str, userId: int) -> Video:
+       paramVideoKey, videoKeyParam = NvSql.createParam("videoKey", videoKey)
+       paramUserId, userIdParam = NvSql.createParam("userId", userId)
+       videoFields, allFieldsOrder = NvSql.selectOder(VideoMetadata.all, usePrefix=True)
+       stmt = NvSql.formatStmt(
+           f"""
+           select {videoFields} from {VideoMetadata.tableNamePrefix()}, 
+           {ChannelMetadata.tableNamePrefix()},
+           {UserMetadata.tableNamePrefix()}
+           where {VideoMetadata.channelId.getWithPrefix()} = {ChannelMetadata.channelId.getWithPrefix()}
+           and {ChannelMetadata.userId.getWithPrefix()} = {UserMetadata.userId.getWithPrefix()}
+           and {UserMetadata.userId.getWithPrefix()} = {paramUserId}
+           and {VideoMetadata.videoKey.getWithPrefix()} = {paramVideoKey}
+           """,
+       )
+       paramsToCursor = NvSql.concatParams(videoKeyParam, userIdParam)
+       with self._db.getConn() as conn:
+           cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+           _ = cur.execute(stmt, params=paramsToCursor)
+           result = cur.fetchone()
+           return VideoMetadata.row(result)
+
+    @override
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 
         if newVideoData.isNone():
             raise Exception("You cant update a record with an empty input.")
@@ -98,6 +123,45 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             returning_fields=allFields
         )
         paramsUpdate: dict[str, object] = NvSql.parseSqlParams(stmt, inputObject=newVideoData, auditObject=auditData)
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+            _ = cur.execute(stmt, params=paramsUpdate)
+            result = cur.fetchone()
+            conn.commit()
+        return VideoMetadata.row(result)
+
+    @override
+    def updateStatusByVideoKey(self, videoKey: str, newVideoData: VideoInput, auditData: AuditData) -> Video: 
+        if newVideoData.isNone():
+            raise Exception("You cant update a record with an empty input.")
+
+        fieldsAudit = NvSql.updateFields(VideoMetadata, inputData=auditData)
+        fieldsTable = NvSql.updateFields(VideoMetadata, inputData=newVideoData)
+
+        allFields, allFieldsOrder = NvSql.selectOder(VideoMetadata.all)
+        
+        videoKeyParam, videoKeyParamValue = NvSql.createParam("videoKeyParam", videoKey)
+
+        stmt = NvSql.formatStmt(
+            """
+            update {table_name} 
+               set {fields_table}, {fields_audit}
+             where {videoKey_field} = {video_key}
+            returning {returning_fields};
+            """, 
+            table_name=VideoMetadata.tableName(),
+            fields_table=fieldsTable,
+            fields_audit=fieldsAudit,
+            videoKey_field=VideoMetadata.videoKey.field,
+            video_key=videoKeyParam,
+            returning_fields=allFields
+        )
+        paramsUpdate: dict[str, object] = NvSql.parseSqlParams(
+            stmt, 
+            inputObject=newVideoData, 
+            auditObject=auditData,
+            additionalParams=videoKeyParamValue
+        )
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             _ = cur.execute(stmt, params=paramsUpdate)

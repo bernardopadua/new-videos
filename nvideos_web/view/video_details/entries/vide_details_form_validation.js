@@ -30,15 +30,23 @@ export default class VideoUploadFormValidation {
         this._ulList.appendChild(_li);
     }
 
-    validateAllFields() {
+    validateAllFields(isCreating) {
         const _validateVideoTitle = this._validateVideoTitle();
         const _validateVideoDescription = this._validateVideoDescription();
         const _validateVideoTags = this._validateVideoTags();
         const _validateThumbAndVideoFile = this._validateThumbAndVideoFile();
-        const __allFieldsValid = (
+        let __allFieldsValid = (
             _validateVideoTitle && _validateVideoDescription &&
             _validateVideoTags && _validateThumbAndVideoFile
         );
+
+        if (!isCreating) {
+            __allFieldsValid = (
+                _validateVideoTitle && _validateVideoDescription &&
+                _validateVideoTags
+            );
+        }
+
         if (__allFieldsValid) {
             return true;
         }

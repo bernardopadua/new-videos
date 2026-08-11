@@ -31,49 +31,62 @@ const videoUploadFormValidation = new VideoUploadFormValidation();
 videoForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
+    const isCreating = videoForm.getAttribute("is-creating") === "True" ? true : false;
+    
     videoUploadFormValidation.clearValidationMessages();
-    if (!videoUploadFormValidation.validateAllFields()) {
+    if (!videoUploadFormValidation.validateAllFields(isCreating)) {
         videoUploadFormValidation.showAlertBlock();
         return;
     }
 
-    const mediaUploadAlert = new MediaUploadAlertService();
-
-    mediaUploadAlert.showLoading();
-    document.getElementById("media-upload-alert").scrollIntoView({ behavior: 'smooth', block: 'center' });
-    //I opted to upload the thumb first, not complicated management.
-    //Simple that works.
-    thumbnailUploadService.doUploadThumbnail().then(r => {
-        const videoThumbTempFilename = document.getElementById('videoThumbTempFilename');
-        if (videoThumbTempFilename) {
-            videoThumbTempFilename.value = r.filename;
-        } else {
-            console.error("Error getting temp video thumb filename");
-            console.error("Aborting video upload.");
-            mediaUploadAlert.showError();
-            return;
-        }
-
-        const getTempVideoFileName = (r) => {
-            const videoTempFileName = document.getElementById('videoTempFilename');
-            if (!videoTempFileName) {
-                console.error("Error getVideoUploadStatus: video uuid is null");
-                mediaUploadAlert.showError();
-                return;
-            }
-            if (r && r.filename) {
-                videoTempFileName.value = r.filename;
+    if (thumbnailUploadService.checkFilesToUpload()) {
+        const mediaUploadAlert = new MediaUploadAlertService();
+        mediaUploadAlert.showLoading();
+        document.getElementById("media-upload-alert").scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        //I opted to upload the thumb first, not complicated management.
+        //Simple that works.
+        thumbnailUploadService.doUploadThumbnail().then(r => {
+            const videoThumbTempFilename = document.getElementById('videoThumbTempFilename');
+            if (videoThumbTempFilename) {
+                videoThumbTempFilename.value = r.filename;
             } else {
+                console.error("Error getting temp video thumb filename");
+                console.error("Aborting video upload.");
                 mediaUploadAlert.showError();
                 return;
             }
 
-            mediaUploadAlert.hideLoading();
-            videoForm.submit();
-        };
+            //No video to upload //editing.
+            if (!videoUploadService.checkFilesToUpload()) {
+                mediaUploadAlert.hideLoading();
+                videoForm.submit();
+                return;
+            }
 
-        videoUploadService.doVideoUpload(getTempVideoFileName);
-        videoUploadService.getVideoUploadStatus();
-    });
+            const getTempVideoFileName = (r) => {
+                const videoTempFileName = document.getElementById('videoTempFilename');
+                if (!videoTempFileName) {
+                    console.error("Error getVideoUploadStatus: video uuid is null");
+                    mediaUploadAlert.showError();
+                    return;
+                }
+                if (r && r.filename) {
+                    videoTempFileName.value = r.filename;
+                } else {
+                    mediaUploadAlert.showError();
+                    return;
+                }
+
+                mediaUploadAlert.hideLoading();
+                videoForm.submit();
+            };
+
+            videoUploadService.doVideoUpload(getTempVideoFileName);
+            videoUploadService.getVideoUploadStatus();
+        });
+    } else {
+        videoForm.submit();
+    }
     
 });

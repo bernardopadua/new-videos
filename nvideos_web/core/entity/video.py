@@ -46,7 +46,7 @@ class VideoMetadata(
     MetadataClass[Video],
     BaseMetadataAuditMixin
 ):
-    _table_name = "nvideo_video"
+    _table_name = "video"
     _model_data = Video
     _use_prefix = "vv"
     #Columns

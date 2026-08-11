@@ -1,3 +1,7 @@
+class VideoServiceUserNotAuthenticated(Exception):
+    """The user is not authenticated."""
+    pass
+
 class VideoServiceVideoDoesntExists(Exception):
     """The video doesn't exists."""
     pass

@@ -1,5 +1,6 @@
 #include <sw/redis++/redis++.h>
 
+#include "deps/httplib.h"
 #include "deps/json.hpp"
 
 #include <cstdio>
@@ -10,9 +11,16 @@
 #include <threads.h>
 #include <wait.h>
 
-#define REDIS_ADDRESS "tcp://localhost:6379"
+/* 
+    THIS ENTIRE THING SHOULD NOT BE HERE 
+    THIS SHOULD BE ENV VARs
+*/
+const std::string WEB_SERVER_DOMAIN = "http://localhost:8080";
+const std::string REDIS_ADDRESS = "tcp://localhost:6379";
 
-std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
+const std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
+
+const std::string API_AUTH_KEY = "7X9m-Q2vP-8K1z-L4nR-5W8c-J3tF-0B9x-P2vM";
 
 double get_video_time_duration(std::string videoKey, std::string videoFile){
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
@@ -43,7 +51,7 @@ double get_video_time_duration(std::string videoKey, std::string videoFile){
             "-v", "error",
             "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1",
-            "/usr/media_server/videos/aaa/video.webm",
+            videoFilePath.c_str(),
             nullptr
         };
 
@@ -79,7 +87,7 @@ double get_video_time_duration(std::string videoKey, std::string videoFile){
     return totalVideoTime;
 }
 
-void process_video_file(std::string videoKey, std::string videoFile, sw::redis::Redis redis) {
+void process_video_file(std::string videoKey, std::string videoFile, sw::redis::Redis& redis) {
     double totalDuration = get_video_time_duration(videoKey, videoFile);
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
 
@@ -112,9 +120,13 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
         close(fds[0]);
 
 
+        std::string inputVideoFile = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
+        std::string outputVideoFile = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + "playlist.m3u8";
+        std::string outputVideoPlaylist = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + "playlist%d.ts";
+
         const char *args[] = {
             "ffmpeg",
-            "-i", "/usr/media_server/videos/aaa/video.webm",
+            "-i", inputVideoFile.c_str(),
             "-vf",
             "scale=-2:720",
             "-c:v", "libx264",
@@ -130,7 +142,7 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
             "-progress", "pipe:1",
             "-hls_time", "6",
             "-hls_playlist_type", "vod",
-            "-hls_segment_filename", "/usr/media_server/videos/aaa/playlist%d.ts", "/usr/media_server/videos/aaa/playlist.m3u8",
+            "-hls_segment_filename", outputVideoPlaylist.c_str(), outputVideoFile.c_str(),
             nullptr
         };
 
@@ -159,7 +171,19 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
                 cc.size() - cc.find_last_of("=")
             ));
             int currentPercent = round(((currentTime/1000000.0) / totalDuration) * 100);
-            redis.set("video:processing:" + videoKey, std::to_string(currentPercent));
+            redis.set("video:processing:" + videoKey, std::to_string(currentPercent), std::chrono::seconds(60));
+
+            if(currentPercent == 100){
+                httplib::Client cli(WEB_SERVER_DOMAIN);
+                httplib::Headers h({
+                    {"New-Videos-Auth", API_AUTH_KEY}
+                });
+                cli.Post(
+                    "/video/processing/finished/"+videoKey+"/"+std::to_string(round(totalDuration)), 
+                    h
+                );
+                
+            }
         }
     }
 
@@ -180,15 +204,19 @@ int main(int argc, char *argv[]) {
 
     auto sub = redis.subscriber();
 
+    //Still thinking on altering to LPUSH -> (B)RPOP for more "fair" distribution.
     sub.on_message([&redis](std::string channel, std::string msg){ 
         nlohmann::json j = nlohmann::json::parse(msg);
         if(j.contains("videoKey") && j.contains("videoFilename")){
-            //std::thread t(process_video_file, 
-            // j["videoKey"].get<std::string>(), 
-            // j["videoFilename"].get<std::string>(),
-            // redis
-            //);
             std::cout << j["videoKey"] << j["videoFilename"] << std::endl;
+            
+            std::thread t(
+                process_video_file, 
+                j["videoKey"].get<std::string>(), 
+                j["videoFilename"].get<std::string>(),
+                std::ref(redis)
+            );
+            t.detach();
         }
     });
     sub.subscribe("video_upload");

@@ -18,7 +18,7 @@ channelDetailsBp = Blueprint(
 
 @channelDetailsBp.route("/channel/<int:channel_id>")
 def channel_detail(channel_id):
-    renderTemplate = render_template("channel_detail.html", channel_id=channel_id)
+    renderTemplate = render_template("channel/channel_detail.html", channel_id=channel_id)
     return renderTemplate
 
 @channelDetailsBp.route("/channel/create", methods=["GET", "POST"])
@@ -47,7 +47,7 @@ def channel_create():
                     else None
             ).fillInputData().updateChannelById(channelCreated.channelId)
 
-            return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
+            return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelCreated.channelId))
         except Exception as e:
             return render_template("base/error.html", error=str(e))
     
@@ -59,7 +59,7 @@ def channel_create():
     except:
         return render_template("base/error.html")
 
-    return render_template("channel_details_edit.html")
+    return render_template("channel/channel_details_edit.html")
 
 @channelDetailsBp.route("/channel/<int:channel_id>/edit", methods=["GET", "POST"])
 @loginRequired
@@ -91,11 +91,11 @@ def channel_edit(channel_id):
                     else None
             ).fillInputData().updateChannelById(channelUpdated.channelId)
 
-            return redirect(url_for("channel_details.channel_detail", channel_id=channelUpdated.channelId))
+            return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelUpdated.channelId))
         except Exception as e:
             return render_template("base/error.html", error=str(e))
 
     try:
-        return render_template("channel_details_edit.html", ch=channel)
+        return render_template("channel/channel_details_edit.html", ch=channel)
     except Exception as e:
         return render_template("base/error.html")

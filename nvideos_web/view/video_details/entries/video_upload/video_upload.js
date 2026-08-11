@@ -105,4 +105,20 @@ export default class VideoUploadService {
         }
         return false;
     }
+
+    checkFilesToUpload() {
+        if (!this._videoFile) {
+            this._videoFile = document.getElementById("video_file");
+
+            if (!this._videoFile) {
+                return false;
+            }
+        }
+
+        if (this._videoFile.files.length == 0) {
+            return false;
+        }
+
+        return true;
+    }
 };

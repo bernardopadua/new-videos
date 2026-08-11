@@ -51,13 +51,13 @@ def user_edit():
             return render_template("base/error.html", error=str(e))
 
         return render_template(
-            "user_details_edit.html",
+            "user/user_details_edit.html",
             us=userUpdated,
             success=True
         )
 
     us: User = UserService(userId=session["userId"]).selectByUserId()
     return render_template(
-        "user_details_edit.html",
+        "user/user_details_edit.html",
         us=us
     )

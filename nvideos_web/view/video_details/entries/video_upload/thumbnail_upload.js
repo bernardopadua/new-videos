@@ -30,4 +30,10 @@ export default class ThumbnailUploadService {
 
         return response.json();
     }
+
+    checkFilesToUpload(){
+        const thumbFile = document.getElementById("video_thumb_file");
+        if (!thumbFile) return false;
+        return thumbFile.files.length > 0;
+    }
 };

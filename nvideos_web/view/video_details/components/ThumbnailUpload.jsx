@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-export default function ThumbnailUpload() {
-    const [thumbImagePreview, setThumbImagePreview] = useState("");
+export default function ThumbnailUpload({ thumbnailTempFilenameInput }) {
+    const [thumbImagePreview, setThumbImagePreview] = useState(thumbnailTempFilenameInput.value || "");
 
     const handleChange = (e) => {
         const file = e.target.files[0];

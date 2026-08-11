@@ -24,8 +24,8 @@
 std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
 std::filesystem::path MEDIA_SERVER_TEMP_PATH = "/tmp/";
 
-#define DOMAIN_WEB_SERVER "http://localhost:8080"
-#define REDIS_ADDRESS "tcp://localhost:6379"
+std::string DOMAIN_WEB_SERVER = "http://localhost:8080";
+std::string REDIS_ADDRESS = "tcp://localhost:6379";
 
 std::string generateHashFileName(std::string ext){
     auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
@@ -40,16 +40,9 @@ std::string generateHashFileName(std::string ext){
 int main(int regv, char** regc){
     httplib::Server srv;
     sw::redis::Redis redis = sw::redis::Redis(REDIS_ADDRESS);
-    const char* sss = std::getenv("DOMAIN_MEDIA_SERVER");
+    std::string DOMAIN_MEDIA_SERVER(std::getenv("DOMAIN_MEDIA_SERVER"));
 
-    if (sss == nullptr){
-        std::cerr << "DOMAIN_MEDIA_SERVER is not set." << std::endl;
-        return 1;
-    }
-
-    std::string thisDomain = std::string(sss);
-
-    if(thisDomain.empty()){
+    if(DOMAIN_MEDIA_SERVER.empty()){
         std::cerr << "DOMAIN_MEDIA_SERVER is not set." << std::endl;
         return 1;
     }
@@ -65,7 +58,7 @@ int main(int regv, char** regc){
         res.set_content("", "text/plain");
     });
     //Init video upload
-    srv.Post("/video/init/upload", [](const httplib::Request &req, httplib::Response &res){
+    srv.Post("/video/init/upload", [&redis](const httplib::Request &req, httplib::Response &res){
         nlohmann::json payload;
 
         try {
@@ -247,10 +240,54 @@ int main(int regv, char** regc){
 
         res.set_content("{ \
             \"success\":\"File moved successfully.\", \
-            \"videofilename\":\"/video/"+ videoKey +"/video"+ extVideoFile +"\",\
+            \"videofilename\":\"video"+ extVideoFile +"\",\
             \"thumbnailfilename\":\"/video/thumbnail/"+ videoKey +"/thumbnail"+ extThumbnailFile +"\"\
             }", "application/json");
     });
+    srv.Post("/video/move/thumb/temp/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
+        std::string videoKey = req.matches[1];
+        std::string thumbnailFileNameTemp = req.matches[2];
+
+        if (thumbnailFileNameTemp.size() > 0 && !std::filesystem::exists(MEDIA_SERVER_TEMP_PATH / thumbnailFileNameTemp)) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Thumbnail file not found.\"}", "application/json");
+            return;
+        }
+
+        int dotPost = thumbnailFileNameTemp.find_last_of('.');
+        std::string extThumbnailFile = thumbnailFileNameTemp.substr(dotPost);
+
+        std::string newPath = MEDIA_SERVER_BASE_PATH.string()+"videos/" + videoKey;
+
+        if(!std::filesystem::exists(newPath)) {
+            res.status = 404;
+            res.set_content("{\"error\":\"Video directory not found.\"}", "application/json");
+            return;
+        }
+
+        for (auto& i : std::filesystem::directory_iterator(newPath)){
+            if (i.is_regular_file() && i.path().filename().string().rfind("thumbnail.") > 0){
+                try {
+                    std::filesystem::remove(i.path());
+                } catch (const std::exception &e) {
+                    res.status = 500;
+                    res.set_content("{\"error\":\"Failed to remove thumbnail file.\"}", "application/json");
+                    return;
+                }
+            }
+        }
+
+        std::filesystem::rename(
+            MEDIA_SERVER_TEMP_PATH.string()+thumbnailFileNameTemp, 
+            newPath + "/thumbnail" + extThumbnailFile
+        );
+
+        res.set_content("{ \
+            \"success\":\"File moved successfully.\", \
+            \"thumbnailfilename\":\"/video/thumbnail/"+ videoKey +"/thumbnail"+ extThumbnailFile +"\"\
+            }", "application/json");
+    });
+    
 
     //Get thumbnail from video key
     srv.Get("/video/thumbnail/([^/]+)/([^/]+)", [](const httplib::Request &req, httplib::Response &res){
