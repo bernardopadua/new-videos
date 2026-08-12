@@ -28,7 +28,6 @@
                 "videoKey": "{{ vd.videoKey }}"
             }
         </script>
-        <script type="module" src="{{url_for('video_details.static', filename='dist/vpl.js')}}"></script>
 
         <!-- TITLE & CATEGORY TAGS -->
         <div class="space-y-3">
@@ -78,19 +77,25 @@
                 <span class="text-sm text-white">{{vd.videoViewCount}} views</span>
             </div>
             
-            <div id="desc-wrapper" class="relative max-h-20 overflow-hidden transition-all duration-300">
+            {% set descriptionLength = "has-more" if (vd.videoDescription | length) > 100 else "" %}
+            <div id="desc-wrapper" {{ descriptionLength }} class="relative max-h-20 overflow-hidden transition-all duration-300">
                 <p class="text-sm text-gray-200 leading-relaxed font-normal whitespace-pre-line">
                     {{ vd.videoDescription }}
                 </p>
 
+                {% if descriptionLength %}
                 <div id="desc-fade" class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-surface/90 to-transparent pointer-events-none">
                 </div>
+                {% endif %}
             </div>
 
-            <div class="pt-1 flex items-center gap-2 text-xs font-semibold text-brand hover:underline">
+            {% if descriptionLength %}
+            <div id="desc-more" class="pt-1 flex items-center gap-2 text-xs font-semibold text-brand hover:underline">
                 <span>...more</span>
             </div>
+            {% endif %}
         </div>
+
 
         <!-- COMMENTS SECTION (SPACIOUS PADDING & NO LIKE BUTTONS) -->
         <div class="space-y-8 pt-6 border-t border-white/10">
@@ -169,37 +174,27 @@
 
     </div>
 
-    <!-- RIGHT SECONDARY COLUMN (RECOMMENDED VIDEOS - STRICT SIDE-BY-SIDE DESKTOP POSITION) -->
+    <!-- RIGHT SECONDARY COLUMN -->
     <div class="xl:col-span-4 space-y-4 min-w-0">
-        
-        <!-- FILTER CHIPS ON TOP -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 text-xs no-scrollbar">
-            <button class="px-4 py-2 bg-white text-black font-bold rounded-xl shrink-0 shadow">All</button>
-            <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shrink-0 transition border border-white/10">From DevPro</button>
-            <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shrink-0 transition border border-white/10">Related</button>
-            <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shrink-0 transition border border-white/10">Recently uploaded</button>
-        </div>
 
         <!-- RECOMMENDED ITEM LIST (SPACIOUS CARD PADDING) -->
         <div class="space-y-4">
-            {% for i in range(10) %}
+            {% for vdr in vdsRecommended %}
             <div class="p-3.5 rounded-2xl bg-surface/50 hover:bg-surface/90 border border-white/5 hover:border-white/15 transition flex items-start gap-4 group cursor-pointer shadow-sm">
                 <!-- THUMBNAIL -->
                 <div class="w-40 sm:w-44 aspect-video bg-black rounded-xl overflow-hidden shrink-0 relative border border-white/10 group-hover:border-brand/50 transition shadow-sm">
-                    <img src="https://picsum.photos/320/180?random={{ i + 10 }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Thumbnail">
-                    <span class="absolute bottom-1.5 right-1.5 bg-black/85 text-[10px] font-bold px-1.5 py-0.5 rounded text-white">18:32</span>
+                    <img src="{{vdr.videoThumbUrl}}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Thumbnail">
+                    <span class="absolute bottom-1.5 right-1.5 bg-black/85 text-[10px] font-bold px-1.5 py-0.5 rounded text-white">{{ formatTimeVideoDuration(vdr.videoTimeDuration) }}</span>
                 </div>
 
                 <!-- METADATA -->
                 <div class="flex-1 min-w-0 flex flex-col justify-start py-0.5 space-y-1">
                     <h4 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-brand transition">
-                        Building Scalable Video Streaming Platforms with HLS and Flask
+                        {{ vdr.videoTitle }}
                     </h4>
-                    <p class="text-xs text-gray-400 truncate hover:text-white font-medium">DevPro Studio</p>
+                    <p class="text-xs text-gray-400 truncate hover:text-white font-medium">{{ vdr.channelName }}</p>
                     <div class="text-[11px] text-gray-500 flex items-center gap-1.5 pt-0.5">
-                        <span>45K views</span>
-                        <span>•</span>
-                        <span>3 days ago</span>
+                        <span>{{ getTotalViewsDescription(vdr.videoViewCount) }}</span>
                     </div>
                 </div>
             </div>
@@ -208,6 +203,6 @@
 
     </div>
 
-
+    <script type="module" src="{{url_for('video_details.static', filename='dist/vdwe.js')}}"></script>
 </div>
 {% endblock %}

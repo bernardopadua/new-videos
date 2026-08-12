@@ -2,7 +2,6 @@
 from typing import override
 
 # PSYCOPG
-from psycopg import Cursor
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
@@ -91,6 +90,21 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             if result is None:
                 return None, None
             return ChannelMetadata.row(result), ChannelTotalSubscribers.row(result)
+
+    @override
+    def selectChannelsIdsUserIsSubscribed(self, userId: int) -> list[int]:
+        sb = SubscriberMetadata
+        
+        userIdSqlParam, userIdParamObj = NvSql.createParam("user_id", userId)
+
+        stmt = NvSql.formatStmt(
+            f"""
+            select {sb.channelId.field} from {sb.tableName()} where {sb.userId.field} = {userIdSqlParam};
+            """
+        )
+        with self._db.getConn() as conn:
+            results = conn.execute(stmt, params=userIdParamObj)
+            return [ result[0] for result in results.fetchall() ]
 
     @override
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel:
@@ -185,3 +199,18 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
             result = cur.fetchone()
             conn.commit()
             return ChannelMetadata.row(result)
+
+    @override
+    def hardDelete(self, channelId: int) -> bool:
+        channelIdParamSql, channelIdParam = NvSql.createParam("channel_id", channelId)
+
+        stmt = NvSql.formatStmt(
+            f"""
+            delete from {ChannelMetadata.tableName()} where {ChannelMetadata.channelId.field} = {channelIdParamSql};
+            """
+        )
+
+        with self._db.getConn() as conn:
+            r = conn.execute(stmt, params=channelIdParam)
+            conn.commit()
+            return r.rowcount > 0

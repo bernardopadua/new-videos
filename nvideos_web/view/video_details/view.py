@@ -136,29 +136,23 @@ def video_list():
 
 @videoDetailsBp.route("/video/<string:video_key>")
 @loginRequired
-@channelRequired
 def video_detail(video_key: str):
     #TODO: Treat input video_key
     
-    channelId: int | None = session.get("channelId")
-    
-    if channelId is None: #pyright
-        return render_template("base/error.html", error="Channel not found")
-
     vSrv: VideoService = VideoService(
-        userId=session.get("userId"),
-        channelId=session.get("channelId")
+        userId=session.get("userId")
     )
     cSrv: ChannelService = ChannelService(
         userId=session.get("userId")
     )
-    vd = vSrv.selectByVideoKey(video_key)
-    ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(channelId)
+    chUserIsSubscribed = cSrv.selectChannelsIdsUserIsSubscribed()
+    vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, chUserIsSubscribed)
+    ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(vd.channelId)
 
     if not vd or not ch:
-        return render_template("base/error.html", error="Video or Channel not found")
+        return render_template("base/error.html", error="Video not found")
     
-    renderTemplate = render_template("video/video_detail.html", vd=vd, ch=ch, chTotal=chTotal)
+    renderTemplate = render_template("video/video_detail.html", vd=vd, vdsRecommended=vdsRecommended, ch=ch, chTotal=chTotal)
     return renderTemplate
 
 

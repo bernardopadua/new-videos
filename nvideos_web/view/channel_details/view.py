@@ -5,7 +5,7 @@ from flask import (
 )
 
 # DECORATORS
-from nvideos_web.view.endpoint_decorators import loginRequired
+from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired
 
 # SERVICE
 from nvideos_web.services.channel.service import ChannelService, Channel
@@ -17,6 +17,7 @@ channelDetailsBp = Blueprint(
 )
 
 @channelDetailsBp.route("/channel/<int:channel_id>")
+@channelRequired
 def channel_detail(channel_id):
     renderTemplate = render_template("channel/channel_detail.html", channel_id=channel_id)
     return renderTemplate
@@ -27,9 +28,10 @@ def channel_create():
     if flaskRequest.method == "POST":
         formData:dict[str,str] = flaskRequest.form
         cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+        channelCreated: Channel | None = None
 
         try:
-            channelCreated: Channel = cSrv.fillInputData(
+            channelCreated = cSrv.fillInputData(
                 channelName=formData.get("channelName"),
                 channelDescription=formData.get("channelDescription"),
                 
@@ -47,9 +49,13 @@ def channel_create():
                     else None
             ).fillInputData().updateChannelById(channelCreated.channelId)
 
-            return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelCreated.channelId))
+            return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
         except Exception as e:
-            return render_template("base/error.html", error=str(e))
+            #TODO: LOGGING.
+            if channelCreated:
+                _ = cSrv.hardDeleteChannelById(channelCreated.channelId)
+
+            return render_template("base/error.html")
     
     try:
         cSrv: ChannelService = ChannelService(userId=session.get("userId"))

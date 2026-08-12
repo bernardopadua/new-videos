@@ -58,6 +58,14 @@ class ChannelService(BaseService[ChannelInput]):
         except:
             return None, None
 
+    def selectChannelsIdsUserIsSubscribed(self, /, *, userId: int | None = None) -> list[int]:
+        if self.currentUser:
+            userId = self.currentUser
+        elif userId is None:
+            raise ChannelServiceNoCurrentUser("No current user informed.")
+
+        return self._chRep.selectChannelsIdsUserIsSubscribed(userId=userId)
+
     def checkInputDataIsValid(self, /) -> Self:
         _inputData = self.getInputData()
         
@@ -94,6 +102,23 @@ class ChannelService(BaseService[ChannelInput]):
             return self._chRep.updateById(channelId=idRegistry, newChannelData=_inputData, auditData=_auditData)
         finally:
             self.resetData()
+
+    def deleteChannelById(self, idRegistry: int, /) -> bool:
+        _auditData = self.fillAuditData().getAuditData()
+
+        try:
+            if not self.checkIdExists(idRegistry=idRegistry).getCheckIdExists():
+                raise ChannelServiceChannelDoesntExists("The channel you are trying to delete doesn't exists.")
+
+            return self._chRep.deleteById(idRegistry=idRegistry, auditData=_auditData)
+        finally:
+            self.resetData()
+
+    def hardDeleteChannelById(self, channelId: int, /) -> bool:
+        try:
+            return self._chRep.hardDelete(channelId=channelId)
+        except:
+            return False
 
     def doIAlreadyHaveChannel(self, /) -> Channel | None:
         if not self.currentUser:

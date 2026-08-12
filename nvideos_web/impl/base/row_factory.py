@@ -14,10 +14,10 @@ from nvideos_web.core.entity.base.base_entity import ModelField, BaseModelData
 class ModelRowFactory:
     def __init__(
         self, 
-        listOrderFields: list[ModelField],
+        listOrderFields: list[ModelField] | None,
         /, *, additionalModelFields: type[BaseModelData] | None = None
     ):
-        self.fields: list[ModelField] = listOrderFields
+        self.fields: list[ModelField] | None = listOrderFields
         self._additionalModelFields: type[BaseModelData] | None = additionalModelFields
 
     def __call__(
@@ -30,7 +30,7 @@ class ModelRowFactory:
             instancesModel: dict[int, object] = {}
 
             for i in range(len(values)):
-                if i < len(self.fields):
+                if self.fields is not None and i < len(self.fields):
                     field: ModelField = self.fields[i]
                     modelIdentification: int = id(field.getOwner())
                     if modelIdentification not in eachModel:
@@ -42,7 +42,8 @@ class ModelRowFactory:
                     fieldStr: str
                     if cursor and cursor.description and cursor.description[i]:
                         fieldStr = cursor.description[i].name
-                        eachModel[modelIdentification] = { "model": self._additionalModelFields, "row": {} }
+                        if modelIdentification not in eachModel:
+                            eachModel[modelIdentification] = { "model": self._additionalModelFields, "row": {} }
                         eachModel[modelIdentification]["row"][fieldStr] = values[i]
 
             for model in eachModel.keys():

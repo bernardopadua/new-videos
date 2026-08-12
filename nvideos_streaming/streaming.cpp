@@ -266,7 +266,7 @@ int main(int regv, char** regc){
         }
 
         for (auto& i : std::filesystem::directory_iterator(newPath)){
-            if (i.is_regular_file() && i.path().filename().string().rfind("thumbnail.") > 0){
+            if (i.is_regular_file() && i.path().filename().string().rfind("thumbnail.", 0) == 0){
                 try {
                     std::filesystem::remove(i.path());
                 } catch (const std::exception &e) {

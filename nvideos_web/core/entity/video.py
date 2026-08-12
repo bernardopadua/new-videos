@@ -8,6 +8,9 @@ from nvideos_web.core.entity.base.base_entity import (
     MetadataClass, BaseMetadataAuditMixin
 )
 
+# CONSTANTS
+from nvideos_web.core.entity.base.constants import VideoPermissions
+
 @dataclass(frozen=True, slots=True)
 class Video(AuditData, BaseModelData):
     videoId: int = field(default=0)
@@ -40,6 +43,23 @@ class VideoInput(BaseInput):
     videoIsActive: bool | None = field(default=None)
     videoStatus: str | None = field(default=None)
     videoTempFilename: str | None = field(default=None)
+
+@dataclass(frozen=True, slots=True)
+class VideosRecommended(BaseModelData):
+    videoId: int = field(default=0)
+    videoKey: str = field(default="")
+    videoTitle: str = field(default="")
+    videoThumbUrl: str = field(default="")
+    videoViewCount: int = field(default=0)
+    videoTimeDuration: int = field(default=0)
+    videoPermission: str = field(default="")
+    channelId: int = field(default=0)
+    channelName: str = field(default="")
+
+    def checkUserCanSee(self, channelsUserIsSubscribed: list[int], /) -> bool:
+        if self.videoPermission == VideoPermissions.P_SUBSCRIBER_ONLY.value:
+            return self.channelId in channelsUserIsSubscribed
+        return True
 
 @final
 class VideoMetadata(

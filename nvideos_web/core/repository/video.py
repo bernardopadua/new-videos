@@ -7,7 +7,8 @@ from abc import ABC, abstractmethod
 # ENTITY
 from nvideos_web.core.entity.video import (
     Video,
-    VideoInput
+    VideoInput,
+    VideosRecommended
 )
 from nvideos_web.core.entity.base.base_entity import AuditData
 
@@ -22,7 +23,7 @@ class VideoRepository(ABC):
     def checkKeyExists(self, videoKey: str) -> bool: 
         ...
     @abstractmethod
-    def selectByVideoKey(self, videoKey: str, userId: int) -> Video: 
+    def selectByVideoKey(self, videoKey: str, *, conn: Connection | None = None) -> Video | None: 
         ...
     @abstractmethod
     def selectLimitVideosByChannelId(self, limit: int, 
@@ -35,6 +36,12 @@ class VideoRepository(ABC):
         ...
     @abstractmethod
     def selectLimitCountVideoByChannelId(self, *, limit: int, channelId: int, offset: int = 0) -> tuple[list[Video], int]:
+        ...
+    @abstractmethod
+    def selectRecommendedVideos(self, videoKey: str, channelId: int, *, conn: Connection | None = None) -> list[VideosRecommended]:
+        ...
+    @abstractmethod
+    def selectVideoKeyByIdAndRecommended(self, videoKey: str) -> tuple[Video, list[VideosRecommended]]:
         ...
     @abstractmethod
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 

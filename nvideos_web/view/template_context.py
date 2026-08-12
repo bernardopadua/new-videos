@@ -49,6 +49,31 @@ def getChannelSubscriberDescription(totalSubscribers: int) -> str:
     else:
         return str(totalSubscribers)
 
+def getTotalViewsDescription(totalViews: int) -> str:
+    if totalViews > 1000 and totalViews < 1000000:
+        total = str(totalViews/1000)
+        if total.find(".") == -1:
+            return total + "K views"
+        else:
+            return total[:total.find(".")] + "K views"
+    elif totalViews > 1000000:
+        total = str(totalViews/1000000)
+        if total.find(".") == -1:
+            return total + "M views"
+        else:
+            return total[:total.find(".")] + "M views"
+    else:
+        return str(totalViews) + " views"
+
+def formatTimeVideoDuration(timeDurationSeconds: int):
+    hours: str = str(round(timeDurationSeconds / 3600)).zfill(2) if timeDurationSeconds > 3600 else "00"
+    minutes: str = str(round((timeDurationSeconds % 3600) / 60)).zfill(2)
+    seconds: str = str(round(timeDurationSeconds % 60)).zfill(2)
+
+    if hours == "00":
+        return minutes + ":" + seconds
+    return hours + ":" + minutes + ":" + seconds
+
 #Don't know if it is the best solution.
 def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["userIsLoggedIn"] = userIsLoggedIn
@@ -57,3 +82,5 @@ def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["getVideoPermissionTranslated"] = getVideoPermissionTranslated
     cast(dict[str, Any], app.jinja_env.globals)["getChannelNameAbreviation"] = getChannelNameAbreviation
     cast(dict[str, Any], app.jinja_env.globals)["getChannelSubscriberDescription"] = getChannelSubscriberDescription
+    cast(dict[str, Any], app.jinja_env.globals)["getTotalViewsDescription"] = getTotalViewsDescription
+    cast(dict[str, Any], app.jinja_env.globals)["formatTimeVideoDuration"] = formatTimeVideoDuration

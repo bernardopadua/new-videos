@@ -62,7 +62,7 @@ export default defineConfig({
                 'video_details/video_details_entry/vde': './video_details/entries/video_details_entry.jsx',
                 'video_details/video_details_registration_editing/vdre': './video_details/entries/video_details_registration_editing.js',
                 'video_details/video_listing_entry/vle': './video_details/entries/video_listing_entry.jsx',
-                'video_details/video_player/vpl': './video_details/entries/video_player.js',
+                'video_details/video_detail_watch_entry/vdwe': './video_details/entries/video_detail_watch_entry.js',
             },
             output: {
                 entryFileNames: (chunkInfo) => {
