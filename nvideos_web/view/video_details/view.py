@@ -7,9 +7,11 @@ from flask import (
 
 # SERVICE
 from nvideos_web.services.video.service import VideoService
+from nvideos_web.services.channel.service import ChannelService
 
 # ENTITY
 from nvideos_web.core.entity.video import Video
+from nvideos_web.core.entity.channel import Channel, ChannelTotalSubscribers
 
 # DECORATOR
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired, authKeyNeeded
@@ -136,10 +138,28 @@ def video_list():
 @loginRequired
 @channelRequired
 def video_detail(video_key: str):
-    #TODO: Select video to vd
-    renderTemplate = render_template("video/video_detail.html", vd=None)
-    return renderTemplate
+    #TODO: Treat input video_key
+    
+    channelId: int | None = session.get("channelId")
+    
+    if channelId is None: #pyright
+        return render_template("base/error.html", error="Channel not found")
 
+    vSrv: VideoService = VideoService(
+        userId=session.get("userId"),
+        channelId=session.get("channelId")
+    )
+    cSrv: ChannelService = ChannelService(
+        userId=session.get("userId")
+    )
+    vd = vSrv.selectByVideoKey(video_key)
+    ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(channelId)
+
+    if not vd or not ch:
+        return render_template("base/error.html", error="Video or Channel not found")
+    
+    renderTemplate = render_template("video/video_detail.html", vd=vd, ch=ch, chTotal=chTotal)
+    return renderTemplate
 
 
 #

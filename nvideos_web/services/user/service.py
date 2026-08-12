@@ -97,7 +97,7 @@ class UserService(BaseService[UserInput]):
         def checkForValidEmail(email: str) -> bool:
             import re
             return bool(re.search(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email))
-            
+
 
         if self._filledInputData.userPasswordPlain != self._filledInputData.confirmPassword:
             raise UserServiceUserDontMatchPassword("The informed password doesn't match the user's password.")

@@ -9,7 +9,7 @@ from typing_extensions import override, final
 from nvideos_web.services.base.service import BaseService
 
 # ENTITY
-from nvideos_web.core.entity.channel import Channel, ChannelInput
+from nvideos_web.core.entity.channel import Channel, ChannelInput, ChannelTotalSubscribers
 
 # REPOSITORY
 from nvideos_web.impl.channel_repository import PgChannelRepository
@@ -41,6 +41,22 @@ class ChannelService(BaseService[ChannelInput]):
         self._chRep: PgChannelRepository = PgChannelRepository(dbContext=dbContext)
         self._avatarImageUrl: str | None = None
         self._coverImageUrl: str | None = None
+
+    def selectChannelById(self, channelId: int, /) -> Channel | None:
+        #I'm keeping it simple for now, will implement the other selects later
+        try:
+            channel = self._chRep.selectById(channelId=channelId)
+            return channel
+        except:
+            return None
+    
+    def selectChannelByIdWithTotalSubscribers(self, channelId: int, /) -> tuple[Channel | None, ChannelTotalSubscribers | None]:
+        #I'm keeping it simple for now, will implement the other selects later
+        try:
+            channel, totalSubscribers = self._chRep.selectByIdWithTotalSubscribers(channelId=channelId)
+            return channel, totalSubscribers
+        except:
+            return None, None
 
     def checkInputDataIsValid(self, /) -> Self:
         _inputData = self.getInputData()

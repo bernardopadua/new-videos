@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, fields
 # TYPING
 from typing import (
     TypeVar, Generic, 
-    Callable, Any, cast
+    Callable, Any, cast, Self
 )
 
 AVOID_PREFIX_REPETITION: list[str] = []
@@ -244,6 +244,10 @@ class BaseModelData:
             if attr is not None and attr != "" and attr != 0:
                 data[i.name] = attr
         return data
+    
+    @classmethod
+    def row(cls, rowResult: dict[int, object]) -> Self:
+        return rowResult[id(cls)]
 
 @dataclass
 class BaseInput:

@@ -2,31 +2,44 @@
 
 {% block title %}Video Player - nVideos{% endblock %}
 
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+{% endblock %}
+
 {% block content %}
 <!-- YOUTUBE-INSPIRED WATCH PAGE (SIDE-BY-SIDE DESKTOP LAYOUT, NO LIKES, SPACIOUS PADDING) -->
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 lg:gap-10 pb-16 w-full">
     
     <!-- LEFT PRIMARY COLUMN (PLAYER + TITLE + CHANNEL + DESCRIPTION + COMMENTS) -->
-    <div class="xl:col-span-8 space-y-8 min-w-0">
+    <div class="xl:col-span-8 space-y-5 min-w-0">
         
         <!-- VIDEO PLAYER CONTAINER (16:9) -->
         <div class="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-            <video id="main-video-player" controls class="w-full h-full object-contain" poster="https://picsum.photos/1280/720?random=1">
+            <video id="main-video-player" 
+                controls class="w-full h-full object-contain" 
+                poster="{{vd.videoThumbUrl}}"
+            >
                 <source src="" type="video/mp4">
                 Your browser does not support HTML5 video.
             </video>
         </div>
+        <script id="initial-data" type="application/json">
+            {
+                "videoKey": "{{ vd.videoKey }}"
+            }
+        </script>
+        <script type="module" src="{{url_for('video_details.static', filename='dist/vpl.js')}}"></script>
 
         <!-- TITLE & CATEGORY TAGS -->
         <div class="space-y-3">
             <div class="flex items-center gap-2 flex-wrap">
-                <span class="px-3.5 py-1.5 bg-brand/20 text-brand border border-brand/30 rounded-full text-xs font-semibold">Software Engineering</span>
-                <span class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">Python & Flask</span>
-                <span class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">React v19</span>
+                {% for tag in vd.videoTags %}
+                    <span class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">{{ tag }}</span>
+                {% endfor %}
             </div>
 
             <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">
-                Building a High-Performance YouTube + Twitch Hybrid Web App with Flask & React
+                {{ vd.videoTitle }}
             </h1>
         </div>
 
@@ -37,19 +50,18 @@
             <div class="flex items-center gap-4">
                 <div class="relative shrink-0">
                     <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-brand/30 border-2 border-brand overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow">
-                        DP
+                        {{getChannelNameAbreviation(ch.channelName)}}
                     </div>
-                    <span class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-bg-dark rounded-full" title="Online"></span>
                 </div>
 
                 <div class="flex flex-col">
                     <div class="flex items-center gap-1.5">
-                        <h3 class="font-bold text-white text-base hover:text-brand transition cursor-pointer">DevPro Studio</h3>
+                        <h3 class="font-bold text-white text-base hover:text-brand transition cursor-pointer">{{ ch.channelName }}</h3>
                         <svg class="w-4 h-4 text-brand fill-current" viewBox="0 0 20 20">
                             <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
                         </svg>
                     </div>
-                    <p class="text-xs text-gray-400 mt-0.5">245K subscribers</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{getChannelSubscriberDescription(chTotal.totalSubscribers)}} subscribers</p>
                 </div>
 
                 <!-- SUBSCRIBE BUTTON -->
@@ -58,55 +70,22 @@
                 </button>
             </div>
 
-            <!-- ACTION BUTTONS (NO LIKES) -->
-            <div class="flex items-center gap-3 flex-wrap">
-                <!-- SHARE -->
-                <button class="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 107.032-1.176 3 3 0 00-7.032 1.176zm0 8.434a3 3 0 107.032 1.176 3 3 0 00-7.032-1.176z"/>
-                    </svg>
-                    <span>Share</span>
-                </button>
-
-                <!-- CLIP -->
-                <button class="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 11-4.243-4.243 3 3 0 014.243 4.243zm9-9a3 3 0 11-4.243-4.243 3 3 0 014.243 4.243z"/>
-                    </svg>
-                    <span>Clip</span>
-                </button>
-
-                <!-- SAVE -->
-                <button class="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                    </svg>
-                    <span>Save</span>
-                </button>
-
-                <!-- MORE OPTIONS -->
-                <button class="p-2.5 text-xs font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/15 rounded-full transition shadow-sm">
-                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                    </svg>
-                </button>
-            </div>
-
         </div>
 
         <!-- DESCRIPTION BOX (YOUTUBE STYLE WITH SPACIOUS PADDING) -->
         <div class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md space-y-4 shadow-lg hover:border-white/20 transition cursor-pointer">
             <div class="flex items-center gap-4 text-xs font-bold text-gray-300 flex-wrap border-b border-white/10 pb-3">
-                <span class="text-sm text-white">128,430 views</span>
-                <span>•</span>
-                <span class="text-sm text-white">Streamed 2 days ago</span>
-                <span>•</span>
-                <span class="text-brand font-semibold text-sm">Video Key: {{ video_key }}</span>
+                <span class="text-sm text-white">{{vd.videoViewCount}} views</span>
             </div>
             
-            <p class="text-sm text-gray-200 leading-relaxed font-normal">
-                In this deep dive episode, we walk through building a modern web application stack combining Python Flask on the backend with Vite, React v19, and Tailwind CSS v4 on the frontend! Learn how to integrate custom endpoints, component architectures, and responsive layout designs.
-            </p>
+            <div id="desc-wrapper" class="relative max-h-20 overflow-hidden transition-all duration-300">
+                <p class="text-sm text-gray-200 leading-relaxed font-normal whitespace-pre-line">
+                    {{ vd.videoDescription }}
+                </p>
+
+                <div id="desc-fade" class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-surface/90 to-transparent pointer-events-none">
+                </div>
+            </div>
 
             <div class="pt-1 flex items-center gap-2 text-xs font-semibold text-brand hover:underline">
                 <span>...more</span>
@@ -228,6 +207,7 @@
         </div>
 
     </div>
+
 
 </div>
 {% endblock %}

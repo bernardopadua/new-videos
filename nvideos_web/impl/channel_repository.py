@@ -6,7 +6,11 @@ from psycopg import Cursor
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
-from nvideos_web.core.entity.channel import Channel, ChannelInput, ChannelMetadata
+from nvideos_web.core.entity.channel import (
+    Channel, ChannelInput, 
+    ChannelMetadata, ChannelTotalSubscribers
+)
+from nvideos_web.core.entity.subscriber import SubscriberMetadata
 
 # DB
 from nvideos_web.db.pgcontext import NewVideosDBContext
@@ -43,6 +47,50 @@ class PgChannelRepository(PgRepositoryBase, ChannelRepository):
                 return None
 
             return ChannelMetadata.row(result)
+
+    @override
+    def selectById(self, channelId: int) -> Channel | None:
+        selectFields, selectFieldsOrder = NvSql.selectOder(ChannelMetadata.all)
+        channelIdSqlParam, channelIdParam = NvSql.createParam("channel_id", channelId)
+        stmt = NvSql.formatStmt(
+            f"""
+            select {selectFields}
+              from {ChannelMetadata.tableName()}
+             where {ChannelMetadata.channelId.field} = {channelIdSqlParam};
+            """
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(selectFieldsOrder))
+            r = cur.execute(stmt, params=channelIdParam)
+            result = r.fetchone()
+            if result is None:
+                return None
+            return ChannelMetadata.row(result)
+
+    @override
+    def selectByIdWithTotalSubscribers(self, channelId: int) -> tuple[Channel | None, ChannelTotalSubscribers | None]:
+        selectFields, selectFieldsOrder = NvSql.selectOder(ChannelMetadata.all, usePrefix=True)
+        channelIdSqlParam, channelIdParam = NvSql.createParam("channel_id", channelId)
+        stmt = NvSql.formatStmt(
+            f"""
+            select {selectFields}, count({SubscriberMetadata.subscriberId.getWithPrefix()}) as "totalSubscribers"
+              from {ChannelMetadata.tableNamePrefix()}
+              left join {SubscriberMetadata.tableNamePrefix()} on 
+                {ChannelMetadata.channelId.getWithPrefix()} = {SubscriberMetadata.channelId.getWithPrefix()}
+             where {ChannelMetadata.channelId.getWithPrefix()} = {channelIdSqlParam}
+            group by {ChannelMetadata.channelId.getWithPrefix()};
+            """
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(
+                selectFieldsOrder, 
+                additionalModelFields=ChannelTotalSubscribers
+            ))
+            r = cur.execute(stmt, params=channelIdParam)
+            result = r.fetchone()
+            if result is None:
+                return None, None
+            return ChannelMetadata.row(result), ChannelTotalSubscribers.row(result)
 
     @override
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel:
