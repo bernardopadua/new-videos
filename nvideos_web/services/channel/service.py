@@ -58,14 +58,6 @@ class ChannelService(BaseService[ChannelInput]):
         except:
             return None, None
 
-    def selectChannelsIdsUserIsSubscribed(self, /, *, userId: int | None = None) -> list[int]:
-        if self.currentUser:
-            userId = self.currentUser
-        elif userId is None:
-            raise ChannelServiceNoCurrentUser("No current user informed.")
-
-        return self._chRep.selectChannelsIdsUserIsSubscribed(userId=userId)
-
     def checkInputDataIsValid(self, /) -> Self:
         _inputData = self.getInputData()
         
@@ -128,7 +120,7 @@ class ChannelService(BaseService[ChannelInput]):
 
     @override
     def checkIdExists(self, idRegistry: int) -> Self:
-        self._checkExists: bool = self._chRep.checkIdExists(channelId=idRegistry)
+        self._checkExists = self._chRep.checkIdExists(channelId=idRegistry)
         return self
 
     @override
@@ -204,4 +196,3 @@ class ChannelService(BaseService[ChannelInput]):
                 raise ChannelServiceFailedToMoveTempImageToMedia("The media server couldn't move the temp cover image to media.")
 
         return self
-

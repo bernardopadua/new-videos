@@ -13,6 +13,7 @@ from nvideos_web.view.user_details.view import userDetailsBp
 from nvideos_web.view.home.view import homeBp
 from nvideos_web.view.video_details.view import videoDetailsBp
 from nvideos_web.view.channel_details.view import channelDetailsBp
+from nvideos_web.view.subscriber.view import subscriberBp
 
 # GLOBALS
 from nvideos_web.view.template_context import register_globals_app
@@ -31,5 +32,6 @@ def createApp() -> Flask:
     nvideosApp.register_blueprint(userDetailsBp)
     nvideosApp.register_blueprint(videoDetailsBp)
     nvideosApp.register_blueprint(channelDetailsBp)
+    nvideosApp.register_blueprint(subscriberBp)
 
     return nvideosApp

@@ -48,9 +48,13 @@
             <!-- CHANNEL INFO + SUBSCRIBE -->
             <div class="flex items-center gap-4">
                 <div class="relative shrink-0">
-                    <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-brand/30 border-2 border-brand overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow">
-                        {{getChannelNameAbreviation(ch.channelName)}}
-                    </div>
+                    {% if ch.channelAvatarUrl %}
+                        <img src="{{ ch.channelAvatarUrl }}" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-brand shadow" alt="Channel Avatar">
+                    {% else %}
+                        <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-brand/30 border-2 border-brand overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow">
+                            {{ getChannelNameAbreviation(ch.channelName) }}
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="flex flex-col">
@@ -60,13 +64,25 @@
                             <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
                         </svg>
                     </div>
-                    <p class="text-xs text-gray-400 mt-0.5">{{getChannelSubscriberDescription(chTotal.totalSubscribers)}} subscribers</p>
+                    <p id="channel-subscribers" class="text-xs text-gray-400 mt-0.5">{{getChannelSubscriberDescription(chTotal.totalSubscribers)}} subscribers</p>
                 </div>
 
-                <!-- SUBSCRIBE BUTTON -->
-                <button class="ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-black bg-white hover:bg-gray-200 rounded-full transition shadow active:scale-95">
-                    Subscribe
-                </button>
+                <script id="initial-data-subscribe" type="application/json">
+                    {
+                        "channelId": {{ ch.channelId }},
+                        "userOwnChannel": {{ 'true' if userOwnChannel else 'false' }}
+                    }
+                </script>
+                {% if not userOwnChannel %}
+                    <!-- SUBSCRIBE BUTTON -->
+                    <button id="btn-subscribe-channel" class="hidden ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-black bg-white hover:bg-gray-200 rounded-full transition shadow active:scale-95">
+                        Subscribe
+                    </button>
+                    <!-- UNSUBSCRIBE BUTTON -->
+                    <button id="btn-unsubscribe-channel" class="hidden ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-white/10 hover:bg-white/20 rounded-full transition shadow active:scale-95">
+                        Unsubscribe
+                    </button>
+                {% endif %}
             </div>
 
         </div>
@@ -180,7 +196,7 @@
         <!-- RECOMMENDED ITEM LIST (SPACIOUS CARD PADDING) -->
         <div class="space-y-4">
             {% for vdr in vdsRecommended %}
-            <div class="p-3.5 rounded-2xl bg-surface/50 hover:bg-surface/90 border border-white/5 hover:border-white/15 transition flex items-start gap-4 group cursor-pointer shadow-sm">
+            <div class="relative p-3.5 rounded-2xl bg-surface/50 hover:bg-surface/90 border border-white/5 hover:border-white/15 transition flex items-start gap-4 group cursor-pointer shadow-sm">
                 <!-- THUMBNAIL -->
                 <div class="w-40 sm:w-44 aspect-video bg-black rounded-xl overflow-hidden shrink-0 relative border border-white/10 group-hover:border-brand/50 transition shadow-sm">
                     <img src="{{vdr.videoThumbUrl}}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Thumbnail">
@@ -190,7 +206,9 @@
                 <!-- METADATA -->
                 <div class="flex-1 min-w-0 flex flex-col justify-start py-0.5 space-y-1">
                     <h4 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-brand transition">
-                        {{ vdr.videoTitle }}
+                        <a href="{{ url_for('video_details.video_detail', video_key=vdr.videoKey) }}" class="after:absolute after:inset-0">
+                            {{ vdr.videoTitle }}
+                        </a>
                     </h4>
                     <p class="text-xs text-gray-400 truncate hover:text-white font-medium">{{ vdr.channelName }}</p>
                     <div class="text-[11px] text-gray-500 flex items-center gap-1.5 pt-0.5">

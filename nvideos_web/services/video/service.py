@@ -241,6 +241,15 @@ class VideoService(BaseService[VideoInput]):
 
         return [i.toJson() for i in videos], totalRows
 
+    def increaseVideoViewCount(self, videoKey: str, /) -> Self:
+        try:
+            self._videoRep.incrementVideoViewCount(videoKey)
+        except Exception as e:
+            #LOG THE ERROR
+            raise e
+
+        return self
+
     def createNewVideo(self, *, userInput: VideoInput | None = None) -> Video:
         self.insertingMode()
         auditData = self.fillAuditData().getAuditData()

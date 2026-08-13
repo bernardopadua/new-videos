@@ -1,18 +1,20 @@
-class ChannelServiceCurrentUserIsNone(Exception):
+from nvideos_web.services.base.error import ServiceException
+
+class ChannelServiceCurrentUserIsNone(ServiceException):
     pass
 
-class ChannelServiceChannelDoesntExists(Exception):
+class ChannelServiceChannelDoesntExists(ServiceException):
     pass
 
-class ChannelServiceNameIsInvalid(Exception):
+class ChannelServiceNameIsInvalid(ServiceException):
     pass
 
-class ChannelServiceChannelDescriptionIsInvalid(Exception):
+class ChannelServiceChannelDescriptionIsInvalid(ServiceException):
     pass
 
-class ChannelServiceFailedToMoveTempImageToMedia(Exception):
+class ChannelServiceFailedToMoveTempImageToMedia(ServiceException):
     pass
 
-class ChannelServiceNoCurrentUser(Exception):
+class ChannelServiceNoCurrentUser(ServiceException):
     """ No CurrentUser informed when created the service """
     pass

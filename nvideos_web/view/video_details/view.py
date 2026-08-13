@@ -8,6 +8,7 @@ from flask import (
 # SERVICE
 from nvideos_web.services.video.service import VideoService
 from nvideos_web.services.channel.service import ChannelService
+from nvideos_web.services.subscriber.service import SubscriberService
 
 # ENTITY
 from nvideos_web.core.entity.video import Video
@@ -145,14 +146,25 @@ def video_detail(video_key: str):
     cSrv: ChannelService = ChannelService(
         userId=session.get("userId")
     )
-    chUserIsSubscribed = cSrv.selectChannelsIdsUserIsSubscribed()
-    vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, chUserIsSubscribed)
+    sSrv: SubscriberService = SubscriberService(
+        userId=session.get("userId")
+    )
+    
+    #I will keep the video view count simple for now, maybe it changes in the future.
+    _ = vSrv.increaseVideoViewCount(video_key)
+    userIsSubscribed = sSrv.selectChannelsIdsUserIsSubscribed()
+    vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, userIsSubscribed)
     ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(vd.channelId)
 
     if not vd or not ch:
         return render_template("base/error.html", error="Video not found")
     
-    renderTemplate = render_template("video/video_detail.html", vd=vd, vdsRecommended=vdsRecommended, ch=ch, chTotal=chTotal)
+    renderTemplate = render_template("video/video_detail.html", 
+        vd=vd, vdsRecommended=vdsRecommended, 
+        ch=ch, chTotal=chTotal,
+        userOwnChannel=ch.userId==session.get("userId")
+    )
+
     return renderTemplate
 
 

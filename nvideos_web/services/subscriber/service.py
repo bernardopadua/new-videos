@@ -3,9 +3,10 @@ from typing import Self, override, final
 
 # SERVICES
 from nvideos_web.services.base.service import BaseService
+from nvideos_web.services.user.service import UserService
 
 # ENTITY
-from nvideos_web.core.entity.subscriber import SubscriberInput
+from nvideos_web.core.entity.subscriber import Subscriber, SubscriberInput
 from nvideos_web.core.entity.user_subscriber import UserSubscriber
 
 # REPOSITORY
@@ -17,7 +18,10 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # ERRORS
 from nvideos_web.services.base.error import InputDataIsNone
-from nvideos_web.services.subscriber.error import SubscriberChannelDoesntExists
+from nvideos_web.services.subscriber.error import (
+    SubscriberChannelDoesntExists, SubscriberNoCurrentUser,
+    SubscriberDoesntExists
+)
 
 @final
 class SubscriberService(BaseService[SubscriberInput]):
@@ -35,27 +39,96 @@ class SubscriberService(BaseService[SubscriberInput]):
         self._usuRep: PgSubscriberRepository = PgSubscriberRepository(dbContext=dbContext)
         self._chRep: PgChannelRepository = PgChannelRepository(dbContext=dbContext)
 
-    def subscribeToChannel(self, channelId: int) -> UserSubscriber:
+    def subscribeToChannel(self, channelId: int) -> UserSubscriber | None:
+        if not self.currentUser:
+            raise SubscriberNoCurrentUser("No current user informed.")
         if not self._chRep.checkIdExists(channelId=channelId):
             raise SubscriberChannelDoesntExists("Channel that the user is trying to subscribe doesn't exists.")
-        
-        self.insertingMode()
-        auditData = self.fillAuditData().getAuditData()
-        inputData = self._filledInputData if self._filledInputData else self.fillInputData(
-            channelId=channelId,
-            userId=self._currentUser,
-            subscriberIsActive=True
-        ).getInputData()
 
-        try:
-            return self._usuRep.create(subscriberInputData=inputData, auditInputData=auditData)
-        finally:
-            self.resetData()
+        subscriber = self._usuRep.selectByChannelIdAndUserId(channelId, self.currentUser)
+        if subscriber and not subscriber.subscriberIsActive:
+            self.updatingMode()
+            auditData = self.fillAuditData().getAuditData()
+            inputData = self.fillInputData(subscriberIsActive=True).getInputData()
+            
+            try:
+                user = UserService(userId=self.currentUser).selectByUserId()
+                subscriber = self._usuRep.updateById(subscriber.subscriberId, inputData, auditData)
+                return UserSubscriber(
+                    user=user,
+                    subscriber=subscriber
+                )
+            finally:
+                self.resetData()
+            
+        elif subscriber is None:
+            self.insertingMode()
+            auditData = self.fillAuditData().getAuditData()
+            inputData = self._filledInputData if self._filledInputData else self.fillInputData(
+                channelId=channelId,
+                userId=self._currentUser,
+                subscriberIsActive=True
+            ).getInputData()
+
+            try:
+                return self._usuRep.create(subscriberInputData=inputData, auditInputData=auditData)
+            finally:
+                self.resetData()
+        
+        return None
 
     @override
     def checkIdExists(self, idRegistry: int) -> Self:
-        raise NotImplementedError()
-        return super().checkIdExists(idRegistry)
+        pass
+        return self
+
+    def checkSubscribedAndSubscribe(self, channelId: int):
+        if self.currentUser is None:
+            raise SubscriberNoCurrentUser("No current user informed.")
+
+        isSubscribed: bool = self._usuRep.checkAlreadySubscribed(channelId, self.currentUser)
+        if not isSubscribed:
+            _ = self.subscribeToChannel(channelId)
+
+    def checkSubscribedAndUnsubscribe(self, channelId: int) -> bool:
+        if self.currentUser is None:
+            raise SubscriberNoCurrentUser("No current user informed.")
+        
+        subscriber: Subscriber | None = self._usuRep.selectByChannelIdAndUserId(channelId, self.currentUser)
+        if subscriber is None:
+            raise SubscriberDoesntExists("Subscriber not found.")
+
+        self.updatingMode()
+        auditData = self.fillAuditData().getAuditData()
+        
+        try:
+            subscriber = self._usuRep.delete(subscriber.subscriberId, auditData)
+            if not subscriber.subscriberIsActive:
+                return True
+            
+            return False
+        except Exception:
+            #LOG: add logging
+            return False
+        finally:
+            self.resetData()
+
+    def checkAlreadySubscribed(self, channelId: int) -> bool:
+        if self.currentUser is None:
+            raise SubscriberNoCurrentUser("No current user informed.")
+
+        return self._usuRep.checkAlreadySubscribed(channelId, self.currentUser)
+
+    def selectTotalSubscribers(self, channelId: int) -> int:
+        return self._usuRep.selectTotalSubscribers(channelId)
+
+    def selectChannelsIdsUserIsSubscribed(self, /, *, userId: int | None = None) -> list[int]:
+        if self.currentUser:
+            userId = self.currentUser
+        elif userId is None:
+            raise SubscriberNoCurrentUser("No current user informed.")
+
+        return self._usuRep.selectChannelsIdsUserIsSubscribed(userId)
 
     @override
     def getInputData(self) -> SubscriberInput:

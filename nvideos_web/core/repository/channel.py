@@ -19,9 +19,6 @@ class ChannelRepository(ABC):
     def selectByIdWithTotalSubscribers(self, channelId: int) -> tuple[Channel | None, ChannelTotalSubscribers | None]:
         ...
     @abstractmethod
-    def selectChannelsIdsUserIsSubscribed(self, userId: int) -> list[int]:
-        ...
-    @abstractmethod
     def create(self, channelInputData: ChannelInput, auditInputData: AuditData) -> Channel: 
         ...
     @abstractmethod

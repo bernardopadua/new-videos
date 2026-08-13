@@ -1,4 +1,6 @@
 # FLASK
+from crypt import methods
+
 from flask import (
     Blueprint, redirect, render_template, request as flaskRequest, 
     session, url_for
@@ -6,6 +8,9 @@ from flask import (
 
 # DECORATORS
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired
+
+# ERROR
+from nvideos_web.services.channel.error import ServiceException
 
 # SERVICE
 from nvideos_web.services.channel.service import ChannelService, Channel
@@ -50,6 +55,12 @@ def channel_create():
             ).fillInputData().updateChannelById(channelCreated.channelId)
 
             return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
+        
+        except ServiceException as e:
+            if channelCreated:
+                _ = cSrv.hardDeleteChannelById(channelCreated.channelId)
+
+            return render_template("base/error.html", error=str(e))
         except Exception as e:
             #TODO: LOGGING.
             if channelCreated:
@@ -98,10 +109,21 @@ def channel_edit(channel_id):
             ).fillInputData().updateChannelById(channelUpdated.channelId)
 
             return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelUpdated.channelId))
-        except Exception as e:
+        except ServiceException as e:
             return render_template("base/error.html", error=str(e))
+        except Exception:
+            return render_template("base/error.html")
 
     try:
         return render_template("channel/channel_details_edit.html", ch=channel)
-    except Exception as e:
+    except Exception:
         return render_template("base/error.html")
+
+
+#
+# API
+#
+
+# @channelDetailsBp.route("/channel/<int:channel_id>/edit", methods=["GET"])
+# @loginRequired
+# def 

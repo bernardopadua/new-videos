@@ -54,6 +54,20 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             conn.commit()
             return VideoMetadata.row(result)
 
+    def incrementVideoViewCount(self, videoKey: str) -> None: 
+        pVideoKey, videoKeyParam = NvSql.createParam("videoKey", videoKey)
+        stmt = NvSql.formatStmt(
+            f"""
+            update {VideoMetadata.tableName()} 
+            set {VideoMetadata.videoViewCount.field} = {VideoMetadata.videoViewCount.field} + 1
+            where {VideoMetadata.videoKey.field} = {pVideoKey};
+            """
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor()
+            _ = cur.execute(stmt, params=videoKeyParam)
+            conn.commit()
+
     @override
     def checkIdExists(self, videoId: int) -> bool: 
         stmt = NvSql.formatStmt(
@@ -192,6 +206,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
         )   
         pChannelId, paramChannelId = NvSql.createParam("channel_id", channelId)
         pVideoKey, paramVideoKey = NvSql.createParam("video_key", videoKey)
+        pVideoKeyEx, paramVideoKeyEx = NvSql.createParam("video_key_ex", videoKey)
 
         stmt: str = NvSql.formatStmt(
             f"""
@@ -212,6 +227,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
                 where {vm.channelId.getWithPrefix()} = {pChannelId}
                 and {ch.channelId.getWithPrefix()} = {vm.channelId.getWithPrefix()}
                 and (select count(1) from all_videos_recommended) < 10
+                and {vm.videoKey.getWithPrefix()} <> {pVideoKeyEx} 
                 order by {vm.createdAt.getWithPrefix()} desc
                 limit 10
             )
@@ -225,7 +241,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             limit 10;
             """
         )
-        params = NvSql.concatParams(paramChannelId, paramVideoKey)
+        params = NvSql.concatParams(paramChannelId, paramVideoKey, paramVideoKeyEx)
 
         if conn is None:
             with self._db.getConn() as conn:
