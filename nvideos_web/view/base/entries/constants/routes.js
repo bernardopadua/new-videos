@@ -5,6 +5,9 @@ export const ROUTES = {
     unsubscribeChannel: (channelId) => `/channel/${channelId}/unsubscribe`,
     totalSubscribedChannel: (channelId) => `/channel/${channelId}/total-subscribers`,
     
+    //Comment
+    loadReplies: (commentId) => `/comment/load/replies/${commentId}`,
+
     //Video
     videoEdit: (videoKey) => `/video/${videoKey}/edit`,
     videoDetail: (videoKey) => `/video/${videoKey}`,
