@@ -55,8 +55,6 @@ function CommentItem({ comment, initialData }) {
     const isChild = !!comment?.commentCommentId;
     const avatarBg = isChild ? "bg-emerald-600 border border-emerald-400/30" : "bg-indigo-600 border border-indigo-400/30";
 
-    console.log(comment?.commentCommentId, " <><><>< ", comment.commentId);
-
     return (
         <div className="space-y-3">
             {/* Comment Card */}
