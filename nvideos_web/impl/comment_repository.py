@@ -71,6 +71,7 @@ class PgCommentRepository(PgRepositoryBase, CommentRepository):
         commentFieldsCommaStr, _ = NvSql.selectOder(
             cm.commentId,
             cm.commentDescription,
+            cm.commentCommentId,
             cm.createdAt,
             us.userName,
             us.userAvatarUrl,

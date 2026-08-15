@@ -82,7 +82,8 @@ class CommentService(BaseService[CommentInput]):
 
         return CommentList(
             commentId=dbComment.commentId,
-            createdAt=dbComment.createdAt, 
+            createdAt=dbComment.createdAt,
+            commentCommentId=dbComment.commentCommentId,
             commentDescription=dbComment.commentDescription, 
             totalRecomments=0, 
             userId=dbComment.userId, 
