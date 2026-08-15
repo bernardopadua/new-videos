@@ -17,7 +17,7 @@
 
 /*
     This "media-server" has no intent or purpose to be safe at the moment
-    of this writting. So of course you can for example upload an ELF or something.
+    of this writing. So of course you can for example upload an ELF or something.
     This whole project is just a FUN and learning project.
 */
 

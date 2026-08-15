@@ -288,8 +288,6 @@ class UserService(BaseService[UserInput]):
 
     def fillUserSession(self, userData: User):
         session["userId"] = userData.userId
-        session["userFullName"] = userData.userName
-        session["userAvatarUrl"] = userData.userAvatarUrl
         session["user"] = {
             "userId": userData.userId,
             "userName": userData.userName,

@@ -6,6 +6,7 @@ from flask import (
 )
 
 # SERVICE
+from nvideos_web.services.base.error import ServiceException
 from nvideos_web.services.video.service import VideoService
 from nvideos_web.services.channel.service import ChannelService
 from nvideos_web.services.subscriber.service import SubscriberService
@@ -20,9 +21,6 @@ from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired,
 
 # CONSTANTS
 from nvideos_web.view.video_details.constants import VIDEO_SELF_CHANNEL_LIMIT
-
-# TYPING
-from typing import cast
 
 videoDetailsBp = Blueprint(
     "video_details", __name__,
@@ -154,20 +152,35 @@ def video_detail(video_key: str):
         userId=session.get("userId")
     )
     
-    #I will keep the video view count simple for now, maybe it changes in the future.
-    _ = vSrv.increaseVideoViewCount(video_key)
-    userIsSubscribed = sSrv.selectChannelsIdsUserIsSubscribed()
-    vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, userIsSubscribed)
-    ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(vd.channelId)
-    cm = ccSrv.selectCommentsFromVideoKey(video_key)
+    try:
+        #I will keep the video view count simple for now, maybe it changes in the future.
+        _ = vSrv.increaseVideoViewCount(video_key)
+        userIsSubscribed = sSrv.selectChannelsIdsUserIsSubscribed()
+        vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, userIsSubscribed)
+        ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(vd.channelId)
+        cm = ccSrv.selectCommentsFromVideoKey(video_key)
 
-    if not vd or not ch:
-        return render_template("base/error.html", error="Video not found")
-    
+        user = session.get("user")
+        if user is None:
+            raise Exception("No user session")
+
+        userName = user["userName"]
+        userAvatarUrl = user["userAvatarUrl"]
+
+        if not vd or not ch:
+            return render_template("base/error.html", error="Video not found")
+    except ServiceException as e:
+        return render_template("base/error.html", error=str(e))
+    except:
+        #TODO: LOG: logging 
+        return render_template("base/error.html")
+
     renderTemplate = render_template("video/video_detail.html", 
         vd=vd, vdsRecommended=vdsRecommended, 
         ch=ch, chTotal=chTotal, cm=cm,
-        userOwnChannel=ch.userId==session.get("userId")
+        userOwnChannel=ch.userId==session.get("userId"),
+        userName=userName,
+        userAvatarUrl=userAvatarUrl
     )
 
     return renderTemplate

@@ -1,6 +1,8 @@
 # BUILT-IN
 from typing import override
 
+from psycopg import IntegrityError
+
 # ENTITY
 from nvideos_web.core.entity.comment import (
     Comment, CommentInput, CommentList, CommentMetadata
@@ -18,6 +20,9 @@ from nvideos_web.core.repository.comment import CommentRepository
 # IMPL
 from nvideos_web.impl.base.row_factory import ModelRowFactory
 from nvideos_web.impl.base_repository import PgRepositoryBase
+
+# ERRORS
+from nvideos_web.impl.error.comment import CommentCreationError
 
 class PgCommentRepository(PgRepositoryBase, CommentRepository):
     @override
@@ -96,10 +101,45 @@ class PgCommentRepository(PgRepositoryBase, CommentRepository):
         ...
     @override
     def create(self, commentInputData: CommentInput, auditInputData: AuditData) -> Comment: 
-        ...
+        cm = CommentMetadata
+        inputFields, inputParams, _ = NvSql.insertFieldsOrder(CommentMetadata, commentInputData)
+        auditFields, auditParams, _ = NvSql.insertFieldsOrder(CommentMetadata, auditInputData)
+        _, allFieldsOrder = NvSql.selectOder(CommentMetadata.all)
+        stmt = NvSql.formatStmt(
+            f"""
+            insert into {cm.tableName()}
+            ({inputFields}, {auditFields})
+            values
+            ({inputParams}, {auditParams})
+            returning *;
+            """
+        )
+        params = NvSql.parseSqlParams(stmt, inputObject=commentInputData, auditObject=auditInputData)
+        try:
+            with self._db.getConn() as conn:
+                cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
+                r = cur.execute(stmt, params=params)
+                result = r.fetchone()
+                return CommentMetadata.row(result)
+        except IntegrityError as e:
+            #TODO: Logging
+            raise CommentCreationError(e)
+        
     @override
     def checkIdExists(self, commentId: int) -> bool: 
-        ...
+        cm = CommentMetadata
+
+        paramSqlCommentId, commentIdParam = NvSql.createParam("comment_id", commentId)
+
+        stmt = NvSql.formatStmt(
+            f"""
+            select 1 from {cm.tableName()} where {cm.commentId.field} = {paramSqlCommentId};
+            """
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=CommentList))
+            r = cur.execute(stmt, params=commentIdParam)
+            return r.rowcount > 0
     @override
     def updateById(self, commentId: int, newCommentData: CommentInput, auditData: AuditData) -> Comment: 
         ...

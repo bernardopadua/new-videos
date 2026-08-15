@@ -206,24 +206,22 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
         if avoidMyself is not None:
             userId, userIdParam = NvSql.createParam("userId_value", avoidMyself)
             stmt = NvSql.formatStmt(
+                f"""
+                select 1 
+                from {UserMetadata.tableName()} 
+                where {UserMetadata.userEmail.field} = {userEmail}
+                  and {UserMetadata.userId.field} not in ({userId})
+                  and {UserMetadata.userIsActive.field} = true;
                 """
-                select 1 from {table_name} where {userEmail_field} = {userEmail_value}
-                and {userId_field} not in ({userId_value});""",
-                table_name=UserMetadata.tableName(),
-                userEmail_field=UserMetadata.userEmail.field,
-                userEmail_value=userEmail,
-                userId_field=UserMetadata.userId.field,
-                userId_value=userId
             )
         else:
             stmt = NvSql.formatStmt(
-                "select 1 from {table_name} where {userEmail_field} = {userEmail_value};",
-                table_name=UserMetadata.tableName(),
-                userEmail_field=UserMetadata.userEmail.field,
-                userEmail_value=userEmail
+                f"""select 1 
+                   from {UserMetadata.tableName()} 
+                  where {UserMetadata.userEmail.field} = {userEmail}
+                    and {UserMetadata.userIsActive.field} = true;
+                """
             )
-
-
 
         with self._db.getConn() as conn:
             cur = conn.cursor()

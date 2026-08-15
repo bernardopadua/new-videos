@@ -19,9 +19,10 @@ VideoSubscribe();
 const commentsSectionRoot = document.getElementById('comments-section-root');
 if (commentsSectionRoot) {
     const initialComments = JSON.parse(document.getElementById('initial-comment-data').textContent);
+    const initialData = JSON.parse(document.getElementById('initial-data').textContent);
     ReactDOM.createRoot(commentsSectionRoot).render(
         <React.StrictMode>
-            <VideoComments initialComments={initialComments} />
+            <VideoComments initialComments={initialComments} initialData={initialData} />
         </React.StrictMode>
     );
 }

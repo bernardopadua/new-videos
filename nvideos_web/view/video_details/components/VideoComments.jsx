@@ -1,6 +1,10 @@
 import { useState, useRef } from "react";
 import { ROUTES } from "../../base/entries/constants/routes";
 
+const getUserInitials = (name) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+};
+
 function CommentItem({ comment }) {
     const [userAuthor, setUserAuthor] = useState(comment?.userName);
     const [userAvatarUrl, setUserAvatarUrl] = useState(comment?.userAvatarUrl);
@@ -15,10 +19,6 @@ function CommentItem({ comment }) {
         return commentDate.getDate()
             + '/' + (commentDate.getMonth() + 1)
             + '/' + commentDate.getFullYear();
-    };
-
-    const getUserInitials = (name) => {
-        return name.split(' ').map(n => n[0]).join('').toUpperCase();
     };
 
     const loadReplies = () => {
@@ -112,8 +112,33 @@ function CommentItem({ comment }) {
     );
 };
 
-export default function VideoComments({ initialComments }) {
-    
+export default function VideoComments({ initialComments, initialData }) {
+    const userName = initialData?.userName;
+    const userAvatarUrl = initialData?.userAvatarUrl;
+
+    const [comments, setComments] = useState(initialComments?.comments);
+    const commentInput = useRef(null);
+
+    const handleCommentSubmit = () => {
+        if (!commentInput.current?.value) return;
+        fetch(ROUTES.commentReply(initialData?.videoId), {
+            method: 'POST',
+            body: JSON.stringify({
+                comment: commentInput.current.value
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+            .then((r) => r.json())
+            .then((d) => {
+                if (d && d?.comments) {
+                    setComments((prev) => [...d.comments, ...prev]);
+                    commentInput.current.value = "";
+                }
+            });
+    };
+
     return (
         <div className="space-y-8 pt-6 border-t border-white/10">
             
@@ -131,14 +156,20 @@ export default function VideoComments({ initialComments }) {
             <div className="p-6 sm:p-7 rounded-2xl bg-surface/60 border border-white/10 backdrop-blur-md space-y-4 shadow-md">
                 <div className="flex items-start gap-4">
                     <div className="w-11 h-11 rounded-full bg-brand/30 border border-brand/40 flex items-center justify-center shrink-0 text-sm font-bold text-white shadow-sm">
-                        U
+                        {userAvatarUrl ?
+                            <img src={userAvatarUrl} className="w-full h-full object-cover rounded-full" alt="" />
+                            : getUserInitials(userName)
+                        }
                     </div>
                     <div className="flex-1 space-y-3">
-                        <textarea placeholder="Add a public comment..." rows="3" 
-                            className="w-full bg-[#121212] border border-white/10 p-4 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition resize-none shadow-inner"></textarea>
+                        <textarea ref={commentInput} placeholder="Add a public comment..." rows="3" 
+                            className="w-full bg-[#121212] border border-white/10 p-4 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition resize-none shadow-inner"
+                        ></textarea>
                         <div className="flex justify-end gap-3 pt-1">
-                            <button className="px-5 py-2 text-xs font-semibold text-gray-300 hover:bg-white/10 rounded-full transition">Cancel</button>
-                            <button className="px-6 py-2 text-xs font-semibold text-white bg-brand rounded-full hover:bg-[#772ce8] transition shadow">Comment</button>
+                            {/*<button className="px-5 py-2 text-xs font-semibold text-gray-300 hover:bg-white/10 rounded-full transition">Cancel</button>*/}
+                            <button className="px-6 py-2 text-xs font-semibold text-white bg-brand rounded-full hover:bg-[#772ce8] transition shadow"
+                                onClick={handleCommentSubmit}
+                            >Comment</button>
                         </div>
                     </div>
                 </div>
@@ -146,7 +177,7 @@ export default function VideoComments({ initialComments }) {
 
             {/*COMMENTS THREAD LIST*/}
             <div className="space-y-4">
-                {initialComments && initialComments.comments ? initialComments?.comments.map((comment) => {
+                {comments ? comments.map((comment) => {
                     return (
                         <CommentItem key={comment.commentId} comment={comment} />
                     );

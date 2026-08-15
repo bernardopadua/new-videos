@@ -7,6 +7,13 @@ export const ROUTES = {
     
     //Comment
     loadReplies: (commentId) => `/comment/load/replies/${commentId}`,
+    commentReply: (videoId, commentId = null) => {
+        if (commentId){
+            return `/comment/reply/${videoId}/${commentId}`;
+        } else {
+            return `/comment/reply/${videoId}`;
+        }
+    },
 
     //Video
     videoEdit: (videoKey) => `/video/${videoKey}/edit`,

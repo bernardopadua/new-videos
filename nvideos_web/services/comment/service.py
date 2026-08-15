@@ -21,6 +21,7 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # ERRORS
 from nvideos_web.services.base.error import InputDataIsNone
+from nvideos_web.services.comment.error import CommentNoCurrentUser
 
 @final
 class CommentService(BaseService[CommentInput]):
@@ -47,7 +48,8 @@ class CommentService(BaseService[CommentInput]):
 
     @override
     def checkIdExists(self, idRegistry: int) -> Self:
-        ...
+        self._checkExists = self._cmRep.checkIdExists(idRegistry)
+        return self
 
     @override
     def getInputData(self) -> CommentInput:
@@ -55,6 +57,39 @@ class CommentService(BaseService[CommentInput]):
             raise InputDataIsNone(InputDataIsNone.genericError())
 
         return self._filledInputData
+
+    def replyComment(self, 
+        videoId: int, 
+        comment: str, 
+        userName: str,
+        userAvatarUrl: str,
+        /, *, 
+        commentId: int | None = None
+    ) -> CommentList:
+        if not self.currentUser:
+            raise CommentNoCurrentUser("You must be logged in to reply to a comment")
+        
+        self.insertingMode()
+        inputData = self.fillInputData(
+            videoId=videoId, 
+            comment=comment, 
+            userId=self.currentUser, 
+            commentId=commentId
+        ).getInputData()
+        auditData = self.fillAuditData().getAuditData()
+
+        dbComment = self._cmRep.create(inputData, auditData)
+
+        return CommentList(
+            commentId=dbComment.commentId,
+            createdAt=dbComment.createdAt, 
+            commentDescription=dbComment.commentDescription, 
+            totalRecomments=0, 
+            userId=dbComment.userId, 
+            userName=userName,
+            userAvatarUrl=userAvatarUrl
+        )
+
 
     @override
     def fillInputData(self, /, *, 

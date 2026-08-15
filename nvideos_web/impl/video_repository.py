@@ -10,7 +10,10 @@ from nvideos_web.core.entity.base.constants import VideoPermissions
 from nvideos_web.core.repository.video import VideoRepository
 
 # ENTITY
-from nvideos_web.core.entity.video import Video, VideoInput, VideoMetadata, VideosRecommended
+from nvideos_web.core.entity.video import (
+    Video, VideoInput, VideoMetadata, 
+    VideosRecommended
+)
 from nvideos_web.core.entity.channel import ChannelMetadata
 from nvideos_web.core.entity.user import UserMetadata
 from nvideos_web.core.entity.base.base_entity import AuditData
