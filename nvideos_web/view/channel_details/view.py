@@ -1,11 +1,16 @@
 # FLASK
+from crypt import methods
+
 from flask import (
     Blueprint, redirect, render_template, request as flaskRequest, 
     session, url_for
 )
 
 # DECORATORS
-from nvideos_web.view.endpoint_decorators import loginRequired
+from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired
+
+# ERROR
+from nvideos_web.services.channel.error import ServiceException
 
 # SERVICE
 from nvideos_web.services.channel.service import ChannelService, Channel
@@ -17,6 +22,7 @@ channelDetailsBp = Blueprint(
 )
 
 @channelDetailsBp.route("/channel/<int:channel_id>")
+@channelRequired
 def channel_detail(channel_id):
     renderTemplate = render_template("channel/channel_detail.html", channel_id=channel_id)
     return renderTemplate
@@ -27,9 +33,10 @@ def channel_create():
     if flaskRequest.method == "POST":
         formData:dict[str,str] = flaskRequest.form
         cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+        channelCreated: Channel | None = None
 
         try:
-            channelCreated: Channel = cSrv.fillInputData(
+            channelCreated = cSrv.fillInputData(
                 channelName=formData.get("channelName"),
                 channelDescription=formData.get("channelDescription"),
                 
@@ -47,9 +54,19 @@ def channel_create():
                     else None
             ).fillInputData().updateChannelById(channelCreated.channelId)
 
-            return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelCreated.channelId))
-        except Exception as e:
+            return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
+        
+        except ServiceException as e:
+            if channelCreated:
+                _ = cSrv.hardDeleteChannelById(channelCreated.channelId)
+
             return render_template("base/error.html", error=str(e))
+        except Exception as e:
+            #TODO: LOGGING.
+            if channelCreated:
+                _ = cSrv.hardDeleteChannelById(channelCreated.channelId)
+
+            return render_template("base/error.html")
     
     try:
         cSrv: ChannelService = ChannelService(userId=session.get("userId"))
@@ -92,10 +109,21 @@ def channel_edit(channel_id):
             ).fillInputData().updateChannelById(channelUpdated.channelId)
 
             return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelUpdated.channelId))
-        except Exception as e:
+        except ServiceException as e:
             return render_template("base/error.html", error=str(e))
+        except Exception:
+            return render_template("base/error.html")
 
     try:
         return render_template("channel/channel_details_edit.html", ch=channel)
-    except Exception as e:
+    except Exception:
         return render_template("base/error.html")
+
+
+#
+# API
+#
+
+# @channelDetailsBp.route("/channel/<int:channel_id>/edit", methods=["GET"])
+# @loginRequired
+# def 

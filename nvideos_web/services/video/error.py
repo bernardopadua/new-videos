@@ -1,65 +1,67 @@
-class VideoServiceUserNotAuthenticated(Exception):
+from nvideos_web.services.base.error import ServiceException
+
+class VideoServiceUserNotAuthenticated(ServiceException):
     """The user is not authenticated."""
     pass
 
-class VideoServiceVideoDoesntExists(Exception):
+class VideoServiceVideoDoesntExists(ServiceException):
     """The video doesn't exists."""
     pass
 
-class VideoServiceNoVideoInput(Exception):
+class VideoServiceNoVideoInput(ServiceException):
     """No video input provided. Please provide video input."""
     pass
 
-class VideoServiceVideoPermissionIsInvalid(Exception):
+class VideoServiceVideoPermissionIsInvalid(ServiceException):
     """The informed video permission is invalid."""
     pass
 
-class VideoServiceChannelIdIsNone(Exception):
+class VideoServiceChannelIdIsNone(ServiceException):
     """The channel service is missing channel id."""
     pass
 
-class VideoServiceVideoKeyIsNone(Exception):
+class VideoServiceVideoKeyIsNone(ServiceException):
     """The video key is None."""
     pass
 
-class VideoServiceFailedToMoveTempVideoAndThumb(Exception):
+class VideoServiceFailedToMoveTempVideoAndThumb(ServiceException):
     """The video and thumbnail files were not moved from temp to the media server."""
     pass
 
 # CHECK FOR INVALID FIELDS
-class VideoServiceNoUserInput(Exception):
+class VideoServiceNoUserInput(ServiceException):
     """No user input provided. Please provide user input."""
     pass
 
-class VideoServiceVideoTitleIsNone(Exception):
+class VideoServiceVideoTitleIsNone(ServiceException):
     """The video title is None."""
     pass
 
-class VideoServiceVideoTitleIsInvalid(Exception):
+class VideoServiceVideoTitleIsInvalid(ServiceException):
     """The video title is invalid."""
     pass
 
-class VideoServiceVideoDescriptionIsNone(Exception):
+class VideoServiceVideoDescriptionIsNone(ServiceException):
     """The video description is None."""
     pass
 
-class VideoServiceVideoDescriptionIsInvalid(Exception):
+class VideoServiceVideoDescriptionIsInvalid(ServiceException):
     """The video description is invalid."""
     pass
 
-class VideoServiceVideoTagsIsNone(Exception):
+class VideoServiceVideoTagsIsNone(ServiceException):
     """The video tags is None."""
     pass
 
-class VideoServiceVideoTagsIsInvalid(Exception):
+class VideoServiceVideoTagsIsInvalid(ServiceException):
     """The video tags is invalid."""
     pass
 
 # REDIS ERRORS
-class VideoServiceChannelNameIsNone(Exception):
+class VideoServiceChannelNameIsNone(ServiceException):
     """The channel name is None."""
     pass
 
-class VideoServiceMessageIsNone(Exception):
+class VideoServiceMessageIsNone(ServiceException):
     """The message is None."""
     pass

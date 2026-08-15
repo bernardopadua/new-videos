@@ -6,19 +6,21 @@ from flask import (
 )
 
 # SERVICE
+from nvideos_web.services.base.error import ServiceException
 from nvideos_web.services.video.service import VideoService
+from nvideos_web.services.channel.service import ChannelService
+from nvideos_web.services.subscriber.service import SubscriberService
+from nvideos_web.services.comment.service import CommentService
 
 # ENTITY
 from nvideos_web.core.entity.video import Video
+from nvideos_web.core.entity.channel import Channel, ChannelTotalSubscribers
 
 # DECORATOR
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired, authKeyNeeded
 
 # CONSTANTS
 from nvideos_web.view.video_details.constants import VIDEO_SELF_CHANNEL_LIMIT
-
-# TYPING
-from typing import cast
 
 videoDetailsBp = Blueprint(
     "video_details", __name__,
@@ -134,12 +136,54 @@ def video_list():
 
 @videoDetailsBp.route("/video/<string:video_key>")
 @loginRequired
-@channelRequired
 def video_detail(video_key: str):
-    #TODO: Select video to vd
-    renderTemplate = render_template("video/video_detail.html", vd=None)
-    return renderTemplate
+    #TODO: Treat input video_key
+    
+    vSrv: VideoService = VideoService(
+        userId=session.get("userId")
+    )
+    cSrv: ChannelService = ChannelService(
+        userId=session.get("userId")
+    )
+    sSrv: SubscriberService = SubscriberService(
+        userId=session.get("userId")
+    )
+    ccSrv: CommentService = CommentService(
+        userId=session.get("userId")
+    )
+    
+    try:
+        #I will keep the video view count simple for now, maybe it changes in the future.
+        _ = vSrv.increaseVideoViewCount(video_key)
+        userIsSubscribed = sSrv.selectChannelsIdsUserIsSubscribed()
+        vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, userIsSubscribed)
+        ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(vd.channelId)
+        cm, totalComments = ccSrv.selectCommentsFromVideoKey(video_key)
 
+        user = session.get("user")
+        if user is None:
+            raise Exception("No user session")
+
+        userName = user["userName"]
+        userAvatarUrl = user["userAvatarUrl"]
+
+        if not vd or not ch:
+            return render_template("base/error.html", error="Video not found")
+    except ServiceException as e:
+        return render_template("base/error.html", error=str(e))
+    except:
+        #TODO: LOG: logging 
+        return render_template("base/error.html")
+
+    renderTemplate = render_template("video/video_detail.html", 
+        vd=vd, vdsRecommended=vdsRecommended, 
+        ch=ch, chTotal=chTotal, cm=cm, totalComments=totalComments,
+        userOwnChannel=ch.userId==session.get("userId"),
+        userName=userName,
+        userAvatarUrl=userAvatarUrl
+    )
+
+    return renderTemplate
 
 
 #

@@ -8,7 +8,7 @@ from redis import Redis
 from typing import Self, override, final, cast
 
 # ENTITY
-from nvideos_web.core.entity.video import VideoInput, AuditData, Video
+from nvideos_web.core.entity.video import VideoInput, AuditData, Video, VideosRecommended
 
 # CONSTANTS
 from nvideos_web.core.entity.base.constants import VideoPermissions, VideoStatus
@@ -214,12 +214,18 @@ class VideoService(BaseService[VideoInput]):
         return self
 
     def selectByVideoKey(self, videoKey: str) -> Video | None:
-        #TODO: treat incoming request data for security problems.
-        if not self.currentUser:
-            raise VideoServiceUserNotAuthenticated("User is not authenticated.")
-
-        videoData = self._videoRep.selectByVideoKey(videoKey, self.currentUser)
+        videoData = self._videoRep.selectByVideoKey(videoKey)
         return videoData
+
+    def selectByVideoKeyAndRecommended(self, videoKey: str, channelsUserIsSubscribed: list[int], /) -> tuple[Video, list[VideosRecommended]]:
+        video, videoRecommended = self._videoRep.selectVideoKeyByIdAndRecommended(videoKey)
+
+        #Filtering what users can see
+        videoRecommended = [
+            i for i in videoRecommended if i.checkUserCanSee(channelsUserIsSubscribed)
+        ]
+
+        return video, videoRecommended
 
     def selectLimitVideosByChannelId(self, limit: int = 10, *, page: int = 0) -> tuple[list[dict[str, object]] | None, int]:
         offset: int = page * limit
@@ -234,6 +240,15 @@ class VideoService(BaseService[VideoInput]):
         )
 
         return [i.toJson() for i in videos], totalRows
+
+    def increaseVideoViewCount(self, videoKey: str, /) -> Self:
+        try:
+            self._videoRep.incrementVideoViewCount(videoKey)
+        except Exception as e:
+            #LOG THE ERROR
+            raise e
+
+        return self
 
     def createNewVideo(self, *, userInput: VideoInput | None = None) -> Video:
         self.insertingMode()

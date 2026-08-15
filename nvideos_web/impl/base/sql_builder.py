@@ -11,6 +11,7 @@ from typing import LiteralString, TypeVar, Self, cast, TypeAlias
 from nvideos_web.core.entity.base.base_entity import MetadataClass, ModelField, ModelFieldKeyWord
 
 # IMPL
+from nvideos_web.core.entity.user import UserInput
 from nvideos_web.impl.error.base import (
     PgRepositoryInputIsNotDataclass,
     PgRepositoryMissingSqlParameter
@@ -93,7 +94,8 @@ class NvSql:
     @staticmethod
     def selectOder(
         *args: ModelField | ModelFieldKeyWord,
-        usePrefix: bool = False
+        usePrefix: bool = False,
+        useAsinFields: bool = False
     ) -> tuple[FieldsCommaStr, list[ModelField]]:
         newArgs: list[ModelField | ModelFieldKeyWord] = [*args]
         concat: list[str] = []
@@ -105,8 +107,12 @@ class NvSql:
             newArgs = attr.getOwner().getAllFields()
 
         for arg in newArgs:
-            if usePrefix:
+            if usePrefix and useAsinFields:
+                concat.append(f"{arg.getWithPrefix()} as \"{arg.attr}\"")
+            elif usePrefix:
                 concat.append(arg.getWithPrefix())
+            elif useAsinFields:
+                concat.append(f"{arg.field} as \"{arg.attr}\"")
             else:
                 concat.append(arg.field)
             listRowFactory.append(arg)

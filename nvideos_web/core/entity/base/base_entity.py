@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, fields
 # TYPING
 from typing import (
     TypeVar, Generic, 
-    Callable, Any, cast
+    Callable, Any, cast, Self
 )
 
 AVOID_PREFIX_REPETITION: list[str] = []
@@ -24,21 +24,32 @@ class ModelField:
         fieldName: str, /, *, 
         attrName: str = "",
         owner: type[MetadataClass[object]] | None = None,
+        ownerInstance: MetadataClass[object] | None = None,
         isInstance: bool = False
     ) -> None:
         self.field: str = fieldName
         self.attr: str = attrName
         self.isInstance: bool = isInstance
         self.owner: type[MetadataClass[object]] | None = owner
+        self.ownerInstance: MetadataClass[object] | None = ownerInstance
 
     def getWithPrefix(self) -> str:
-        prefix: str = self.getOwner().getPrefix()
+        prefix: str
+        if self.isInstance:
+            prefix = self.getOwnerInstance().prefix_
+        else:
+            prefix = self.getOwner().getPrefix()
         return f"{prefix}.{self.field}"
 
     def getOwner(self) -> type[MetadataClass[object]]:
         if self.owner is None:
             raise Exception("Owner cannot be None at this step. Investigate.")
         return self.owner
+
+    def getOwnerInstance(self) -> MetadataClass[object]:
+        if self.ownerInstance is None:
+            raise Exception("Owner cannot be None at this step. Investigate.")
+        return self.ownerInstance
 
 class ModelFieldKeyWord(ModelField):
     pass
@@ -167,15 +178,19 @@ class MetadataClass(Generic[TModel]):
             if isinstance(attr, ModelField):
                 #TODO: I must solve this cast, it's horrible... rethink all this entity thing
                 _m = ModelField(attr.field, attrName=attr.attr, 
-                    owner=cast(type[MetadataClass[object]], self), isInstance=True
+                    ownerInstance=cast(MetadataClass[object], self), isInstance=True
                 )
                 setattr(self, i, _m)
                 self._all_fields.append(_m)
             if isinstance(attr, ModelFieldKeyWord):
                 _m = ModelFieldKeyWord(attr.field, attrName=attr.attr, 
-                    owner=cast(type[MetadataClass[object]], self), isInstance=True
-                )
+                    ownerInstance=cast(MetadataClass[object], self), isInstance=True
+                )   
                 setattr(self, i, _m)
+
+    @property
+    def prefix_(self) -> str:
+        return self._use_prefix
 
     @classmethod
     def getAllFields(cls) -> list[ModelField | ModelFieldKeyWord]:
@@ -198,7 +213,7 @@ class MetadataClass(Generic[TModel]):
         return clsSelf._table_name
 
     @classmethod
-    def as_(cls: type[TMetadata], *, newPrefix: str) -> TMetadata:
+    def as_(cls: type[Self], *, newPrefix: str) -> Self:
         return cls(newPrefix=newPrefix)
 
     @GetModelData[TModel]
@@ -244,6 +259,10 @@ class BaseModelData:
             if attr is not None and attr != "" and attr != 0:
                 data[i.name] = attr
         return data
+    
+    @classmethod
+    def row(cls, rowResult: dict[int, object]) -> Self:
+        return rowResult[id(cls)]
 
 @dataclass
 class BaseInput:

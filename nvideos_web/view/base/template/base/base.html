@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}nVideos{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('base.static', filename='dist/main.css') }}">
+    {% block head %}{% endblock %}
 </head>
 <body class="bg-bg-dark">
     <!-- NAVBAR -->
@@ -45,8 +46,8 @@
                 <!-- Dropdown Menu -->
                 <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-surface border border-white/10 shadow-2xl py-1.5 text-sm text-white/90 z-50 origin-top-right focus:outline-none transition-all duration-150" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
                     <a href="/profile" class="block px-4 py-2 hover:bg-white/5 hover:text-white transition-colors" role="menuitem" tabindex="-1">Meu perfil</a>
-                    <a href="/my-videos" class="block px-4 py-2 hover:bg-white/5 hover:text-white transition-colors" role="menuitem" tabindex="-1">Meus vídeos</a>
-                    <a href="/upload" class="block px-4 py-2 hover:bg-white/5 hover:text-white transition-colors" role="menuitem" tabindex="-1">Upload</a>
+                    <a href="{{url_for('video_details.video_list')}}" class="block px-4 py-2 hover:bg-white/5 hover:text-white transition-colors" role="menuitem" tabindex="-1">Meus vídeos</a>
+                    <a href="{{url_for('video_details.video_detail_create')}}" class="block px-4 py-2 hover:bg-white/5 hover:text-white transition-colors" role="menuitem" tabindex="-1">Upload</a>
                 </div>
             </div>
             {% endif %}

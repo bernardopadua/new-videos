@@ -9,14 +9,16 @@ from typing import (
 from collections.abc import Sequence
 
 # ENTITY
-from nvideos_web.core.entity.base.base_entity import ModelField
+from nvideos_web.core.entity.base.base_entity import ModelField, BaseModelData
 
 class ModelRowFactory:
     def __init__(
         self, 
-        listOrderFields: list[ModelField],
+        listOrderFields: list[ModelField] | None,
+        /, *, additionalModelFields: type[BaseModelData] | None = None
     ):
-        self.fields: list[ModelField] = listOrderFields
+        self.fields: list[ModelField] | None = listOrderFields
+        self._additionalModelFields: type[BaseModelData] | None = additionalModelFields
 
     def __call__(
         self, 
@@ -28,12 +30,21 @@ class ModelRowFactory:
             instancesModel: dict[int, object] = {}
 
             for i in range(len(values)):
-                field: ModelField = self.fields[i]
-                modelIdentification: int = id(field.getOwner())
-                if modelIdentification not in eachModel:
-                    eachModel[modelIdentification] = { "model": field.getOwner().modelData() , "row": {} }
-                if values[i] is not None and values[i] != "":
-                    eachModel[modelIdentification]["row"][field.attr] = values[i]
+                if self.fields is not None and i < len(self.fields):
+                    field: ModelField = self.fields[i]
+                    modelIdentification: int = id(field.getOwner())
+                    if modelIdentification not in eachModel:
+                        eachModel[modelIdentification] = { "model": field.getOwner().modelData() , "row": {} }
+                    if values[i] is not None and values[i] != "":
+                        eachModel[modelIdentification]["row"][field.attr] = values[i]
+                elif self._additionalModelFields is not None:
+                    modelIdentification: int = id(self._additionalModelFields)
+                    fieldStr: str
+                    if cursor and cursor.description and cursor.description[i]:
+                        fieldStr = cursor.description[i].name
+                        if modelIdentification not in eachModel:
+                            eachModel[modelIdentification] = { "model": self._additionalModelFields, "row": {} }
+                        eachModel[modelIdentification]["row"][fieldStr] = values[i]
 
             for model in eachModel.keys():
                 modelData = eachModel[model]["model"]

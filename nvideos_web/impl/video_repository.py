@@ -6,10 +6,14 @@ from psycopg import Connection
 from psycopg.cursor import Cursor
 
 # REPOSITORY
+from nvideos_web.core.entity.base.constants import VideoPermissions
 from nvideos_web.core.repository.video import VideoRepository
 
 # ENTITY
-from nvideos_web.core.entity.video import Video, VideoInput, VideoMetadata
+from nvideos_web.core.entity.video import (
+    Video, VideoInput, VideoMetadata, 
+    VideosRecommended
+)
 from nvideos_web.core.entity.channel import ChannelMetadata
 from nvideos_web.core.entity.user import UserMetadata
 from nvideos_web.core.entity.base.base_entity import AuditData
@@ -17,6 +21,9 @@ from nvideos_web.core.entity.base.base_entity import AuditData
 # IMPL
 from nvideos_web.impl.base.row_factory import ModelRowFactory
 from nvideos_web.impl.base_repository import PgRepositoryBase
+
+# ERROR
+from nvideos_web.impl.error.video import VideoIsNone
 
 # SQL BUILDER
 from nvideos_web.impl.base.sql_builder import NvSql
@@ -50,6 +57,20 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             conn.commit()
             return VideoMetadata.row(result)
 
+    def incrementVideoViewCount(self, videoKey: str) -> None: 
+        pVideoKey, videoKeyParam = NvSql.createParam("videoKey", videoKey)
+        stmt = NvSql.formatStmt(
+            f"""
+            update {VideoMetadata.tableName()} 
+            set {VideoMetadata.videoViewCount.field} = {VideoMetadata.videoViewCount.field} + 1
+            where {VideoMetadata.videoKey.field} = {pVideoKey};
+            """
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor()
+            _ = cur.execute(stmt, params=videoKeyParam)
+            conn.commit()
+
     @override
     def checkIdExists(self, videoId: int) -> bool: 
         stmt = NvSql.formatStmt(
@@ -78,9 +99,8 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             return r.rowcount > 0
 
     @override
-    def selectByVideoKey(self, videoKey: str, userId: int) -> Video:
+    def selectByVideoKey(self, videoKey: str, *, conn: Connection | None = None) -> Video | None:
        paramVideoKey, videoKeyParam = NvSql.createParam("videoKey", videoKey)
-       paramUserId, userIdParam = NvSql.createParam("userId", userId)
        videoFields, allFieldsOrder = NvSql.selectOder(VideoMetadata.all, usePrefix=True)
        stmt = NvSql.formatStmt(
            f"""
@@ -89,16 +109,14 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
            {UserMetadata.tableNamePrefix()}
            where {VideoMetadata.channelId.getWithPrefix()} = {ChannelMetadata.channelId.getWithPrefix()}
            and {ChannelMetadata.userId.getWithPrefix()} = {UserMetadata.userId.getWithPrefix()}
-           and {UserMetadata.userId.getWithPrefix()} = {paramUserId}
            and {VideoMetadata.videoKey.getWithPrefix()} = {paramVideoKey}
            """,
        )
-       paramsToCursor = NvSql.concatParams(videoKeyParam, userIdParam)
        with self._db.getConn() as conn:
            cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
-           _ = cur.execute(stmt, params=paramsToCursor)
+           _ = cur.execute(stmt, params=videoKeyParam)
            result = cur.fetchone()
-           return VideoMetadata.row(result)
+           return None if result is None else VideoMetadata.row(result)
 
     @override
     def selectLimitVideosByChannelId(self, limit: int, 
@@ -160,6 +178,84 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             resultCount = self.selectCountAllVideoByChannelId(channelId=channelId, conn=conn)
             resultVideos = self.selectLimitVideosByChannelId(limit=limit, channelId=channelId, offset=offset, conn=conn)
             return resultVideos, resultCount
+
+    @override
+    def selectVideoKeyByIdAndRecommended(self, videoKey: str) -> tuple[Video, list[VideosRecommended]]:
+        with self._db.getConn() as conn:
+            video = self.selectByVideoKey(videoKey=videoKey, conn=conn)
+            
+            if video is None:
+                raise VideoIsNone("Video is None")
+
+            videosRecommended = self.selectRecommendedVideos(videoKey=videoKey, channelId=video.channelId, conn=conn)
+            return video, videosRecommended
+
+    @override
+    def selectRecommendedVideos(self, videoKey: str, channelId: int, *, conn: Connection | None = None) -> list[VideosRecommended]:
+        vm: type[VideoMetadata] = VideoMetadata
+        vmO: VideoMetadata = VideoMetadata.as_(newPrefix="ovm")
+        ch: ChannelMetadata = ChannelMetadata.as_(newPrefix="ch")
+        fields, _ = NvSql.selectOder(
+            vm.videoId, vm.videoKey, vm.videoTitle, 
+            vm.videoThumbUrl, vm.videoViewCount, vm.videoTimeDuration, vm.videoPermission, ch.channelId, ch.channelName,
+            usePrefix=True,
+            useAsinFields=True
+        )
+        fieldsOvm, _ = NvSql.selectOder(
+            vmO.videoId, vmO.videoKey, vmO.videoTitle, 
+            vmO.videoThumbUrl, vmO.videoViewCount, vmO.videoTimeDuration, vmO.videoPermission, ch.channelId, ch.channelName,
+            usePrefix=True,
+            useAsinFields=True
+        )   
+        pChannelId, paramChannelId = NvSql.createParam("channel_id", channelId)
+        pVideoKey, paramVideoKey = NvSql.createParam("video_key", videoKey)
+        pVideoKeyEx, paramVideoKeyEx = NvSql.createParam("video_key_ex", videoKey)
+
+        stmt: str = NvSql.formatStmt(
+            f"""
+            with all_videos_recommended AS (
+                select {fieldsOvm} 
+                  from {vm.tableNamePrefix()} 
+                join {vmO.tableNamePrefix()} on 
+                    {vmO.videoTags.getWithPrefix()} && {vm.videoTags.getWithPrefix()} and
+                    {vmO.videoId.getWithPrefix()} <> {vm.videoId.getWithPrefix()}
+                join {ch.tableNamePrefix()} on {vmO.channelId.getWithPrefix()} = {ch.channelId.getWithPrefix()}
+                where {vm.videoKey.getWithPrefix()} = {pVideoKey}
+                  and {vmO.videoPermission.getWithPrefix()} in (E'{VideoPermissions.P_PUBLIC.value}', E'{VideoPermissions.P_SUBSCRIBER_ONLY.value}')
+                order by {vmO.createdAt.getWithPrefix()} desc
+                limit 10
+            ),
+            more_videos_of_channel as (
+                select {fields} from {vm.tableNamePrefix()}, {ch.tableNamePrefix()}
+                where {vm.channelId.getWithPrefix()} = {pChannelId}
+                and {ch.channelId.getWithPrefix()} = {vm.channelId.getWithPrefix()}
+                and (select count(1) from all_videos_recommended) < 10
+                and {vm.videoKey.getWithPrefix()} <> {pVideoKeyEx} 
+                order by {vm.createdAt.getWithPrefix()} desc
+                limit 10
+            )
+
+            select * from all_videos_recommended
+            
+            union
+            
+            select * from more_videos_of_channel
+            
+            limit 10;
+            """
+        )
+        params = NvSql.concatParams(paramChannelId, paramVideoKey, paramVideoKeyEx)
+
+        if conn is None:
+            with self._db.getConn() as conn:
+                cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosRecommended))
+                r = cur.execute(stmt, params=params)
+                return [ VideosRecommended.row(row) for row in r.fetchall() ]
+        else:
+            cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosRecommended))
+            r = cur.execute(stmt, params=params)
+            return [ VideosRecommended.row(row) for row in r.fetchall() ]
+
 
     @override
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 

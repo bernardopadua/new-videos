@@ -30,7 +30,7 @@ def channelRequired(f: Callable[..., Any]) -> Callable[..., Response]:
                 session["channelId"] = channel.channelId
 
         if not session.get("channelId"):
-            return redirect(url_for("channel.create_channel"))
+            return redirect(url_for("channel_details.channel_create"))
 
         return f(*args, **kwargs)
     return decorated_function

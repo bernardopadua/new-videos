@@ -24,10 +24,6 @@ const std::string API_AUTH_KEY = "7X9m-Q2vP-8K1z-L4nR-5W8c-J3tF-0B9x-P2vM";
 
 double get_video_time_duration(std::string videoKey, std::string videoFile){
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
-    if (!std::filesystem::exists(videoFilePath)){
-        std::cerr << "ERROR: Video file does not exist: " << std::endl;
-        exit(1);
-    }
     
     int fds[2];
     pipe(fds);
@@ -88,17 +84,17 @@ double get_video_time_duration(std::string videoKey, std::string videoFile){
 }
 
 void process_video_file(std::string videoKey, std::string videoFile, sw::redis::Redis& redis) {
-    double totalDuration = get_video_time_duration(videoKey, videoFile);
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
-
-    if (totalDuration == 0){
-        std::cerr << "ERROR ON GET VIDEO TIME DURATION" << std::endl;
-        exit(1);
-    }
-
     if (!std::filesystem::exists(videoFilePath)){
-        std::cerr << "ERROR: Video file does not exist: " << std::endl;
-        exit(1);
+        std::cerr << "ERROR: Video file does not exist: " << videoFilePath << std::endl;
+        return;
+    }
+    
+    double totalDuration = get_video_time_duration(videoKey, videoFile);
+
+    if (totalDuration == 0.0){
+        std::cerr << "ERROR ON GET VIDEO TIME DURATION" << std::endl;
+        return;
     }
 
     int fds[2];

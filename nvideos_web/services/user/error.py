@@ -1,39 +1,41 @@
-class UserServiceNoUserInput(Exception):
+from nvideos_web.services.base.error import ServiceException
+
+class UserServiceNoUserInput(ServiceException):
     """When trying to do something that needs user input and none was informed."""
     pass
 
-class UserServiceUserDoesntExists(Exception):
+class UserServiceUserDoesntExists(ServiceException):
     """When trying to do something that needs user and he wasn't informed."""
     pass
 
-class UserServiceUserDontMatchPassword(Exception):
+class UserServiceUserDontMatchPassword(ServiceException):
     """When the informed password doesn't match the user's password."""
     pass
 
-class UserServiceUserHasInvalidPassword(Exception):
+class UserServiceUserHasInvalidPassword(ServiceException):
     """Password has invalid characters."""
     pass
 
-class UserServiceUserNameTooShort(Exception):
+class UserServiceUserNameTooShort(ServiceException):
     """User name is too short."""
     pass
 
-class UserServiceUserHasInvalidEmail(Exception):
+class UserServiceUserHasInvalidEmail(ServiceException):
     """Email has invalid characters."""
     pass
 
-class UserServiceDateIsInvalid(Exception):
+class UserServiceDateIsInvalid(ServiceException):
     """Date is invalid."""
     pass
 
-class UserServiceUserHasInvalidPermission(Exception):
+class UserServiceUserHasInvalidPermission(ServiceException):
     """User has invalid permission."""
     pass
 
-class UserServiceFailedToMoveTempAvatarToMedia(Exception):
+class UserServiceFailedToMoveTempAvatarToMedia(ServiceException):
     """Failed to move temp avatar to media."""
     pass
 
-class UserServiceUserHasInvalidBirthDate(Exception):
+class UserServiceUserHasInvalidBirthDate(ServiceException):
     """User has invalid birth date."""
     pass

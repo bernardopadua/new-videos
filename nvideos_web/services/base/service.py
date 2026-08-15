@@ -84,4 +84,3 @@ class BaseService(ABC, Generic[TInputData]):
     def resetData(self):
         self._filledAudit = None
         self._filledInputData = None
-        self._checkExists = False

@@ -9,7 +9,7 @@ from typing_extensions import override, final
 from nvideos_web.services.base.service import BaseService
 
 # ENTITY
-from nvideos_web.core.entity.channel import Channel, ChannelInput
+from nvideos_web.core.entity.channel import Channel, ChannelInput, ChannelTotalSubscribers
 
 # REPOSITORY
 from nvideos_web.impl.channel_repository import PgChannelRepository
@@ -41,6 +41,22 @@ class ChannelService(BaseService[ChannelInput]):
         self._chRep: PgChannelRepository = PgChannelRepository(dbContext=dbContext)
         self._avatarImageUrl: str | None = None
         self._coverImageUrl: str | None = None
+
+    def selectChannelById(self, channelId: int, /) -> Channel | None:
+        #I'm keeping it simple for now, will implement the other selects later
+        try:
+            channel = self._chRep.selectById(channelId=channelId)
+            return channel
+        except:
+            return None
+    
+    def selectChannelByIdWithTotalSubscribers(self, channelId: int, /) -> tuple[Channel | None, ChannelTotalSubscribers | None]:
+        #I'm keeping it simple for now, will implement the other selects later
+        try:
+            channel, totalSubscribers = self._chRep.selectByIdWithTotalSubscribers(channelId=channelId)
+            return channel, totalSubscribers
+        except:
+            return None, None
 
     def checkInputDataIsValid(self, /) -> Self:
         _inputData = self.getInputData()
@@ -79,6 +95,23 @@ class ChannelService(BaseService[ChannelInput]):
         finally:
             self.resetData()
 
+    def deleteChannelById(self, idRegistry: int, /) -> bool:
+        _auditData = self.fillAuditData().getAuditData()
+
+        try:
+            if not self.checkIdExists(idRegistry=idRegistry).getCheckIdExists():
+                raise ChannelServiceChannelDoesntExists("The channel you are trying to delete doesn't exists.")
+
+            return self._chRep.deleteById(idRegistry=idRegistry, auditData=_auditData)
+        finally:
+            self.resetData()
+
+    def hardDeleteChannelById(self, channelId: int, /) -> bool:
+        try:
+            return self._chRep.hardDelete(channelId=channelId)
+        except:
+            return False
+
     def doIAlreadyHaveChannel(self, /) -> Channel | None:
         if not self.currentUser:
             raise ChannelServiceNoCurrentUser("No current user informed.")
@@ -87,7 +120,7 @@ class ChannelService(BaseService[ChannelInput]):
 
     @override
     def checkIdExists(self, idRegistry: int) -> Self:
-        self._checkExists: bool = self._chRep.checkIdExists(channelId=idRegistry)
+        self._checkExists = self._chRep.checkIdExists(channelId=idRegistry)
         return self
 
     @override
@@ -163,4 +196,3 @@ class ChannelService(BaseService[ChannelInput]):
                 raise ChannelServiceFailedToMoveTempImageToMedia("The media server couldn't move the temp cover image to media.")
 
         return self
-

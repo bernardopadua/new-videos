@@ -17,7 +17,7 @@
 
 /*
     This "media-server" has no intent or purpose to be safe at the moment
-    of this writting. So of course you can for example upload an ELF or something.
+    of this writing. So of course you can for example upload an ELF or something.
     This whole project is just a FUN and learning project.
 */
 
@@ -266,7 +266,7 @@ int main(int regv, char** regc){
         }
 
         for (auto& i : std::filesystem::directory_iterator(newPath)){
-            if (i.is_regular_file() && i.path().filename().string().rfind("thumbnail.") > 0){
+            if (i.is_regular_file() && i.path().filename().string().rfind("thumbnail.", 0) == 0){
                 try {
                     std::filesystem::remove(i.path());
                 } catch (const std::exception &e) {

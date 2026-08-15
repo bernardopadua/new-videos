@@ -1,11 +1,14 @@
-class PgRepositoryMissingParameter(Exception):
+class PgRepositoryException(Exception):
     pass
 
-class PgRepositoryMissingSqlParameter(Exception):
+class PgRepositoryMissingParameter(PgRepositoryException):
     pass
 
-class PgRepositoryInputIsNotDataclass(Exception):
+class PgRepositoryMissingSqlParameter(PgRepositoryException):
     pass
 
-class PgRepositoryParameterValueNone(Exception):
+class PgRepositoryInputIsNotDataclass(PgRepositoryException):
+    pass
+
+class PgRepositoryParameterValueNone(PgRepositoryException):
     pass

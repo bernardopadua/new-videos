@@ -21,6 +21,10 @@ class Channel(AuditData, BaseModelData):
     channelIsActive: bool = field(default=False)
     userId: int = field(default=0)
 
+@dataclass(frozen=True, slots=True)
+class ChannelTotalSubscribers(BaseModelData):
+    totalSubscribers: int = field(default=0)
+
 @dataclass
 class ChannelInput(BaseInput):
     channelName: str | None = field(default=None)
