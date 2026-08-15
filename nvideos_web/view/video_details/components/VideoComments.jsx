@@ -1,20 +1,21 @@
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 import { ROUTES } from "../../base/entries/constants/routes";
 
 const getUserInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
 };
 
-function CommentItem({ comment, initialData }) {
-    const [userAuthor, setUserAuthor] = useState(comment?.userName);
-    const [userAvatarUrl, setUserAvatarUrl] = useState(comment?.userAvatarUrl);
-    const [userComment, setUserComment] = useState(comment?.commentDescription);
-    const [totalComments, setTotalComments] = useState(comment?.totalRecomments);
+const CommentItem = memo(function CommentItem({ comment, initialData, setTotalComments }) {
     const [comments, setComments] = useState(null);
     const [isReplying, setIsReplying] = useState(false);
     const replyInputRef = useRef(null);
     const loadMoreDiv = useRef(null);
     
+    const userAuthor = comment?.userName;
+    const userAvatarUrl = comment?.userAvatarUrl;
+    const userComment = comment?.commentDescription;
+    const totalComments = comment?.totalRecomments;
+
     const formatCommentDate = () => {
         const commentDate = new Date(comment?.createdAt);
         
@@ -48,6 +49,7 @@ function CommentItem({ comment, initialData }) {
                 if (d && d?.comments) {
                     setComments((prev) => [...d.comments, ...(prev || [])]);
                     setIsReplying(false);
+                    setTotalComments((prev) => prev + 1);
                 }
             });
     };
@@ -76,7 +78,7 @@ function CommentItem({ comment, initialData }) {
                     
                     {/* Reply Action Button */}
                     <div className="flex items-center gap-6 text-xs text-gray-400 pt-2 border-t border-white/5">
-                        <button 
+                        <button
                             onClick={() => setIsReplying(!isReplying)}
                             className="hover:text-white transition text-xs font-semibold"
                         >
@@ -95,20 +97,20 @@ function CommentItem({ comment, initialData }) {
                                 )}
                             </div>
                             <div className="flex-1 space-y-2">
-                                <textarea 
+                                <textarea
                                     ref={replyInputRef}
-                                    placeholder="Add a reply..." 
+                                    placeholder="Add a reply..."
                                     rows="2"
                                     className="w-full bg-[#121212] border border-white/10 p-3 rounded-xl text-white placeholder-gray-500 text-xs focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition resize-none shadow-inner"
                                 ></textarea>
                                 <div className="flex justify-end gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => setIsReplying(false)}
                                         className="px-4 py-1.5 text-2xs font-semibold text-gray-300 hover:bg-white/10 rounded-full transition"
                                     >
                                         Cancel
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleReplySubmit}
                                         className="px-4 py-1.5 text-2xs font-semibold text-white bg-brand rounded-full hover:bg-[#772ce8] transition shadow"
                                     >
@@ -147,14 +149,15 @@ function CommentItem({ comment, initialData }) {
             )}
         </div>
     );
-}
+});
 
 export default function VideoComments({ initialComments, initialData }) {
+    const [comments, setComments] = useState(initialComments?.comments);
+    const [totalComments, setTotalComments] = useState(initialComments?.totalComments)
+    const commentInput = useRef(null);
+    
     const userName = initialData?.userName;
     const userAvatarUrl = initialData?.userAvatarUrl;
-
-    const [comments, setComments] = useState(initialComments?.comments);
-    const commentInput = useRef(null);
 
     const handleCommentSubmit = () => {
         if (!commentInput.current?.value) return;
@@ -172,6 +175,7 @@ export default function VideoComments({ initialComments, initialData }) {
                 if (d && d?.comments) {
                     setComments((prev) => [...d.comments, ...prev]);
                     commentInput.current.value = "";
+                    setTotalComments((prev) => prev + 1);
                 }
             });
     };
@@ -180,7 +184,7 @@ export default function VideoComments({ initialComments, initialData }) {
         <div className="space-y-8 pt-6 border-t border-white/10">
             
             <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white">248 Comments</h3>
+                <h3 className="text-xl font-bold text-white">{totalComments} Comments</h3>
                 <button className="flex items-center gap-2 text-xs font-semibold text-gray-300 hover:text-white transition px-4 py-2 rounded-xl bg-white/5 border border-white/10">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10M4 18h7"/>
@@ -216,7 +220,12 @@ export default function VideoComments({ initialComments, initialData }) {
             <div className="space-y-4">
                 {comments ? comments.map((comment) => {
                     return (
-                        <CommentItem key={comment.commentId} comment={comment} initialData={initialData} />
+                        <CommentItem
+                            key={comment.commentId}
+                            comment={comment}
+                            initialData={initialData}
+                            setTotalComments={setTotalComments}
+                        />
                     );
                 }) : null}
             </div>

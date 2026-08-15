@@ -158,7 +158,7 @@ def video_detail(video_key: str):
         userIsSubscribed = sSrv.selectChannelsIdsUserIsSubscribed()
         vd, vdsRecommended = vSrv.selectByVideoKeyAndRecommended(video_key, userIsSubscribed)
         ch, chTotal = cSrv.selectChannelByIdWithTotalSubscribers(vd.channelId)
-        cm = ccSrv.selectCommentsFromVideoKey(video_key)
+        cm, totalComments = ccSrv.selectCommentsFromVideoKey(video_key)
 
         user = session.get("user")
         if user is None:
@@ -177,7 +177,7 @@ def video_detail(video_key: str):
 
     renderTemplate = render_template("video/video_detail.html", 
         vd=vd, vdsRecommended=vdsRecommended, 
-        ch=ch, chTotal=chTotal, cm=cm,
+        ch=ch, chTotal=chTotal, cm=cm, totalComments=totalComments,
         userOwnChannel=ch.userId==session.get("userId"),
         userName=userName,
         userAvatarUrl=userAvatarUrl

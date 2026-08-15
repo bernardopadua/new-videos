@@ -26,7 +26,7 @@ from nvideos_web.impl.error.comment import CommentCreationError
 
 class PgCommentRepository(PgRepositoryBase, CommentRepository):
     @override
-    def selectByVideoKey(self, videoKey: str) -> list[CommentList]:
+    def selectByVideoKey(self, videoKey: str) -> tuple[list[CommentList], int]:
         cm = CommentMetadata
         vm = VideoMetadata
         us = UserMetadata
@@ -56,11 +56,21 @@ class PgCommentRepository(PgRepositoryBase, CommentRepository):
               order by {cm.createdAt.getWithPrefix()} desc;
             """
         )
+        stmt2 = NvSql.formatStmt(
+            f"""
+            select count(1)
+              from {cm.tableNamePrefix()}
+              join {vm.tableNamePrefix()} on {vm.videoId.getWithPrefix()} = {cm.videoId.getWithPrefix()}
+             where {vm.videoKey.getWithPrefix()} = {videoKeySqlParam};
+            """
+        )
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=CommentList))
             r = cur.execute(stmt, params=videoKeyParam)
             result = r.fetchall()
-            return [CommentList.row(row) for row in result]
+            resultTotalRows = conn.execute(stmt2, params=videoKeyParam).fetchone()
+            totalRows = resultTotalRows[0] if resultTotalRows else 0
+            return [CommentList.row(row) for row in result], totalRows
 
     @override
     def selectChildCommentsByParentCommentId(self, parentCommentId: int) -> list[CommentList]:

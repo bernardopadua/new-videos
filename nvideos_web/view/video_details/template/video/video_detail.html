@@ -119,7 +119,8 @@
         <!-- COMMENTS SECTION (SPACIOUS PADDING & NO LIKE BUTTONS) -->
         <script id="initial-comment-data" type="application/json">
             {
-                "comments":{{ cm | tojson }}
+                "comments":{{ cm | tojson }},
+                "totalComments": {{ totalComments }}
             }
         </script>
         <div id="comments-section-root"></div>

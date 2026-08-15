@@ -38,9 +38,9 @@ class CommentService(BaseService[CommentInput]):
 
         self._cmRep: PgCommentRepository = PgCommentRepository(dbContext=dbContext)
 
-    def selectCommentsFromVideoKey(self, videoKey: str) -> list[dict[str, object]]:
-        comments = self._cmRep.selectByVideoKey(videoKey)
-        return [ comment.toJson() for comment in comments ]
+    def selectCommentsFromVideoKey(self, videoKey: str) -> tuple[list[dict[str, object]], int]:
+        comments, totalComments = self._cmRep.selectByVideoKey(videoKey)
+        return [ comment.toJson() for comment in comments ], totalComments
 
     def selectChildCommentsFromCommentId(self, commentId: int) -> list[dict[str, object]]:
         comments = self._cmRep.selectChildCommentsByParentCommentId(commentId)

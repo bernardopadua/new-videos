@@ -10,7 +10,7 @@ from nvideos_web.core.entity.base.base_entity import AuditData
 
 class CommentRepository(ABC):
     @abstractmethod
-    def selectByVideoKey(self, videoKey: str) -> list[CommentList]:
+    def selectByVideoKey(self, videoKey: str) -> tuple[list[CommentList], int]:
         ...
     @abstractmethod
     def selectChildCommentsByParentCommentId(self, parentCommentId: int) -> list[CommentList]:
