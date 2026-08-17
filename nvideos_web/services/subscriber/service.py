@@ -8,6 +8,7 @@ from nvideos_web.services.user.service import UserService
 # ENTITY
 from nvideos_web.core.entity.subscriber import Subscriber, SubscriberInput
 from nvideos_web.core.entity.user_subscriber import UserSubscriber
+from nvideos_web.core.entity.channel import Channel
 
 # REPOSITORY
 from nvideos_web.impl.subscriber_repository import PgSubscriberRepository
@@ -130,6 +131,24 @@ class SubscriberService(BaseService[SubscriberInput]):
 
         return self._usuRep.selectChannelsIdsUserIsSubscribed(userId)
 
+    def selectChannelsUserIsSubscribed(self, /) -> list[dict[str, int | str]] | None:
+        if self.currentUser is None:
+            raise Exception("No current user informed.")
+        
+        try:
+            chs = self._usuRep.selectChannelsUserIsSubscribed(self.currentUser)
+
+            if chs is None:
+                return None
+
+            return [{
+                "channelId": ch.channelId,
+                "channelName": ch.channelName,
+                "channelAvatarUrl": ch.channelAvatarUrl
+            } for ch in chs]
+        except Exception:
+            return None
+        
     @override
     def getInputData(self) -> SubscriberInput:
         if self._filledInputData is None:

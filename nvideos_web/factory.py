@@ -3,6 +3,7 @@ from flask import Flask
 
 # DATABASE
 from nvideos_web.db.pgcontext import NewVideosDBContext
+from nvideos_web.db.redis import RedisPool, nredis
 
 # CONFIG 
 from nvideos_web.config import loadDotEnv
@@ -25,6 +26,9 @@ def createApp() -> Flask:
     NewVideosDBContext.initDBContext()
     nvideosApp = Flask(__name__)
     _ = nvideosApp.config.from_file(".env.flask", loadDotEnv)
+
+    #Initializing Redis
+    nredis.init_app(nvideosApp)
 
     register_globals_app(nvideosApp)
 

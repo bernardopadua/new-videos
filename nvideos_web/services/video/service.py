@@ -2,7 +2,7 @@
 from flask import current_app as app
 
 # REDIS
-from redis import Redis
+from nvideos_web.db.redis import nredis
 
 # TYPING
 from typing import Self, override, final, cast
@@ -441,7 +441,7 @@ class VideoService(BaseService[VideoInput]):
 
     def processEnqueuedMessagesRedis(self):
         import json
-        redis: Redis = Redis.from_url(app.config["REDIS_ADDRESS"])
+        redis = nredis.client
         
         for channelName, messageList in self._enqueuedMessages.items():
             for message in messageList:

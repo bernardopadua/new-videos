@@ -1,0 +1,1 @@
+USER_SUBSCRIBED_CHANNELS_KEY = "user:subscribed:{userId}"

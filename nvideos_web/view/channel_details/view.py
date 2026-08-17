@@ -21,8 +21,27 @@ channelDetailsBp = Blueprint(
     template_folder="template"
 )
 
-@channelDetailsBp.route("/channel/<int:channel_id>")
+@channelDetailsBp.route("/channel/my")
 @channelRequired
+@loginRequired
+def channel_home():
+    cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+    
+    try:
+        channel: Channel | None = cSrv.doIAlreadyHaveChannel()
+
+        if channel is None:
+            return redirect(url_for("channel_details.channel_create"))
+
+        return render_template("channel/channel_detail.html", channel=channel)
+    except ServiceException as e:
+        return render_template("base/error.html", error=str(e))
+    except Exception as e:
+        #TODO: LOGGING
+        return render_template("base/error.html")
+
+@channelDetailsBp.route("/channel/<int:channel_id>")
+@loginRequired
 def channel_detail(channel_id):
     renderTemplate = render_template("channel/channel_detail.html", channel_id=channel_id)
     return renderTemplate
@@ -119,11 +138,3 @@ def channel_edit(channel_id):
     except Exception:
         return render_template("base/error.html")
 
-
-#
-# API
-#
-
-# @channelDetailsBp.route("/channel/<int:channel_id>/edit", methods=["GET"])
-# @loginRequired
-# def 
