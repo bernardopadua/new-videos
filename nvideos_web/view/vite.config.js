@@ -49,7 +49,8 @@ export default defineConfig({
                 'home/avatar_entry': './home/entries/avatar_entry.jsx',
                 'home/user_register_form_validation/ufrv': './home/entries/user_registration/user_register_form_validation.js',
                 'home/user_login/login': './home/entries/user_login/user_login.js',
-
+                'home/home_videos_entry/hve': './home/entries/home_videos_entry.jsx',
+                
                 //UserDetails
                 'user_details/avatar_upload_user_details/ausd': './user_details/entries/avatar_upload_user_details.jsx',
                 'user_details/user_edit_details/ued': './user_details/entries/user_edit_details/user_edit_details.js',

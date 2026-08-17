@@ -58,5 +58,6 @@ def reply(video_id: int, parent_comment_id: int | None = None):
         return jsonify({"success": True, "comments": [commentList.toJson()]})
     except ServiceException as e:
         return jsonify({"error": str(e)}), 400
-    except:
+    except Exception as e:
+        #TODO: LOG: Loggging e
         return jsonify({}), 400

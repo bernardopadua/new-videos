@@ -92,7 +92,11 @@ def channel_create():
         channel: Channel | None = cSrv.doIAlreadyHaveChannel()
         if channel:
             return redirect(url_for("channel_details.channel_detail", channel_id=channel.channelId))
-    except:
+    except ServiceException as e:
+        #TODO: LOGGING
+        return render_template("base/error.html", error=str(e))
+    except Exception as e:
+        #TODO: LOGGING
         return render_template("base/error.html")
 
     return render_template("channel/channel_details_edit.html")

@@ -1,4 +1,6 @@
 # FLASK
+from locale import currency
+
 from flask import current_app as app
 
 # REDIS
@@ -8,7 +10,10 @@ from nvideos_web.db.redis import nredis
 from typing import Self, override, final, cast
 
 # ENTITY
-from nvideos_web.core.entity.video import VideoInput, AuditData, Video, VideosRecommended
+from nvideos_web.core.entity.video import (
+    VideoInput, AuditData, Video, VideosRecommended,
+    VideosHome
+)
 
 # CONSTANTS
 from nvideos_web.core.entity.base.constants import VideoPermissions, VideoStatus
@@ -240,6 +245,23 @@ class VideoService(BaseService[VideoInput]):
         )
 
         return [i.toJson() for i in videos], totalRows
+
+    def selectHomeVideos(self, filter: str, page: int, /, *, limit: int = 10): 
+        limit: int = limit
+        page: int = page
+        offset: int = page * limit
+
+        subscribedVideos: list[VideosHome] = []
+
+        if self.currentUser:
+            limit = int(limit / 2)
+
+            subscribedVideos = self._videoRep.selectLastSubcribedVideos(filter, self.currentUser, limit=limit, offset=offset)
+        
+        publicVideos = self._videoRep.selectLastPublicVideos(filter, limit=limit, offset=offset)
+        
+        
+        return subscribedVideos + publicVideos
 
     def increaseVideoViewCount(self, videoKey: str, /) -> Self:
         try:

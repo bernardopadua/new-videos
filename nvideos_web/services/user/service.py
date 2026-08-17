@@ -246,13 +246,14 @@ class UserService(BaseService[UserInput]):
         return self
 
     def getDatetimeFromDate(self, dateStr: str | None) -> datetime:
-        try:
-            if dateStr is None:
-                raise UserServiceDateIsInvalid("The date is None.")
+        if dateStr is None:
+            raise UserServiceDateIsInvalid("The date is None.")
 
+        try:
             return datetime.strptime(dateStr, "%Y-%m-%d")
-        except:
-            raise UserServiceDateIsInvalid(f"The date {dateStr} is invalid. Use format YYYY-MM-DD.")
+        except Exception as e:
+            #TODO: LOG: Logging e
+            raise e
 
     def moveTempAvatarToMedia(self, userId: int, avatarTempName: str | None) -> Self:
         # I maintaning this request because is a simple task, is not CPU bound is just a MOVE.

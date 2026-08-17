@@ -61,6 +61,18 @@ class VideosRecommended(BaseModelData):
             return self.channelId in channelsUserIsSubscribed
         return True
 
+@dataclass(frozen=True, slots=True)
+class VideosHome(BaseModelData):
+    videoId: int = field(default=0)
+    videoKey: str = field(default="")
+    videoTitle: str = field(default="")
+    videoThumbUrl: str = field(default="")
+    videoViewCount: int = field(default=0)
+    videoTimeDuration: int = field(default=0)
+    channelId: int = field(default=0)
+    channelName: str = field(default="")
+    channelAvatarUrl: str = field(default="")
+
 @final
 class VideoMetadata(
     MetadataClass[Video],
