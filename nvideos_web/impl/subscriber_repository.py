@@ -4,6 +4,7 @@ from typing import override
 
 # ENTITY
 from nvideos_web.core.entity.base.base_entity import AuditData
+from nvideos_web.core.entity.channel import ChannelMetadata, Channel
 from nvideos_web.core.entity.subscriber import Subscriber, SubscriberInput, SubscriberMetadata
 from nvideos_web.core.entity.user import UserMetadata
 
@@ -85,6 +86,31 @@ class PgSubscriberRepository(PgRepositoryBase, SubscriberRepository):
         with self._db.getConn() as conn:
             results = conn.execute(stmt, params=userIdParamObj)
             return [ result[0] for result in results.fetchall() ]
+
+    @override
+    def selectChannelsUserIsSubscribed(self, userId: int) -> list[Channel] | None:
+        sb = SubscriberMetadata
+        cc = ChannelMetadata
+        userIdSqlParam, userIdParamObj = NvSql.createParam("user_id", userId)
+        fieldsCommaSeparated, returningChannel = NvSql.selectOder(
+            cc.channelId, cc.channelName, cc.channelAvatarUrl,
+            usePrefix=True
+        )
+
+        stmt = NvSql.formatStmt(
+            f"""
+            select {fieldsCommaSeparated} 
+              from {sb.tableNamePrefix()} 
+              join {cc.tableNamePrefix()} on {sb.channelId.getWithPrefix()} = {cc.channelId.getWithPrefix()}
+             where {sb.userId.getWithPrefix()} = {userIdSqlParam}
+               and {sb.subscriberIsActive.getWithPrefix()} = true;
+            """
+        )
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(returningChannel))
+            cur.execute(stmt, params=userIdParamObj)
+            result = cur.fetchall()
+            return [cc.row(row) for row in result] if result else None
 
     @override
     def create(self, subscriberInputData: SubscriberInput, auditInputData: AuditData) -> UserSubscriber:

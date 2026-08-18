@@ -47,7 +47,8 @@ class ChannelService(BaseService[ChannelInput]):
         try:
             channel = self._chRep.selectById(channelId=channelId)
             return channel
-        except:
+        except Exception as e:
+            #TODO: LOG: Logging e
             return None
     
     def selectChannelByIdWithTotalSubscribers(self, channelId: int, /) -> tuple[Channel | None, ChannelTotalSubscribers | None]:
@@ -55,7 +56,8 @@ class ChannelService(BaseService[ChannelInput]):
         try:
             channel, totalSubscribers = self._chRep.selectByIdWithTotalSubscribers(channelId=channelId)
             return channel, totalSubscribers
-        except:
+        except Exception as e:
+            #TODO: LOG: Logging e
             return None, None
 
     def checkInputDataIsValid(self, /) -> Self:
@@ -109,7 +111,8 @@ class ChannelService(BaseService[ChannelInput]):
     def hardDeleteChannelById(self, channelId: int, /) -> bool:
         try:
             return self._chRep.hardDelete(channelId=channelId)
-        except:
+        except Exception as e:
+            #TODO: LOG: Logging e
             return False
 
     def doIAlreadyHaveChannel(self, /) -> Channel | None:

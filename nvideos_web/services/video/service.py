@@ -1,14 +1,19 @@
 # FLASK
+from locale import currency
+
 from flask import current_app as app
 
 # REDIS
-from redis import Redis
+from nvideos_web.db.redis import nredis
 
 # TYPING
 from typing import Self, override, final, cast
 
 # ENTITY
-from nvideos_web.core.entity.video import VideoInput, AuditData, Video, VideosRecommended
+from nvideos_web.core.entity.video import (
+    VideoInput, AuditData, Video, VideosRecommended,
+    VideosHome
+)
 
 # CONSTANTS
 from nvideos_web.core.entity.base.constants import VideoPermissions, VideoStatus
@@ -241,6 +246,24 @@ class VideoService(BaseService[VideoInput]):
 
         return [i.toJson() for i in videos], totalRows
 
+    def selectHomeVideos(self, filter: str, page: int, /, *, limit: int = 10): 
+        limit: int = limit
+        page: int = page
+        offset: int = page * limit
+
+        subscribedVideos: list[VideosHome] = []
+        hasMoreSub = False
+
+        if self.currentUser:
+            limit = int(limit / 2)
+            offset = page * limit
+
+            subscribedVideos, hasMoreSub = self._videoRep.selectLastSubcribedVideos(filter, self.currentUser, limit=limit, offset=offset)
+        
+        publicVideos, hasMorePublic = self._videoRep.selectLastPublicVideos(filter, limit=limit, offset=offset)
+        
+        return subscribedVideos + publicVideos, hasMoreSub or hasMorePublic
+
     def increaseVideoViewCount(self, videoKey: str, /) -> Self:
         try:
             self._videoRep.incrementVideoViewCount(videoKey)
@@ -441,7 +464,7 @@ class VideoService(BaseService[VideoInput]):
 
     def processEnqueuedMessagesRedis(self):
         import json
-        redis: Redis = Redis.from_url(app.config["REDIS_ADDRESS"])
+        redis = nredis.client
         
         for channelName, messageList in self._enqueuedMessages.items():
             for message in messageList:

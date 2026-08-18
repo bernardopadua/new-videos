@@ -8,6 +8,7 @@ from nvideos_web.core.entity.subscriber import (
 )
 from nvideos_web.core.entity.user_subscriber import UserSubscriber
 from nvideos_web.core.entity.base.base_entity import AuditData
+from nvideos_web.core.entity.channel import Channel
 
 class SubscriberRepository(ABC):
     @abstractmethod
@@ -24,6 +25,9 @@ class SubscriberRepository(ABC):
         ...
     @abstractmethod
     def selectByChannelIdAndUserId(self, channelId: int, userId: int) -> Subscriber | None:
+        ...
+    @abstractmethod
+    def selectChannelsUserIsSubscribed(self, userId: int) -> list[Channel] | None:
         ...
     @abstractmethod
     def selectChannelsIdsUserIsSubscribed(self, userId: int) -> list[int]:

@@ -20,7 +20,7 @@ from nvideos_web.core.entity.channel import Channel, ChannelTotalSubscribers
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired, authKeyNeeded
 
 # CONSTANTS
-from nvideos_web.view.video_details.constants import VIDEO_SELF_CHANNEL_LIMIT
+from nvideos_web.view.video_details.constants import VIDEO_SELF_CHANNEL_LIMIT, VIDEO_HOME_LIMIT
 
 videoDetailsBp = Blueprint(
     "video_details", __name__,
@@ -171,8 +171,8 @@ def video_detail(video_key: str):
             return render_template("base/error.html", error="Video not found")
     except ServiceException as e:
         return render_template("base/error.html", error=str(e))
-    except:
-        #TODO: LOG: logging 
+    except Exception as e:
+        #TODO: LOG: logging e
         return render_template("base/error.html")
 
     renderTemplate = render_template("video/video_detail.html", 
@@ -229,3 +229,26 @@ def video_processing_finished(video_key: str, time_duration: int):
     #TODO: I will keep it simple for now.
     VideoService().finishedVideoProcessing(video_key, time_duration)
     return jsonify({"success": True})
+
+@videoDetailsBp.route("/video/home/list/<int:page>")
+@videoDetailsBp.route("/video/home/list/<string:filter>/<int:page>")
+@videoDetailsBp.route("/video/home/list/<string:filter>")
+@videoDetailsBp.route("/video/home/list")
+def video_home_list(filter: str = "recent", page: int = 0):
+    #I could do a mobile endpoint to load just a few videos or so.
+    #But too much work for no reason.
+    if session.get("userId"):
+        vs = VideoService(userId=session.get("userId"))
+    else:
+        vs = VideoService()
+
+    try:
+        videos, hasMore = vs.selectHomeVideos(filter, page, limit=VIDEO_HOME_LIMIT)
+        
+        return jsonify({"videos": videos, "hasMore": hasMore})
+    except ServiceException as e:
+        #TODO: LOG: logging e
+        return jsonify({"videos": [], "hasMore": False})
+    except Exception as e:
+        #TODO: LOG: logging e
+        return jsonify({"videos": [], "hasMore": False})

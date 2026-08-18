@@ -1,4 +1,7 @@
 export const ROUTES = {
+    //Home
+    videosHome: (page, filter) => `/video/home/list/${filter}/${page}`,
+    
     //Subscriber
     isSubscribedChannel: (channelId) => `/channel/${channelId}/subscribed`,
     subscribeChannel: (channelId) => `/channel/${channelId}/subscribe`,
@@ -20,6 +23,6 @@ export const ROUTES = {
     videoDetail: (videoKey) => `/video/${videoKey}`,
     videoSelfChannel: (page) => `/video/list/paging/${page}`,
     videoGetStatusPercent: (videoKey) => `/video/status/${videoKey}`,
-
+    //MediaServer
     videoWatchMediaServer: (videoKey) => `/video/${videoKey}/playlist.m3u8`,
 };

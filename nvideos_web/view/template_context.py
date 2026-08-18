@@ -1,11 +1,14 @@
 # FLASK
-from flask import Flask, session
+from flask import Flask, session, current_app as app
 
 # BUILT-IN
 from datetime import date
 
 # TYPING
 from typing import cast, Any
+
+# DB
+from nvideos_web.db.redis import nredis
 
 # SERVICES
 from nvideos_web.services.video.service import VideoService
@@ -14,7 +17,13 @@ def userIsLoggedIn() -> bool:
     return session.get("userId") is not None
 
 def getUserAvatar() -> str | None:
-    return session.get("userAvatarUrl")
+    user = cast(dict[str, object] | None, session.get("user"))
+    if user:
+        avatar = user.get("userAvatarUrl")
+        if avatar is not None:
+            return cast(str, avatar)
+    return None
+
 
 def getDateToinput(dateTime: date) -> str:
     return dateTime.strftime("%Y-%m-%d")
@@ -74,6 +83,27 @@ def formatTimeVideoDuration(timeDurationSeconds: int):
         return minutes + ":" + seconds
     return hours + ":" + minutes + ":" + seconds
 
+def getChannelsSubscribers() -> list[dict[str, str]] | None:
+    import json
+    from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
+
+    r = nredis.client
+    userId = session.get("userId")
+
+    if userId is None:
+        return None
+
+    result = r.get(
+        USER_SUBSCRIBED_CHANNELS_KEY.format(userId=userId)
+    )
+
+    if not result:
+        return None
+    if not isinstance(result, (str,bytes)):
+        return None
+
+    return json.loads(result)
+
 #Don't know if it is the best solution.
 def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["userIsLoggedIn"] = userIsLoggedIn
@@ -84,3 +114,4 @@ def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["getChannelSubscriberDescription"] = getChannelSubscriberDescription
     cast(dict[str, Any], app.jinja_env.globals)["getTotalViewsDescription"] = getTotalViewsDescription
     cast(dict[str, Any], app.jinja_env.globals)["formatTimeVideoDuration"] = formatTimeVideoDuration
+    cast(dict[str, Any], app.jinja_env.globals)["getChannelsSubscribers"] = getChannelsSubscribers

@@ -1,18 +1,9 @@
 import { useState, useEffect } from 'react';
 import { ROUTES } from '../../base/entries/constants/routes'
+import { formatDuration } from '../../base/entries/constants/utils';
 
 function VideoCard({ video }) {
     const [videoStatus, setVideoStatus] = useState(video?.videoStatus ?? "processed");
-
-    const formatDuration = (seconds) => {
-        if (!seconds) return "00:00";
-        
-        const hours = seconds > 3600 ? Math.floor(seconds / 3600) : '00';
-        const minutes = seconds > 3600 ? Math.floor((seconds % 3600) / 60).toString().padStart(2, '0') : Math.floor(seconds / 60).toString().padStart(2, '0');
-        const secs = Math.round(seconds % 60).toString().padStart(2, '0');
-
-        return hours !== '00' ? `${hours}:${minutes}:${secs}` : `${minutes}:${secs}`;
-    };
 
     useEffect(() => {
         let timer = null;
@@ -62,7 +53,7 @@ function VideoCard({ video }) {
                     <div className="absolute bottom-3 right-3 z-10 px-2 py-0.5 rounded bg-black/75 text-white text-xxs font-medium font-mono backdrop-blur-sm shadow-sm select-none">
                         {formatDuration(video.videoTimeDuration)}
                     </div>
-                ) : null}
+                ) : null}formatTime
                 {/* STATUS BADGE IN THUMBNAIL (ABSOLUTE) */}
                 <div className="absolute top-3 right-3 z-10">
                     {videoStatus ?

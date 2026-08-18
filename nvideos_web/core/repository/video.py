@@ -8,7 +8,8 @@ from abc import ABC, abstractmethod
 from nvideos_web.core.entity.video import (
     Video,
     VideoInput,
-    VideosRecommended
+    VideosRecommended,
+    VideosHome
 )
 from nvideos_web.core.entity.base.base_entity import AuditData
 
@@ -51,6 +52,12 @@ class VideoRepository(ABC):
         ...
     @abstractmethod
     def selectRecommendedVideos(self, videoKey: str, channelId: int, *, conn: Connection | None = None) -> list[VideosRecommended]:
+        ...
+    @abstractmethod
+    def selectLastPublicVideos(self, filter: str, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
+        ...
+    @abstractmethod
+    def selectLastSubcribedVideos(self, filter: str, userId: int, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
         ...
     @abstractmethod
     def selectVideoKeyByIdAndRecommended(self, videoKey: str) -> tuple[Video, list[VideosRecommended]]:

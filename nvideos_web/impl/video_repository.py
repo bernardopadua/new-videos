@@ -7,12 +7,13 @@ from psycopg.cursor import Cursor
 
 # REPOSITORY
 from nvideos_web.core.entity.base.constants import VideoPermissions
+from nvideos_web.core.entity.subscriber import SubscriberMetadata
 from nvideos_web.core.repository.video import VideoRepository
 
 # ENTITY
 from nvideos_web.core.entity.video import (
     Video, VideoInput, VideoMetadata, 
-    VideosRecommended
+    VideosRecommended, VideosHome
 )
 from nvideos_web.core.entity.channel import ChannelMetadata
 from nvideos_web.core.entity.user import UserMetadata
@@ -109,7 +110,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
            {UserMetadata.tableNamePrefix()}
            where {VideoMetadata.channelId.getWithPrefix()} = {ChannelMetadata.channelId.getWithPrefix()}
            and {ChannelMetadata.userId.getWithPrefix()} = {UserMetadata.userId.getWithPrefix()}
-           and {VideoMetadata.videoKey.getWithPrefix()} = {paramVideoKey}
+           and {VideoMetadata.videoKey.getWithPrefix()} = {paramVideoKey};
            """,
        )
        with self._db.getConn() as conn:
@@ -192,9 +193,9 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
 
     @override
     def selectRecommendedVideos(self, videoKey: str, channelId: int, *, conn: Connection | None = None) -> list[VideosRecommended]:
-        vm: type[VideoMetadata] = VideoMetadata
-        vmO: VideoMetadata = VideoMetadata.as_(newPrefix="ovm")
-        ch: ChannelMetadata = ChannelMetadata.as_(newPrefix="ch")
+        vm = VideoMetadata
+        vmO = VideoMetadata.as_(newPrefix="ovm")
+        ch = ChannelMetadata.as_(newPrefix="ch")
         fields, _ = NvSql.selectOder(
             vm.videoId, vm.videoKey, vm.videoTitle, 
             vm.videoThumbUrl, vm.videoViewCount, vm.videoTimeDuration, vm.videoPermission, ch.channelId, ch.channelName,
@@ -255,7 +256,94 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosRecommended))
             r = cur.execute(stmt, params=params)
             return [ VideosRecommended.row(row) for row in r.fetchall() ]
+    
+    @override
+    def selectLastPublicVideos(self, filter: str, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
+        vm: type[VideoMetadata] = VideoMetadata
+        ch: type[ChannelMetadata] = ChannelMetadata
+        fields, _ = NvSql.selectOder(
+            vm.videoId, vm.videoKey, vm.videoTitle, 
+            vm.videoThumbUrl, vm.videoViewCount, 
+            vm.videoTimeDuration, ch.channelId, 
+            ch.channelName, ch.channelAvatarUrl,
+            usePrefix=True, useAsinFields=True
+        )
 
+        pLimit, paramLimit = NvSql.createParam("limit", limit)
+        pOffset, paramOffset = NvSql.createParam("offset", offset)
+        _, paramHasMore = NvSql.createParam("offset", offset+limit)
+
+        if filter == 'recent':
+            orderBy = f" order by {vm.createdAt.getWithPrefix()} desc "
+        else:
+            orderBy = f" order by {vm.videoViewCount.getWithPrefix()} desc "
+
+        stmt = NvSql.formatStmt(
+            f"""
+            select {fields} from {vm.tableNamePrefix()}, {ch.tableNamePrefix()}
+            where {ch.channelId.getWithPrefix()} = {vm.channelId.getWithPrefix()}
+            and {vm.videoPermission.getWithPrefix()} in (E'{VideoPermissions.P_PUBLIC.value}')
+            {orderBy}
+            limit {pLimit} offset {pOffset};
+            """
+        )
+        params = NvSql.concatParams(paramLimit, paramOffset)
+        paramsHasMore = NvSql.concatParams(paramLimit, paramHasMore)
+
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosHome))
+            r = cur.execute(stmt, params=params)
+            result = [ VideosHome.row(row) for row in r.fetchall() ]
+            r = conn.execute(stmt, params=paramsHasMore)
+            return result, r.rowcount > 0
+
+    @override
+    def selectLastSubcribedVideos(self, filter: str, userId: int, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
+        sb = SubscriberMetadata
+        vm = VideoMetadata
+        ch = ChannelMetadata
+
+        fields, _ = NvSql.selectOder(
+            vm.videoId, vm.videoKey, vm.videoTitle, 
+            vm.videoThumbUrl, vm.videoViewCount, 
+            vm.videoTimeDuration, ch.channelId, 
+            ch.channelName, ch.channelAvatarUrl,
+            usePrefix=True, useAsinFields=True
+        )
+
+        pLimit, paramLimit = NvSql.createParam("limit", limit)
+        pOffset, paramOffset = NvSql.createParam("offset", offset)
+        pUserId, paramUserId = NvSql.createParam("user_id", userId)
+        _, paramHasMore = NvSql.createParam("offset", offset+limit)
+
+        if filter == 'recent':
+            orderBy = f" order by {vm.createdAt.getWithPrefix()} desc "
+        else:
+            orderBy = f" order by {vm.videoViewCount.getWithPrefix()} desc "
+
+        stmt = NvSql.formatStmt(
+            f"""
+            select {fields} from {sb.tableNamePrefix()} 
+            join {ch.tableNamePrefix()} on {sb.channelId.getWithPrefix()} = {ch.channelId.getWithPrefix()}
+            join {vm.tableNamePrefix()} on {vm.channelId.getWithPrefix()} = {ch.channelId.getWithPrefix()}
+            where {sb.userId.getWithPrefix()} = {pUserId}
+            and {sb.subscriberIsActive.getWithPrefix()} = true
+            and {vm.videoPermission.getWithPrefix()} in (E'{VideoPermissions.P_SUBSCRIBER_ONLY.value}')
+            {orderBy}
+            limit {pLimit} offset {pOffset};
+            """
+        )
+
+        params = NvSql.concatParams(paramLimit, paramOffset, paramUserId)
+        paramsHasMore = NvSql.concatParams(paramLimit, paramHasMore, paramUserId)
+
+        with self._db.getConn() as conn:
+            cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosHome))
+            r = cur.execute(stmt, params=params)
+            result = [ VideosHome.row(row) for row in r.fetchall() ]
+            r = conn.execute(stmt, params=paramsHasMore)
+            hasMore = r.rowcount > 0
+            return result, hasMore
 
     @override
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 

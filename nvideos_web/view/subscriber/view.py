@@ -4,6 +4,9 @@ from flask import (
     request as flaskRequest
 )
 
+# DB
+from nvideos_web.db.redis import nredis
+
 # DECORATORS
 from nvideos_web.services.base.error import ServiceException
 from nvideos_web.services.channel.service import ChannelService
@@ -17,8 +20,6 @@ from nvideos_web.view.template_context import getChannelSubscriberDescription
 
 subscriberBp = Blueprint(
     "subscriber", __name__
-    #static_folder="static", static_url_path="/user_details/static",
-    #template_folder="template"
 )
 
 #
@@ -58,6 +59,8 @@ def is_subscribed_channel(channel_id: int):
 @subscriberBp.route("/channel/<int:channel_id>/subscribe", methods=["POST"])
 @loginRequired
 def subscribe_channel(channel_id: int):
+    from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
+    
     sSrv: SubscriberService = SubscriberService(userId=session.get("userId"))
     cSrv: ChannelService = ChannelService(userId=session.get("userId"))
 
@@ -66,6 +69,37 @@ def subscribe_channel(channel_id: int):
             return jsonify({"isSubscribed": False})
 
         sSrv.checkSubscribedAndSubscribe(channel_id)
+
+        channel = cSrv.selectChannelById(channel_id)
+        channelsSubscribed = nredis.client.get(USER_SUBSCRIBED_CHANNELS_KEY.format(userId=sSrv.currentUser))
+
+        if channel is None:
+            #TODO: LOG: Logging
+            return jsonify({"isSubscribed": False})
+
+        if channelsSubscribed is None:
+            channelsSubscribed = [{
+                "channelId": channel.channelId,
+                "channelAvatarUrl": channel.channelAvatarUrl,
+                "channelName": channel.channelName
+            }]
+        else:
+            import json
+            if not isinstance(channelsSubscribed, (str, bytes)):
+                #TODO: LOG: Logging
+                raise Exception("Result from redis is not JSON string/bytes.")
+
+            channelsSubscribed = json.loads(channelsSubscribed)
+            
+            if not isinstance(channelsSubscribed, list):
+                #TODO: LOG: Logging
+                raise Exception("Result from redis is not a list.")
+
+            channelsSubscribed.append({
+                "channelId": channel.channelId,
+                "channelAvatarUrl": channel.channelAvatarUrl,
+                "channelName": channel.channelName
+            })        
 
         return jsonify({"isSubscribed": True})
     except ServiceException as e:

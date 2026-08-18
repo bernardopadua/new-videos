@@ -5,9 +5,15 @@ from flask import (
     redirect
 )
 
+# DB 
+from nvideos_web.db.redis import nredis
+
 # SERVICE
+from nvideos_web.services.base.error import ServiceException
+from nvideos_web.services.subscriber.service import SubscriberService
 from nvideos_web.services.user.service import UserService
 from nvideos_web.services.user.error import UserServiceUserHasInvalidEmail
+from nvideos_web.view.endpoint_decorators import loginRequired
 
 homeBp = Blueprint(
     "home", __name__, 
@@ -32,22 +38,35 @@ def login():
         
         try:
             uSrv = UserService()
-            if uSrv.userLogin(userEmail, userPassword):
-                return redirect("/")
-            else:
+            if (usu := uSrv.userLogin(userEmail, userPassword)) is None:
                 return render_template("home/login.html", error="Email ou senha incorretos.")
+                
+            ss = SubscriberService(userId=usu.userId)
+            chs = ss.selectChannelsUserIsSubscribed()
+
+            if chs is not None:
+                from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
+                import json
+                _ = nredis.client.set(
+                    USER_SUBSCRIBED_CHANNELS_KEY.format(userId=usu.userId),
+                    json.dumps(chs)
+                )
+            
+            return redirect("/")                
+        except ServiceException as e:
+            return render_template("base/error.html", error=str(e))
         except Exception:
-            return render_template("home/login.html", error="Email ou senha incorretos.")
+            return render_template("base/error.html")
             
     templateRender = render_template("home/login.html")
     return templateRender
 
 @homeBp.route("/logout")
+@loginRequired
 def logout():
     from flask import session, redirect
     session.clear()
     return redirect("/")
-
 
 @homeBp.route("/register", methods=["GET", "POST"])
 def user_registration():
@@ -90,64 +109,3 @@ def user_registration():
 
     templateRender = render_template("home/register_user.html")
     return templateRender
-
-@homeBp.route("/player")
-def index_player():
-    urlPlayer = url_for("home.static", filename="player.js")
-    page_resp = f"""
-        <html>
-        <head>
-            <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-        </head>
-        <h1>11</h1>
-        <video id="video" controls style="width: 100%; max-width: 640px;"></video>
-        <script src='{urlPlayer}'></script>
-        </html>
-    """
-    resp = make_response(page_resp)
-
-    cspPol = "script-src 'self' https://cdn.jsdelivr.net;"
-    cspPol = f"{cspPol}connect-src 'self' http://localhost:8099;"
-
-    resp.headers['Content-Security-Policy'] = cspPol
-    return resp
-
-@homeBp.route("/abc/<int:seconds>")
-def abc(seconds: int = 0):
-    from nvideos_web.services.user.service import UserService
-    from nvideos_web.services.channel.service import ChannelService
-    from nvideos_web.services.subscriber.service import SubscriberService
-
-    us = UserService()
-    print(us.userEmailExists("john.doe4@gmail.com"))
-
-    # cc = ChannelService()
-    # _ = cc.fillInputData(channelName="New Channel 2")
-
-    # us = UserService()
-    # user = us.selectByUserName("User1")
-
-    # user = us.fillInputData(
-    #     userName="New Test2",
-    #     userEmail="newtest2@test.com.br",
-    #     userSurname="Test2",
-    #     userPassword="123456",
-    #     userIsActive=True,
-    #     createSystemUser=True
-    # ).createNewUser()
-    # print(user)
-
-    # us = UserService(userId=9)
-    # user = us.fillInputData(userName="Changing name 1").updateUserById(44)
-    # user = us.deleteByUserId(10)
-    #print(user)
-    
-    # ch = ChannelService(userId=10)
-    # ch.checkIdExists(10)
-    # ch.fillInputData(
-    #     channelName="Testing channel 1"
-    # ).createNewChannel()
-
-    # sub = SubscriberService(userId=3).subscribeToChannel(channelId=3)
-
-    return "<h1>Hello</h1>"

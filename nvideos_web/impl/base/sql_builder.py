@@ -77,10 +77,11 @@ class NvSql:
     def createParam(paramName: str, paramValue: object) -> tuple[ParamPgSQL, ParamPgMapObject]:
         parsedParam: object = ""
         
-        if paramValue is str:
-            parsedParam = f"'{paramValue}'"
-        else:
-            parsedParam = paramValue
+        #I messed up.
+        #if isinstance(paramValue, str):
+        #    parsedParam = f"'{paramValue}'"
+        #else:
+        parsedParam = paramValue
 
         return f"%({paramName})s", {paramName: parsedParam}
 
