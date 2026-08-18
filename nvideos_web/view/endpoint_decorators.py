@@ -16,6 +16,9 @@ def loginRequired(f: Callable[..., Any]) -> Callable[..., Response]:
     @wraps(f)
     def decorated_function(*args: Sequence[Any], **kwargs: Mapping[str, Any]) -> Response:
         if not session.get("userId"):
+            if request.full_path != url_for("home.login"):
+                session["next"] = request.full_path
+            
             return redirect(url_for("home.login"))
         return f(*args, **kwargs)
     return decorated_function

@@ -1,8 +1,7 @@
 # FLASK
 from flask import (
-    url_for, Blueprint, make_response, 
-    render_template, request as flaskRequest,
-    redirect
+    Blueprint, render_template, 
+    request as flaskRequest, redirect, session
 )
 
 # DB 
@@ -40,7 +39,7 @@ def login():
             uSrv = UserService()
             if (usu := uSrv.userLogin(userEmail, userPassword)) is None:
                 return render_template("home/login.html", error="Email ou senha incorretos.")
-                
+
             ss = SubscriberService(userId=usu.userId)
             chs = ss.selectChannelsUserIsSubscribed()
 
@@ -52,6 +51,9 @@ def login():
                     json.dumps(chs)
                 )
             
+            if (nextPath := session.pop("next", None)) is not None:
+                return redirect(nextPath)
+
             return redirect("/")                
         except ServiceException as e:
             return render_template("base/error.html", error=str(e))
