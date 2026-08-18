@@ -60,8 +60,12 @@ export default function HomeVideos() {
             fetch(ROUTES.videosHome(page, filter))
                 .then(res => res.json())
                 .then((data) => {
-                    if (!ignore){
-                        setVideos((prev) => { return [...prev, ...data?.videos] });
+                    if (!ignore) {
+                        if (page > 0) {
+                            setVideos((prev) => { return [...prev, ...data?.videos] });
+                        } else {
+                            setVideos(data?.videos);
+                        }
                         hasMoreRef.current = data?.hasMore;
                     }
                 });
