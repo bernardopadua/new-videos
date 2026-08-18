@@ -3,7 +3,7 @@ from flask import Flask
 
 # DATABASE
 from nvideos_web.db.pgcontext import NewVideosDBContext
-from nvideos_web.db.redis import RedisPool, nredis
+from nvideos_web.db.redis import nredis
 
 # CONFIG 
 from nvideos_web.config import loadDotEnv

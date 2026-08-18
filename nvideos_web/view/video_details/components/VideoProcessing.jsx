@@ -7,7 +7,7 @@ export default function VideoProcessing({ videoKeyInput, videoStatusInput, video
     const videoKey = videoKeyInput?.value;
     const videoThumbUrl = videoThumbUrlInput?.value;
 
-    useEffect(() => { 
+    useEffect(() => {
         let timer;
         let isMounted = true;
 
@@ -16,13 +16,13 @@ export default function VideoProcessing({ videoKeyInput, videoStatusInput, video
                 const response = await fetch(`/video/status/${videoKey}`);
                 if (response.ok) {
                     const data = await response.json();
-                    
+
                     if (parseInt(data?.percent) < 100) {
                         setProcessingPercent(`${data.percent}%`);
                         timer = setTimeout(() => {
                             fetchVideoStatus();
                         }, 1500);
-                    } else if(parseInt(data?.percent) == 100) {
+                    } else if (parseInt(data?.percent) == 100) {
                         clearTimeout(timer);
                         setVideoStatus('processed');
                         setProcessingPercent('100%');
@@ -39,7 +39,7 @@ export default function VideoProcessing({ videoKeyInput, videoStatusInput, video
                     }
                 }
             } catch (error) {
-                if(isMounted)
+                if (isMounted)
                     console.error("Error fetching video status:", error);
             }
         };
@@ -64,7 +64,7 @@ export default function VideoProcessing({ videoKeyInput, videoStatusInput, video
                 {/*Thumbnail Container*/}
                 <div className="relative w-full md:w-64 aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner group">
                     <img src={videoThumbUrl} alt="Video thumbnail" className="w-full h-full object-cover" />
-                    
+
                     {/*Processing Overlay (Visible when processing)*/}
                     {videoStatus == 'processing' ?
                         (<div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm transition-all duration-300">
@@ -91,13 +91,13 @@ export default function VideoProcessing({ videoKeyInput, videoStatusInput, video
                                 </span>
                                 <span>Transcoding and processing video...</span>
                             </div>
-                            <p className="text-xs text-gray-400">We are processing multiple resolutions and optimizing your video for streaming. This might take a few minutes.</p>
-                        
+                            <p className="text-xs text-gray-400">We are processing and preparing your video for smooth streaming. This might take a few minutes.</p>
+
                             {/*Progress Bar*/}
                             <div className="w-full mt-4 space-y-2">
                                 <div className="flex justify-between text-xs text-gray-400 font-semibold">
                                     <span>Processing...</span>
-                                    <span id="video-processing-percent">{ processingPercent }</span>
+                                    <span id="video-processing-percent">{processingPercent}</span>
                                 </div>
                                 <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                                     <div id="video-processing-bar" className="bg-brand h-full transition-all duration-300 rounded-full" style={{ width: processingPercent }}></div>
