@@ -252,16 +252,17 @@ class VideoService(BaseService[VideoInput]):
         offset: int = page * limit
 
         subscribedVideos: list[VideosHome] = []
+        hasMoreSub = False
 
         if self.currentUser:
             limit = int(limit / 2)
+            offset = page * limit
 
-            subscribedVideos = self._videoRep.selectLastSubcribedVideos(filter, self.currentUser, limit=limit, offset=offset)
+            subscribedVideos, hasMoreSub = self._videoRep.selectLastSubcribedVideos(filter, self.currentUser, limit=limit, offset=offset)
         
-        publicVideos = self._videoRep.selectLastPublicVideos(filter, limit=limit, offset=offset)
+        publicVideos, hasMorePublic = self._videoRep.selectLastPublicVideos(filter, limit=limit, offset=offset)
         
-        
-        return subscribedVideos + publicVideos
+        return subscribedVideos + publicVideos, hasMoreSub or hasMorePublic
 
     def increaseVideoViewCount(self, videoKey: str, /) -> Self:
         try:

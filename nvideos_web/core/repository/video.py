@@ -54,10 +54,10 @@ class VideoRepository(ABC):
     def selectRecommendedVideos(self, videoKey: str, channelId: int, *, conn: Connection | None = None) -> list[VideosRecommended]:
         ...
     @abstractmethod
-    def selectLastPublicVideos(self, filter: str, *, limit: int, offset: int = 0) -> list[VideosHome]:
+    def selectLastPublicVideos(self, filter: str, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
         ...
     @abstractmethod
-    def selectLastSubcribedVideos(self, filter: str, userId: int, *, limit: int, offset: int = 0) -> list[VideosHome]:
+    def selectLastSubcribedVideos(self, filter: str, userId: int, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
         ...
     @abstractmethod
     def selectVideoKeyByIdAndRecommended(self, videoKey: str) -> tuple[Video, list[VideosRecommended]]:

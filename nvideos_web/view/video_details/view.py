@@ -235,9 +235,20 @@ def video_processing_finished(video_key: str, time_duration: int):
 @videoDetailsBp.route("/video/home/list/<string:filter>")
 @videoDetailsBp.route("/video/home/list")
 def video_home_list(filter: str = "recent", page: int = 0):
+    #I could do a mobile endpoint to load just a few videos or so.
+    #But too much work for no reason.
     if session.get("userId"):
-        vs = VideoService(userId=session.get("userID"))
+        vs = VideoService(userId=session.get("userId"))
     else:
         vs = VideoService()
 
-    return jsonify(vs.selectHomeVideos(filter, page, limit=VIDEO_HOME_LIMIT))
+    try:
+        videos, hasMore = vs.selectHomeVideos(filter, page, limit=VIDEO_HOME_LIMIT)
+        
+        return jsonify({"videos": videos, "hasMore": hasMore})
+    except ServiceException as e:
+        #TODO: LOG: logging e
+        return jsonify({"videos": [], "hasMore": False})
+    except Exception as e:
+        #TODO: LOG: logging e
+        return jsonify({"videos": [], "hasMore": False})

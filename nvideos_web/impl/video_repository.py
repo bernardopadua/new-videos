@@ -258,7 +258,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             return [ VideosRecommended.row(row) for row in r.fetchall() ]
     
     @override
-    def selectLastPublicVideos(self, filter: str, *, limit: int, offset: int = 0) -> list[VideosHome]:
+    def selectLastPublicVideos(self, filter: str, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
         vm: type[VideoMetadata] = VideoMetadata
         ch: type[ChannelMetadata] = ChannelMetadata
         fields, _ = NvSql.selectOder(
@@ -271,6 +271,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
 
         pLimit, paramLimit = NvSql.createParam("limit", limit)
         pOffset, paramOffset = NvSql.createParam("offset", offset)
+        _, paramHasMore = NvSql.createParam("offset", offset+limit)
 
         if filter == 'recent':
             orderBy = f" order by {vm.createdAt.getWithPrefix()} desc "
@@ -287,14 +288,17 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
             """
         )
         params = NvSql.concatParams(paramLimit, paramOffset)
+        paramsHasMore = NvSql.concatParams(paramLimit, paramHasMore)
 
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosHome))
             r = cur.execute(stmt, params=params)
-            return [ VideosHome.row(row) for row in r.fetchall() ]
+            result = [ VideosHome.row(row) for row in r.fetchall() ]
+            r = conn.execute(stmt, params=paramsHasMore)
+            return result, r.rowcount > 0
 
     @override
-    def selectLastSubcribedVideos(self, filter: str, userId: int, *, limit: int, offset: int = 0) -> list[VideosHome]:
+    def selectLastSubcribedVideos(self, filter: str, userId: int, *, limit: int, offset: int = 0) -> tuple[list[VideosHome], bool]:
         sb = SubscriberMetadata
         vm = VideoMetadata
         ch = ChannelMetadata
@@ -310,6 +314,7 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
         pLimit, paramLimit = NvSql.createParam("limit", limit)
         pOffset, paramOffset = NvSql.createParam("offset", offset)
         pUserId, paramUserId = NvSql.createParam("user_id", userId)
+        _, paramHasMore = NvSql.createParam("offset", offset+limit)
 
         if filter == 'recent':
             orderBy = f" order by {vm.createdAt.getWithPrefix()} desc "
@@ -330,11 +335,15 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
         )
 
         params = NvSql.concatParams(paramLimit, paramOffset, paramUserId)
+        paramsHasMore = NvSql.concatParams(paramLimit, paramHasMore, paramUserId)
 
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(None, additionalModelFields=VideosHome))
             r = cur.execute(stmt, params=params)
-            return [ VideosHome.row(row) for row in r.fetchall() ]
+            result = [ VideosHome.row(row) for row in r.fetchall() ]
+            r = conn.execute(stmt, params=paramsHasMore)
+            hasMore = r.rowcount > 0
+            return result, hasMore
 
     @override
     def updateById(self, videoId: int, newVideoData: VideoInput, auditData: AuditData) -> Video: 
