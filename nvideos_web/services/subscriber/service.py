@@ -83,13 +83,15 @@ class SubscriberService(BaseService[SubscriberInput]):
         pass
         return self
 
-    def checkSubscribedAndSubscribe(self, channelId: int):
+    def checkSubscribedAndSubscribe(self, channelId: int) -> UserSubscriber | None:
         if self.currentUser is None:
             raise SubscriberNoCurrentUser("No current user informed.")
 
         isSubscribed: bool = self._usuRep.checkAlreadySubscribed(channelId, self.currentUser)
         if not isSubscribed:
-            _ = self.subscribeToChannel(channelId)
+            return self.subscribeToChannel(channelId)
+
+        return None
 
     def checkSubscribedAndUnsubscribe(self, channelId: int) -> bool:
         if self.currentUser is None:

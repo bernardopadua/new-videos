@@ -12,6 +12,7 @@ from nvideos_web.db.redis import nredis
 
 # SERVICES
 from nvideos_web.services.video.service import VideoService
+from nvideos_web.services.channel.service import ChannelService
 
 def userIsLoggedIn() -> bool:
     return session.get("userId") is not None
@@ -104,6 +105,18 @@ def getChannelsSubscribers() -> list[dict[str, str]] | None:
 
     return json.loads(result)
 
+def userHasChannel() -> bool:
+    """
+    Checks if the user has a channel.
+    """
+    if not userIsLoggedIn():
+        return False
+
+    if ChannelService(userId=session.get("userId")).doIAlreadyHaveChannel() is None:
+        return False
+    
+    return True
+
 #Don't know if it is the best solution.
 def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["userIsLoggedIn"] = userIsLoggedIn
@@ -115,3 +128,4 @@ def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["getTotalViewsDescription"] = getTotalViewsDescription
     cast(dict[str, Any], app.jinja_env.globals)["formatTimeVideoDuration"] = formatTimeVideoDuration
     cast(dict[str, Any], app.jinja_env.globals)["getChannelsSubscribers"] = getChannelsSubscribers
+    cast(dict[str, Any], app.jinja_env.globals)["userHasChannel"] = userHasChannel

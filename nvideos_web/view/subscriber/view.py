@@ -59,6 +59,7 @@ def is_subscribed_channel(channel_id: int):
 @subscriberBp.route("/channel/<int:channel_id>/subscribe", methods=["POST"])
 @loginRequired
 def subscribe_channel(channel_id: int):
+    import json
     from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
     
     sSrv: SubscriberService = SubscriberService(userId=session.get("userId"))
@@ -68,7 +69,12 @@ def subscribe_channel(channel_id: int):
         if not cSrv.checkIdExists(channel_id).getCheckIdExists():
             return jsonify({"isSubscribed": False})
 
-        sSrv.checkSubscribedAndSubscribe(channel_id)
+        userSubscribed = sSrv.checkSubscribedAndSubscribe(channel_id)
+
+        if (userSubscribed is None or 
+            not userSubscribed.subscriber.subscriberIsActive):
+            #TODO: Logging
+            return jsonify({"isSubscribed": False})
 
         channel = cSrv.selectChannelById(channel_id)
         channelsSubscribed = nredis.client.get(USER_SUBSCRIBED_CHANNELS_KEY.format(userId=sSrv.currentUser))
@@ -84,7 +90,6 @@ def subscribe_channel(channel_id: int):
                 "channelName": channel.channelName
             }]
         else:
-            import json
             if not isinstance(channelsSubscribed, (str, bytes)):
                 #TODO: LOG: Logging
                 raise Exception("Result from redis is not JSON string/bytes.")
@@ -99,7 +104,18 @@ def subscribe_channel(channel_id: int):
                 "channelId": channel.channelId,
                 "channelAvatarUrl": channel.channelAvatarUrl,
                 "channelName": channel.channelName
-            })        
+            })
+
+        #I'm just assuming
+        redisIsSet = nredis.client.set(
+            USER_SUBSCRIBED_CHANNELS_KEY.format(userId=sSrv.currentUser),
+            json.dumps(channelsSubscribed)
+        )
+
+        #I would comment the lines below, but I will keep this to avoid deleting commented code.
+        if not redisIsSet:
+            #TODO: Logging
+            pass      
 
         return jsonify({"isSubscribed": True})
     except ServiceException as e:

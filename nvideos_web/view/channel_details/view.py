@@ -131,14 +131,17 @@ def channel_edit(channel_id):
                     else None
             ).fillInputData().updateChannelById(channelUpdated.channelId)
 
-            return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelUpdated.channelId))
+            return redirect(url_for("channel_details.channel_detail", channel_id=channelUpdated.channelId))
         except ServiceException as e:
+            #TODO: LOGGING
             return render_template("base/error.html", error=str(e))
-        except Exception:
+        except Exception as e:
+            #TODO: LOGGING
             return render_template("base/error.html")
 
     try:
         return render_template("channel/channel_details_edit.html", ch=channel)
-    except Exception:
+    except Exception as e:
+        #TODO: Logging
         return render_template("base/error.html")
 
