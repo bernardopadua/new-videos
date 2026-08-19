@@ -1,3 +1,5 @@
+import { ROUTES } from '../../../base/entries/constants/routes';
+
 export default class ChannelImageUpload {
     constructor() {
         this._bannerImage = {
@@ -13,13 +15,12 @@ export default class ChannelImageUpload {
     }
 
     async uploadMedia(formData) {
-        const urlToUpload = import.meta.env.VITE_URL_MEDIA_SERVER;
         try {
             if (this._bannerImage.obj.files.length > 0) {
                 const formData = new FormData();
                 formData.append("file", this._bannerImage.obj.files[0]);
                 const responseBanner = await fetch(
-                    urlToUpload + "/channel/upload/image/temp", {
+                    ROUTES.channelUploadImageTemp(), {
                     method: "POST",
                     body: formData
                 });
@@ -31,7 +32,7 @@ export default class ChannelImageUpload {
                 const formData = new FormData();
                 formData.append("file", this._avatarImage.obj.files[0]);
                 const responseAvatar = await fetch(
-                    urlToUpload + "/channel/upload/image/temp", {
+                    ROUTES.channelUploadImageTemp(), {
                     method: "POST",
                     body: formData
                 });

@@ -5,6 +5,7 @@ import BannerChannel from '../components/BannerChannel';
 import AvatarUpload from '../components/AvatarUpload';
 
 import ChannelImageUpload from './channel_image_upload/channel_image_upload_editcreate';
+import ChannelEditDetailsValidation from './channel_details_edit/channel_details_edit';
 
 const bannerCoverUrl = document.getElementById("bannerCoverImageUrl");
 const rootCoverImage = ReactDOM.createRoot(document.getElementById("root-cover-image"));
@@ -26,10 +27,16 @@ const formChannel = document.getElementById("channel-details-form");
 formChannel.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    const mediaUpload = new ChannelImageUpload();
-    const submitFormCallback = () => {
-        formChannel.submit();
-    }
+    const fieldValidation = new ChannelEditDetailsValidation();
+    const validFields = fieldValidation.validateAllFields();
 
-    mediaUpload.doUploadMedia(submitFormCallback);
+    console.log(validFields);
+    if (validFields) {
+        const mediaUpload = new ChannelImageUpload();
+        const submitFormCallback = () => {
+            formChannel.submit();
+        }
+
+        mediaUpload.doUploadMedia(submitFormCallback);
+    }
 });

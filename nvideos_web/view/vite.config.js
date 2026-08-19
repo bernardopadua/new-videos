@@ -8,7 +8,10 @@ const cleanSomeDirs = () => ({
     name: 'clean-some-dirs',
     buildStart: () => {
         const dirs = [
-            'base/static/dist'
+            'base/static/dist',
+            'channel_details/static/dist',
+            'video_details/static/dist',
+            'user_details/static/dist',
         ];
         dirs.forEach((dir) => {
             fs.readdir(dir, (err, files) => {
@@ -58,7 +61,6 @@ export default defineConfig({
 
                 //ChannelDetails
                 'channel_details/channel_editcreate_details/ced': './channel_details/entries/channel_editcreate_details_entry.jsx',
-                //'channel_details/channel_image_upload_editcreate/ciec': './channel_details/entries/channel_image_upload_editcreate.js',
 
                 //VideoDetails
                 'video_details/video_details_entry/vde': './video_details/entries/video_details_entry.jsx',

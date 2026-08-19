@@ -2,6 +2,10 @@ export const ROUTES = {
     //Home
     videosHome: (page, filter) => `/video/home/list/${filter}/${page}`,
     
+    //Channel
+    //MediaServer
+    channelUploadImageTemp: () => `${import.meta.env.VITE_URL_MEDIA_SERVER}/channel/upload/image/temp`,
+
     //Subscriber
     isSubscribedChannel: (channelId) => `/channel/${channelId}/subscribed`,
     subscribeChannel: (channelId) => `/channel/${channelId}/subscribe`,

@@ -1,6 +1,4 @@
 # FLASK
-from crypt import methods
-
 from flask import (
     Blueprint, redirect, render_template, request as flaskRequest, 
     session, url_for
@@ -10,10 +8,13 @@ from flask import (
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired
 
 # ERROR
-from nvideos_web.services.channel.error import ServiceException
+from nvideos_web.services.base.error import ServiceException
 
 # SERVICE
-from nvideos_web.services.channel.service import ChannelService, Channel
+from nvideos_web.services.channel.service import ChannelService
+
+# ENTITY
+from nvideos_web.core.entity.channel import Channel
 
 channelDetailsBp = Blueprint(
     "channel_details", __name__,
