@@ -5,18 +5,20 @@
 {% block content %}
 <!-- YOUTUBE-STYLE CHANNEL PRESENTATION PAGE -->
 <div class="max-w-[1700px] mx-auto space-y-10 sm:space-y-12 pb-20">
-    
+
     <!-- COVER BANNER & OVERLAPPING AVATAR CONTAINER -->
     <div class="relative w-full mb-14 sm:mb-18">
         <!-- Banner Image -->
-        <div class="w-full h-44 sm:h-64 lg:h-72 rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#121212]">
-            <img src="https://picsum.photos/1920/600?random=88" class="w-full h-full object-cover" alt="Channel Banner">
+        <div
+            class="w-full h-44 sm:h-64 lg:h-72 rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#121212]">
+            <img src="{{ch.channelImageUrl}}" class="w-full h-full object-cover" alt="Channel Banner">
         </div>
 
         <!-- Overlapping Profile Avatar (True Overlap via absolute positioning) -->
-        <div class="absolute -bottom-10 sm:-bottom-14 left-6 sm:left-10 z-10" style="position: absolute; bottom: -48px; left: 32px; z-index: 10;">
-            <img src="https://picsum.photos/300/300?random=12" 
-                class="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-bg-dark object-cover shadow-2xl bg-[#121212]" 
+        <div class="absolute -bottom-10 sm:-bottom-14 left-6 sm:left-10 z-10"
+            style="position: absolute; bottom: -48px; left: 32px; z-index: 10;">
+            <img src="{{ch.channelAvatarUrl}}"
+                class="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-bg-dark object-cover shadow-2xl bg-[#121212]"
                 style="width: 128px; height: 128px; border-radius: 9999px; object-fit: cover; border: 4px solid #0f0f0f;"
                 alt="Channel Profile Avatar">
         </div>
@@ -25,39 +27,51 @@
     <!-- CHANNEL BRANDING & DESCRIPTION (YOUTUBE LAYOUT) -->
     <div class="px-4 sm:px-8 space-y-6">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            
+
             <!-- TITLE, STATS & DESCRIPTION -->
             <div class="space-y-2 max-w-3xl">
                 <div class="flex items-center gap-2">
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">DevPro Studio</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{{ch.channelName}}</h1>
                     <!-- VERIFIED BADGE -->
                     <svg class="w-5 h-5 text-brand fill-current" viewBox="0 0 20 20">
-                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        <path
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
                     </svg>
                 </div>
 
                 <div class="flex items-center gap-3 text-xs sm:text-sm text-gray-400 font-medium flex-wrap">
-                    <span class="text-white font-semibold">@devprostudio</span>
+                    <span class="text-white font-semibold">@{{ch.channelName | lower}}</span>
                     <span>•</span>
-                    <span>245K subscribers</span>
+                    <span id="channel-subscribers">{{totalSubscribers}} subscribers</span>
                     <span>•</span>
-                    <span>142 videos</span>
+                    <span>{{totalVideos}} videos</span>
                 </div>
 
                 <!-- DESCRIPTION SUMMARY -->
                 <p class="text-xs sm:text-sm text-gray-300 leading-relaxed pt-1">
-                    Welcome to DevPro Studio! We share high-quality tutorials, live coding streams, and walkthroughs about Python, Flask, React, and modern web application development.
+                    {{ch.channelDescription}}
                 </p>
             </div>
 
             <!-- ACTION BUTTONS -->
             <div class="flex items-center gap-4 w-full md:w-auto shrink-0">
-                <button class="flex-1 md:flex-none px-7 py-3 text-xs sm:text-sm font-extrabold text-black bg-white hover:bg-gray-200 rounded-full transition shadow-lg active:scale-95">
+                {% if not userOwnChannel %}
+                <button id="btn-subscribe-channel"
+                    class="hidden px-6 py-3 text-xs sm:text-sm font-semibold text-white bg-brand hover:bg-[#772ce8] rounded-full transition shadow-lg shadow-brand/25 active:scale-95">
                     Subscribe
                 </button>
-                <a href="/channel/{{ channel_id }}/edit" class="px-6 py-3 text-xs sm:text-sm font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/20 rounded-full transition shadow-sm">
+                <button id="btn-unsubscribe-channel"
+                    class="hidden px-6 py-3 text-xs sm:text-sm font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/20 rounded-full transition shadow-sm active:scale-95">
+                    Unsubscribe
+                </button>
+                {% endif %}
+
+                {% if ch.userId == getCurrentUserId() %}
+                <a href="/channel/{{ channel_id }}/edit"
+                    class="px-6 py-3 text-xs sm:text-sm font-semibold text-white bg-white/10 border border-white/10 hover:bg-white/20 rounded-full transition shadow-sm">
                     Edit Channel
                 </a>
+                {% endif %}
             </div>
 
         </div>
@@ -75,25 +89,31 @@
     </div>
 
     <!-- FEATURED VIDEO SHOWCASE -->
-    <div class="p-8 sm:p-10 rounded-3xl bg-surface/80 border border-white/10 backdrop-blur-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
-        
+    <div
+        class="p-8 sm:p-10 rounded-3xl bg-surface/80 border border-white/10 backdrop-blur-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+
         <!-- FEATURED THUMBNAIL -->
-        <div class="lg:col-span-5 aspect-video rounded-2xl overflow-hidden bg-black border border-white/10 relative group cursor-pointer shadow-lg">
-            <img src="https://picsum.photos/800/450?random=99" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Featured Video">
-            <span class="absolute bottom-3 right-3 bg-black/85 text-xs font-bold px-2.5 py-1 rounded-md text-white">24:15</span>
+        <div
+            class="lg:col-span-5 aspect-video rounded-2xl overflow-hidden bg-black border border-white/10 relative group cursor-pointer shadow-lg">
+            <img src="{{lastVideo.get('videoThumbUrl')}}"
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Featured Video">
+            <span
+                class="absolute bottom-3 right-3 bg-black/85 text-xs font-bold px-2.5 py-1 rounded-md text-white">{{formatTimeVideoDuration(lastVideo.get("videoTimeDuration"))}}</span>
         </div>
 
         <!-- FEATURED CONTENT -->
         <div class="lg:col-span-7 space-y-4">
-            <span class="inline-block px-3.5 py-1.5 bg-brand/20 text-brand border border-brand/30 rounded-full text-xs font-bold uppercase tracking-wider">
-                Featured Video
+            <span
+                class="inline-block px-3.5 py-1.5 bg-brand/20 text-brand border border-brand/30 rounded-full text-xs font-bold uppercase tracking-wider">
+                Last Video
             </span>
-            <h2 class="text-xl sm:text-2xl font-extrabold text-white leading-snug hover:text-brand transition cursor-pointer">
-                Building a High-Performance YouTube + Twitch Hybrid Web App with Flask & React
+            <h2
+                class="text-xl sm:text-2xl font-extrabold text-white leading-snug hover:text-brand transition cursor-pointer">
+                {{lastVideo.get("videoTitle")}}
             </h2>
-            <p class="text-xs text-gray-400 font-semibold">128K views • 2 days ago</p>
+            <p class="text-xs text-gray-400 font-semibold">{{getTotalViewsDescription(lastVideo.get("videoViewCount"))}} • {{formatDatetimeToString(lastVideo.get("createdAt"))}}</p>
             <p class="text-xs sm:text-sm text-gray-300 leading-relaxed line-clamp-3">
-                In this deep dive episode, we walk through building a modern web application stack combining Python Flask on the backend with Vite, React v19, and Tailwind CSS v4 on the frontend!
+                {{lastVideo.get("videoDescription")}}
             </p>
         </div>
 
@@ -106,29 +126,55 @@
         </h3>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {% for i in range(12) %}
+            {% for vd in channelVideos %}
             <div class="flex flex-col gap-3.5 group cursor-pointer">
                 <!-- THUMBNAIL -->
-                <div class="aspect-video bg-surface rounded-2xl overflow-hidden border border-white/10 group-hover:border-brand/50 transition-all relative shadow-md">
-                    <img src="https://picsum.photos/400/225?random={{ i + 20 }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Video Thumbnail">
-                    <div class="absolute bottom-2 right-2 bg-black/85 text-xs font-bold px-2 py-1 rounded text-white">12:45</div>
+                <div
+                    class="aspect-video bg-surface rounded-2xl overflow-hidden border border-white/10 group-hover:border-brand/50 transition-all relative shadow-md">
+                    <img src="{{vd.videoThumbUrl}}"
+                        class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        alt="Video Thumbnail">
+                    <div class="absolute bottom-2 right-2 bg-black/85 text-xs font-bold px-2 py-1 rounded text-white">
+                        {{formatTimeVideoDuration(vd.get("videoTimeDuration"))}}</div>
                 </div>
 
                 <!-- METADATA -->
                 <div class="flex gap-3">
-                    <img src="https://picsum.photos/300/300?random=12" class="w-10 h-10 rounded-full object-cover shrink-0 border border-brand/30" alt="Channel Avatar">
+                    <img src="{{ch.channelAvatarUrl}}"
+                        class="w-10 h-10 rounded-full object-cover shrink-0 border border-brand/30"
+                        alt="Channel Avatar">
                     <div class="flex-1 min-w-0">
-                        <h4 class="font-bold text-sm text-white line-clamp-2 leading-snug group-hover:text-brand transition">
-                            How to build a YouTube clone with Tailwind v4 and Flask (Episode {{ i + 1 }})
+                        <h4
+                            class="font-bold text-sm text-white line-clamp-2 leading-snug group-hover:text-brand transition">
+                            {{vd.videoTitle}}
                         </h4>
-                        <p class="text-xs text-gray-400 mt-1">DevPro Studio</p>
-                        <p class="text-xs text-gray-400 mt-0.5">12K views • 3 days ago</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ch.channelName}}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">{{getTotalViewsDescription(vd.get("videoViewCount", 0))}} • {{formatDatetimeToString(vd.get("createdAt"))}}</p>
                     </div>
                 </div>
             </div>
             {% endfor %}
+
+            <script id="channel-details-json" type="application/json">
+                {
+                    "channelId": {{ch.channelId}},
+                    "channelName": "{{ch.channelName}}",
+                    "channelAvatarUrl": "{{ch.channelAvatarUrl}}"
+                }
+            </script>
+            <script id="initial-data-subscribe" type="application/json">
+                {
+                    "channelId": {{ch.channelId}},
+                    "userOwnChannel": {{userOwnChannel | tojson}}
+                }
+            </script>
+            <div id="video-loading-root" class="contents"></div>
         </div>
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="module" src="{{url_for('channel_details.static', filename='dist/cde.js')}}"></script>
 {% endblock %}

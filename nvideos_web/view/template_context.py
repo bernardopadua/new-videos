@@ -2,7 +2,7 @@
 from flask import Flask, session, current_app as app
 
 # BUILT-IN
-from datetime import date
+from datetime import date, datetime
 
 # TYPING
 from typing import cast, Any
@@ -17,6 +17,10 @@ from nvideos_web.services.channel.service import ChannelService
 def userIsLoggedIn() -> bool:
     return session.get("userId") is not None
 
+def getCurrentUserId() -> int | None:
+    currentUser = cast(int | None, session.get("userId", None)) #pywright
+    return currentUser
+
 def getUserAvatar() -> str | None:
     user = cast(dict[str, object] | None, session.get("user"))
     if user:
@@ -24,7 +28,6 @@ def getUserAvatar() -> str | None:
         if avatar is not None:
             return cast(str, avatar)
     return None
-
 
 def getDateToinput(dateTime: date) -> str:
     return dateTime.strftime("%Y-%m-%d")
@@ -84,6 +87,10 @@ def formatTimeVideoDuration(timeDurationSeconds: int):
         return minutes + ":" + seconds
     return hours + ":" + minutes + ":" + seconds
 
+def formatDatetimeToString(dateTime: str) -> str:
+    dt = datetime.fromisoformat(dateTime)
+    return datetime.strftime(dt, "%Y-%m-%d %H:%M:%S")
+
 def getChannelsSubscribers() -> list[dict[str, str]] | None:
     import json
     from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
@@ -129,3 +136,5 @@ def register_globals_app(app: Flask):
     cast(dict[str, Any], app.jinja_env.globals)["formatTimeVideoDuration"] = formatTimeVideoDuration
     cast(dict[str, Any], app.jinja_env.globals)["getChannelsSubscribers"] = getChannelsSubscribers
     cast(dict[str, Any], app.jinja_env.globals)["userHasChannel"] = userHasChannel
+    cast(dict[str, Any], app.jinja_env.globals)["getCurrentUserId"] = getCurrentUserId
+    cast(dict[str, Any], app.jinja_env.globals)["formatDatetimeToString"] = formatDatetimeToString

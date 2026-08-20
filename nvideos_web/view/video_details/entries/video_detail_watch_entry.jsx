@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import VideoPlayerInit from "./video_player/video_player";
 import VideoDescriptionToggle from "./video_detail/video_description_toggle";
-import VideoSubscribe from "./video_detail/video_subscribe";
+import CheckChannelSubscription from "../../subscriber/entries/channel_subscription/check_channel_subscription";
 
 import VideoComments from "../components/VideoComments";
 
@@ -14,7 +14,7 @@ VideoPlayerInit();
 VideoDescriptionToggle();
 
 //VideoSubscribe button
-VideoSubscribe();
+CheckChannelSubscription();
 
 const commentsSectionRoot = document.getElementById('comments-section-root');
 if (commentsSectionRoot) {

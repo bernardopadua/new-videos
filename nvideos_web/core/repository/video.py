@@ -39,16 +39,26 @@ class VideoRepository(ABC):
     def selectByVideoKey(self, videoKey: str, *, conn: Connection | None = None) -> Video | None: 
         ...
     @abstractmethod
-    def selectLimitVideosByChannelId(self, limit: int, 
-        channelId: int, *, offset: int = 0, 
+    def selectLimitVideosByChannelId(self, limit: int, channelId: int, 
+        *, offset: int = 0, filterByStatus: str = "", 
+        videoPermissions: list[str] | None = None,
         conn: Connection | None = None
     ) -> list[Video]:
         ...
     @abstractmethod
-    def selectCountAllVideoByChannelId(self, channelId: int, *, conn: Connection | None = None) -> int: 
+    def selectCountAllVideoByChannelId(self, channelId: int, *, 
+        filterByStatus: str = "", 
+        videoPermissions: list[str] | None = None,
+        conn: Connection | None = None
+    ) -> int: 
         ...
     @abstractmethod
-    def selectLimitCountVideoByChannelId(self, *, limit: int, channelId: int, offset: int = 0) -> tuple[list[Video], int]:
+    def selectLimitCountVideoByChannelId(self, *, 
+        filterByStatus: str = "", 
+        videoPermissions: list[str] | None = None,
+        limit: int, channelId: int, 
+        offset: int = 0
+    ) -> tuple[list[Video], int]:
         ...
     @abstractmethod
     def selectRecommendedVideos(self, videoKey: str, channelId: int, *, conn: Connection | None = None) -> list[VideosRecommended]:

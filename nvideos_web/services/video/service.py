@@ -7,7 +7,7 @@ from flask import current_app as app
 from nvideos_web.db.redis import nredis
 
 # TYPING
-from typing import Self, override, final, cast
+from typing import Self, override, final, cast, TypeAlias
 
 # ENTITY
 from nvideos_web.core.entity.video import (
@@ -29,7 +29,7 @@ from nvideos_web.services.video.error import (
     VideoServiceVideoTitleIsNone, VideoServiceVideoTitleIsInvalid,
     VideoServiceVideoDescriptionIsInvalid, VideoServiceVideoDescriptionIsNone,
     VideoServiceVideoTagsIsInvalid, VideoServiceVideoTagsIsNone,
-    VideoServiceVideoDoesntExists, VideoServiceUserNotAuthenticated,
+    VideoServiceVideoDoesntExists,
     VideoServiceChannelNameIsNone, VideoServiceMessageIsNone
 )
 from nvideos_web.services.base.error import InputDataIsNone
@@ -39,6 +39,9 @@ from nvideos_web.db.pgcontext import NewVideosDBContext
 
 # REPOSITORY
 from nvideos_web.impl.video_repository import PgVideoRepository
+
+VideoJson: TypeAlias = dict[str, object]
+ListVideoJson: TypeAlias = list[VideoJson]
 
 @final
 class VideoService(BaseService[VideoInput]):
@@ -237,13 +240,43 @@ class VideoService(BaseService[VideoInput]):
         
         if not self._channelId:
             raise VideoServiceChannelIdIsNone("Channel id is missing. Please provide a channel id.")
-        
+
         videos, totalRows = self._videoRep.selectLimitCountVideoByChannelId(
             limit=limit,
             channelId=self._channelId,
             offset=offset
         )
 
+        return [i.toJson() for i in videos], totalRows
+
+    def selectLimitProcessedVideosByChannelId(self, 
+        limit: int = 10, *,
+        page: int = 0,
+        userIsSubscribedToChannel: bool = False,
+        userOwnVideoChannel: bool = False
+    ) -> tuple[ListVideoJson | None, int]:
+        offset: int = page * limit
+        videoPermissions: list[str] | None = [
+            VideoPermissions.P_PUBLIC.value,
+        ] if not userOwnVideoChannel else None
+
+        if userIsSubscribedToChannel and videoPermissions is not None:
+            videoPermissions.append(VideoPermissions.P_SUBSCRIBER_ONLY.value)
+
+        if not self._channelId:
+            raise VideoServiceChannelIdIsNone("Channel id is missing. Please provide a channel id.")
+
+        #Maybe I should do another service method just for channel videos
+        #If anything changes I will add a new method to cover this part.
+        videos, totalRows = self._videoRep.selectLimitCountVideoByChannelId(
+            limit=limit,
+            channelId=self._channelId,
+            videoPermissions=videoPermissions,
+            offset=offset, filterByStatus=VideoStatus.P_PROCESSED.value
+        )
+
+        #Since I will use this method to async pagination I will keep the return as "json"/dict.
+        #So the view will mount with jinja2 using .get (dict) instead of ".property"
         return [i.toJson() for i in videos], totalRows
 
     def selectHomeVideos(self, filter: str, page: int, /, *, limit: int = 10): 

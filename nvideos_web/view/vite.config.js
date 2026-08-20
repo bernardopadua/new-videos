@@ -61,6 +61,7 @@ export default defineConfig({
 
                 //ChannelDetails
                 'channel_details/channel_editcreate_details/ced': './channel_details/entries/channel_editcreate_details_entry.jsx',
+                'channel_details/channel_detail/cde': './channel_details/entries/channel_detail_entry.jsx',
 
                 //VideoDetails
                 'video_details/video_details_entry/vde': './video_details/entries/video_details_entry.jsx',

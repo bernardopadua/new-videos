@@ -3,6 +3,7 @@ export const ROUTES = {
     videosHome: (page, filter) => `/video/home/list/${filter}/${page}`,
     
     //Channel
+    channelVideoList: (channelId, page) => `/channel/videos/list/${channelId}/${page}`,
     //MediaServer
     channelUploadImageTemp: () => `${import.meta.env.VITE_URL_MEDIA_SERVER}/channel/upload/image/temp`,
 

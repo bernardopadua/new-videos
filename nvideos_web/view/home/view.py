@@ -11,7 +11,12 @@ from nvideos_web.db.redis import nredis
 from nvideos_web.services.base.error import ServiceException
 from nvideos_web.services.subscriber.service import SubscriberService
 from nvideos_web.services.user.service import UserService
+from nvideos_web.services.channel.service import ChannelService
+
+# ERRORs
 from nvideos_web.services.user.error import UserServiceUserHasInvalidEmail
+
+# DECORATORS
 from nvideos_web.view.endpoint_decorators import loginRequired
 
 homeBp = Blueprint(
@@ -33,12 +38,18 @@ def login():
         userPassword = flaskRequest.form.get("userPassword")
     
         if not userEmail or not userPassword:
-            return render_template("home/login.html", error="Email e senha são obrigatórios.")
+            return render_template("home/login.html", error="Email and password are required.")
         
         try:
             uSrv = UserService()
             if (usu := uSrv.userLogin(userEmail, userPassword)) is None:
-                return render_template("home/login.html", error="Email ou senha incorretos.")
+                return render_template("home/login.html", error="Email or password incorrect.")
+
+            ch = ChannelService(userId=usu.userId)
+            channel = ch.doIAlreadyHaveChannel()
+
+            if channel:
+                uSrv.setUserChannel(channel.channelId)
 
             ss = SubscriberService(userId=usu.userId)
             chs = ss.selectChannelsUserIsSubscribed()
@@ -57,7 +68,7 @@ def login():
             return redirect("/")                
         except ServiceException as e:
             return render_template("base/error.html", error=str(e))
-        except Exception:
+        except Exception as e:
             return render_template("base/error.html")
             
     templateRender = render_template("home/login.html")

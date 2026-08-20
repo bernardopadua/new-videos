@@ -287,6 +287,12 @@ class UserService(BaseService[UserInput]):
         
         return None
 
+    def setUserChannel(self, channelId: int):
+        user = session.get("user", None)
+        if user:
+            user["channelId"] = channelId
+            session.modified = True
+
     def fillUserSession(self, userData: User):
         session["userId"] = userData.userId
         session["user"] = {
