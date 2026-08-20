@@ -1,5 +1,5 @@
 # TYPING
-from typing import Self, override, final
+from typing import Self, override, final, TypeAlias
 
 # SERVICES
 from nvideos_web.services.base.service import BaseService
@@ -8,7 +8,6 @@ from nvideos_web.services.user.service import UserService
 # ENTITY
 from nvideos_web.core.entity.subscriber import Subscriber, SubscriberInput
 from nvideos_web.core.entity.user_subscriber import UserSubscriber
-from nvideos_web.core.entity.channel import Channel
 
 # REPOSITORY
 from nvideos_web.impl.subscriber_repository import PgSubscriberRepository
@@ -23,6 +22,9 @@ from nvideos_web.services.subscriber.error import (
     SubscriberChannelDoesntExists, SubscriberNoCurrentUser,
     SubscriberDoesntExists
 )
+
+ChannelSubscribed: TypeAlias = dict[str, int | str]
+ChannelSubscribedList: TypeAlias = list[ChannelSubscribed]
 
 @final
 class SubscriberService(BaseService[SubscriberInput]):
@@ -83,13 +85,15 @@ class SubscriberService(BaseService[SubscriberInput]):
         pass
         return self
 
-    def checkSubscribedAndSubscribe(self, channelId: int):
+    def checkSubscribedAndSubscribe(self, channelId: int) -> UserSubscriber | None:
         if self.currentUser is None:
             raise SubscriberNoCurrentUser("No current user informed.")
 
         isSubscribed: bool = self._usuRep.checkAlreadySubscribed(channelId, self.currentUser)
         if not isSubscribed:
-            _ = self.subscribeToChannel(channelId)
+            return self.subscribeToChannel(channelId)
+
+        return None
 
     def checkSubscribedAndUnsubscribe(self, channelId: int) -> bool:
         if self.currentUser is None:

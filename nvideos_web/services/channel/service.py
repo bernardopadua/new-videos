@@ -66,7 +66,8 @@ class ChannelService(BaseService[ChannelInput]):
         if _inputData.channelName is None or len(_inputData.channelName) < 3:
             raise ChannelServiceNameIsInvalid("The informed channel name is invalid or is lower than 3 chars.")
         
-        if _inputData.channelDescription is None or len(_inputData.channelDescription) > 1000:
+        if _inputData.channelDescription is None or len(_inputData.channelDescription) > 1000 or \
+            len(_inputData.channelDescription) < 10:
             raise ChannelServiceChannelDescriptionIsInvalid("The informed channel description is invalid or is higher than 1000 chars.")
 
         return self

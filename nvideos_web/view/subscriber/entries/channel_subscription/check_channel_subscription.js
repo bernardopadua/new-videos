@@ -1,10 +1,10 @@
 import { ROUTES } from "../../../base/entries/constants/routes";
 
-export default function VideoSubscribe() {
+export default function CheckChannelSubscription() {
     const subscribeBtn = document.getElementById("btn-subscribe-channel");
     const unsubscribeBtn = document.getElementById("btn-unsubscribe-channel");
     const channelSubscribers = document.getElementById("channel-subscribers");
-    const initialData = JSON.parse(document.getElementById("initial-data-subscribe").text);
+    const initialData = JSON.parse(document.getElementById("initial-data-subscribe").textContent);
     
     const channelId = initialData?.channelId;
     const userOwnChannel = initialData?.userOwnChannel;
@@ -21,7 +21,7 @@ export default function VideoSubscribe() {
                     unsubscribeBtn.classList.add("hidden");
                 }
             });
-        
+
         const updateTotalSubscribers = () => {
             fetch(ROUTES.totalSubscribedChannel(channelId))
                 .then((r) => r.json())

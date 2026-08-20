@@ -3,22 +3,20 @@
 {% block title %}Video Player - nVideos{% endblock %}
 
 {% block head %}
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 {% endblock %}
 
 {% block content %}
 <!-- YOUTUBE-INSPIRED WATCH PAGE (SIDE-BY-SIDE DESKTOP LAYOUT, NO LIKES, SPACIOUS PADDING) -->
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 lg:gap-10 pb-16 w-full">
-    
+
     <!-- LEFT PRIMARY COLUMN (PLAYER + TITLE + CHANNEL + DESCRIPTION + COMMENTS) -->
     <div class="xl:col-span-8 space-y-5 min-w-0">
-        
+
         <!-- VIDEO PLAYER CONTAINER (16:9) -->
-        <div class="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-            <video id="main-video-player" 
-                controls class="w-full h-full object-contain" 
-                poster="{{vd.videoThumbUrl}}"
-            >
+        <div
+            class="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+            <video id="main-video-player" controls class="w-full h-full object-contain" poster="{{vd.videoThumbUrl}}">
                 <source src="" type="video/mp4">
                 Your browser does not support HTML5 video.
             </video>
@@ -36,7 +34,9 @@
         <div class="space-y-3">
             <div class="flex items-center gap-2 flex-wrap">
                 {% for tag in vd.videoTags %}
-                    <span class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">{{ tag }}</span>
+                <span
+                    class="px-3.5 py-1.5 bg-white/5 text-gray-300 border border-white/10 rounded-full text-xs font-medium">{{
+                    tag }}</span>
                 {% endfor %}
             </div>
 
@@ -46,28 +46,35 @@
         </div>
 
         <!-- CHANNEL & ACTIONS BAR (NO LIKES - SPACIOUS PADDING) -->
-        <div class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 shadow-lg">
-            
+        <div
+            class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md flex flex-wrap items-center justify-between gap-6 shadow-lg">
+
             <!-- CHANNEL INFO + SUBSCRIBE -->
             <div class="flex items-center gap-4">
                 <div class="relative shrink-0">
                     {% if ch.channelAvatarUrl %}
-                        <img src="{{ ch.channelAvatarUrl }}" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-brand shadow" alt="Channel Avatar">
+                    <img src="{{ ch.channelAvatarUrl }}"
+                        class="w-13 h-13 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-brand shadow"
+                        alt="Channel Avatar">
                     {% else %}
-                        <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-brand/30 border-2 border-brand overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow">
-                            {{ getChannelNameAbreviation(ch.channelName) }}
-                        </div>
+                    <div
+                        class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-brand/30 border-2 border-brand overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow">
+                        {{ getChannelNameAbreviation(ch.channelName) }}
+                    </div>
                     {% endif %}
                 </div>
 
                 <div class="flex flex-col">
                     <div class="flex items-center gap-1.5">
-                        <h3 class="font-bold text-white text-base hover:text-brand transition cursor-pointer">{{ ch.channelName }}</h3>
+                        <h3 class="font-bold text-white text-base hover:text-brand transition cursor-pointer">
+                            <a href="{{url_for('channel_details.channel_detail', channel_id=ch.channelId)}}">{{ ch.channelName }}</h3></a>
                         <svg class="w-4 h-4 text-brand fill-current" viewBox="0 0 20 20">
-                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                            <path
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
                         </svg>
                     </div>
-                    <p id="channel-subscribers" class="text-xs text-gray-400 mt-0.5">{{getChannelSubscriberDescription(chTotal.totalSubscribers)}} subscribers</p>
+                    <p id="channel-subscribers" class="text-xs text-gray-400 mt-0.5">
+                        {{getChannelSubscriberDescription(chTotal.totalSubscribers)}} subscribers</p>
                 </div>
 
                 <script id="initial-data-subscribe" type="application/json">
@@ -77,33 +84,39 @@
                     }
                 </script>
                 {% if not userOwnChannel %}
-                    <!-- SUBSCRIBE BUTTON -->
-                    <button id="btn-subscribe-channel" class="hidden ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-black bg-white hover:bg-gray-200 rounded-full transition shadow active:scale-95">
-                        Subscribe
-                    </button>
-                    <!-- UNSUBSCRIBE BUTTON -->
-                    <button id="btn-unsubscribe-channel" class="hidden ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-white/10 hover:bg-white/20 rounded-full transition shadow active:scale-95">
-                        Unsubscribe
-                    </button>
+                <!-- SUBSCRIBE BUTTON -->
+                <button id="btn-subscribe-channel"
+                    class="hidden ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-black bg-white hover:bg-gray-200 rounded-full transition shadow active:scale-95">
+                    Subscribe
+                </button>
+                <!-- UNSUBSCRIBE BUTTON -->
+                <button id="btn-unsubscribe-channel"
+                    class="hidden ml-4 px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-white/10 hover:bg-white/20 rounded-full transition shadow active:scale-95">
+                    Unsubscribe
+                </button>
                 {% endif %}
             </div>
 
         </div>
 
         <!-- DESCRIPTION BOX (YOUTUBE STYLE WITH SPACIOUS PADDING) -->
-        <div class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md space-y-4 shadow-lg hover:border-white/20 transition cursor-pointer">
-            <div class="flex items-center gap-4 text-xs font-bold text-gray-300 flex-wrap border-b border-white/10 pb-3">
+        <div
+            class="p-6 sm:p-7 rounded-2xl bg-surface/80 border border-white/10 backdrop-blur-md space-y-4 shadow-lg hover:border-white/20 transition cursor-pointer">
+            <div
+                class="flex items-center gap-4 text-xs font-bold text-gray-300 flex-wrap border-b border-white/10 pb-3">
                 <span class="text-sm text-white">{{vd.videoViewCount}} views</span>
             </div>
-            
+
             {% set descriptionLength = "has-more" if (vd.videoDescription | length) > 100 else "" %}
-            <div id="desc-wrapper" {{ descriptionLength }} class="relative max-h-20 overflow-hidden transition-all duration-300">
+            <div id="desc-wrapper" {{ descriptionLength }}
+                class="relative max-h-20 overflow-hidden transition-all duration-300">
                 <p class="text-sm text-gray-200 leading-relaxed font-normal whitespace-pre-line">
                     {{ vd.videoDescription }}
                 </p>
 
                 {% if descriptionLength %}
-                <div id="desc-fade" class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-surface/90 to-transparent pointer-events-none">
+                <div id="desc-fade"
+                    class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-surface/90 to-transparent pointer-events-none">
                 </div>
                 {% endif %}
             </div>
@@ -133,17 +146,25 @@
         <!-- RECOMMENDED ITEM LIST (SPACIOUS CARD PADDING) -->
         <div class="space-y-4">
             {% for vdr in vdsRecommended %}
-            <div class="relative p-3.5 rounded-2xl bg-surface/50 hover:bg-surface/90 border border-white/5 hover:border-white/15 transition flex items-start gap-4 group cursor-pointer shadow-sm">
+            <div
+                class="relative p-3.5 rounded-2xl bg-surface/50 hover:bg-surface/90 border border-white/5 hover:border-white/15 transition flex items-start gap-4 group cursor-pointer shadow-sm">
                 <!-- THUMBNAIL -->
-                <div class="w-40 sm:w-44 aspect-video bg-black rounded-xl overflow-hidden shrink-0 relative border border-white/10 group-hover:border-brand/50 transition shadow-sm">
-                    <img src="{{vdr.videoThumbUrl}}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="Thumbnail">
-                    <span class="absolute bottom-1.5 right-1.5 bg-black/85 text-[10px] font-bold px-1.5 py-0.5 rounded text-white">{{ formatTimeVideoDuration(vdr.videoTimeDuration) }}</span>
+                <div
+                    class="w-40 sm:w-44 aspect-video bg-black rounded-xl overflow-hidden shrink-0 relative border border-white/10 group-hover:border-brand/50 transition shadow-sm">
+                    <img src="{{vdr.videoThumbUrl}}"
+                        class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        alt="Thumbnail">
+                    <span
+                        class="absolute bottom-1.5 right-1.5 bg-black/85 text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                    >{{ formatTimeVideoDuration(vdr.videoTimeDuration) }}</span>
                 </div>
 
                 <!-- METADATA -->
                 <div class="flex-1 min-w-0 flex flex-col justify-start py-0.5 space-y-1">
-                    <h4 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-brand transition">
-                        <a href="{{ url_for('video_details.video_detail', video_key=vdr.videoKey) }}" class="after:absolute after:inset-0">
+                    <h4
+                        class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-brand transition">
+                        <a href="{{ url_for('video_details.video_detail', video_key=vdr.videoKey) }}"
+                            class="after:absolute after:inset-0">
                             {{ vdr.videoTitle }}
                         </a>
                     </h4>
@@ -157,7 +178,9 @@
         </div>
 
     </div>
-
-    <script type="module" src="{{url_for('video_details.static', filename='dist/vdwe.js')}}"></script>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="module" src="{{url_for('video_details.static', filename='dist/vdwe.js')}}"></script>
 {% endblock %}

@@ -1,19 +1,36 @@
 # FLASK
-from crypt import methods
+import json
 
 from flask import (
-    Blueprint, redirect, render_template, request as flaskRequest, 
+    Blueprint, jsonify, redirect, render_template, request as flaskRequest, 
     session, url_for
 )
 
+# REDIS
+from nvideos_web.db.redis import nredis
+from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
+
 # DECORATORS
+from nvideos_web.services.subscriber.service import SubscriberService
+from nvideos_web.services.user.service import UserService
+from nvideos_web.services.video.service import VideoService, VideoJson
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired
 
+# TYPING
+from typing import cast
+
+# CONSTANTS
+from nvideos_web.view.channel_details.constants import LIMIT_VIDEOS_CHANNEL
+
 # ERROR
-from nvideos_web.services.channel.error import ServiceException
+from nvideos_web.services.base.error import ServiceException
 
 # SERVICE
-from nvideos_web.services.channel.service import ChannelService, Channel
+from nvideos_web.services.subscriber.service import ChannelSubscribedList
+from nvideos_web.services.channel.service import ChannelService
+
+# ENTITY
+from nvideos_web.core.entity.channel import Channel
 
 channelDetailsBp = Blueprint(
     "channel_details", __name__,
@@ -42,9 +59,54 @@ def channel_home():
 
 @channelDetailsBp.route("/channel/<int:channel_id>")
 @loginRequired
-def channel_detail(channel_id):
-    renderTemplate = render_template("channel/channel_detail.html", channel_id=channel_id)
-    return renderTemplate
+def channel_detail(channel_id: int):
+    import json
+    cs = ChannelService(userId=session.get("userId"))
+    ss = SubscriberService(userId=session.get("userId"))
+
+    try:
+        channel = cs.selectChannelById(channel_id)
+        if not channel:
+            raise ServiceException("Channel does not exists.")
+
+        vs = VideoService(userId=session.get("userId"), channelId=channel_id)
+
+        userOwnChannel = cast(int, session.get("userId", 0)) == channel.userId
+
+        channelsUserSubscribed = nredis.client.get(
+            USER_SUBSCRIBED_CHANNELS_KEY.format(userId=session.get("userId"))
+        )
+        
+        isSubscribed = False
+        if channelsUserSubscribed:
+            channelsUserSubscribed = json.loads(channelsUserSubscribed)
+            isSubscribed = channel.channelId in channelsUserSubscribed
+
+        totalSubscribers = ss.selectTotalSubscribers(channelId=channel_id)
+        channelVideos, totalVideos = vs.selectLimitProcessedVideosByChannelId(
+            limit=LIMIT_VIDEOS_CHANNEL,
+            userOwnVideoChannel=userOwnChannel,
+            userIsSubscribedToChannel=isSubscribed
+        )
+        lastVideo: VideoJson | None = None
+
+        if channelVideos and len(channelVideos) > 0:
+            lastVideo = channelVideos.pop(0)
+
+        return render_template(
+            "channel/channel_detail.html", 
+            ch=channel, isSubscribed=isSubscribed,
+            totalSubscribers=totalSubscribers,
+            lastVideo=lastVideo,
+            totalVideos=totalVideos, channelVideos=channelVideos,
+            userOwnChannel=channel.userId == session.get("userId")
+        )
+    except ServiceException as e:
+        return render_template("base/error.html", error=str(e))
+    except Exception as e:
+
+        #TODO: LOGGING
+        return render_template("base/error.html")
 
 @channelDetailsBp.route("/channel/create", methods=["GET", "POST"])
 @loginRequired
@@ -72,6 +134,8 @@ def channel_create():
                     if formData.get("bannerCoverImageUrl") != channelCreated.channelImageUrl \
                     else None
             ).fillInputData().updateChannelById(channelCreated.channelId)
+
+            UserService().setUserChannel(channelCreated.channelId)
 
             return redirect(url_for("channel_details.channel_detail", channel_id=channelCreated.channelId))
         
@@ -131,14 +195,57 @@ def channel_edit(channel_id):
                     else None
             ).fillInputData().updateChannelById(channelUpdated.channelId)
 
-            return redirect(url_for("channel/channel_details.channel_detail", channel_id=channelUpdated.channelId))
+            return redirect(url_for("channel_details.channel_detail", channel_id=channelUpdated.channelId))
         except ServiceException as e:
+            #TODO: LOGGING
             return render_template("base/error.html", error=str(e))
-        except Exception:
+        except Exception as e:
+            #TODO: LOGGING
             return render_template("base/error.html")
 
     try:
         return render_template("channel/channel_details_edit.html", ch=channel)
-    except Exception:
+    except Exception as e:
+        #TODO: Logging
         return render_template("base/error.html")
 
+#
+# API
+#
+@channelDetailsBp.route("/channel/videos/list/<int:channel_id>/<int:page>")
+@loginRequired
+def channel_list_videos_pagination(channel_id: int, page: int):
+    
+    try:
+        vs = VideoService(userId=session.get("userId"), channelId=channel_id)
+
+        if (user:=cast(dict[str, object] | None, session.get("user", None))) is None:
+            #TODO: Logging: user doesn't exists
+            #This cannot happen
+            raise Exception("User is not in session")
+
+        userOwnChannel = channel_id == user.get("channelId", 0)
+
+        channelsUserSubscribed = nredis.client.get(
+            USER_SUBSCRIBED_CHANNELS_KEY.format(userId=session.get("userId"))
+        )
+        
+        isSubscribed = False
+        if channelsUserSubscribed:
+            channelsUserSubscribed = cast(ChannelSubscribedList, json.loads(channelsUserSubscribed))
+            isSubscribed = any(True for channel in channelsUserSubscribed if channel.get("channelId", 0) == channel_id)
+
+        channelVideos, _ = vs.selectLimitProcessedVideosByChannelId(
+            limit=LIMIT_VIDEOS_CHANNEL,
+            page=page,
+            userOwnVideoChannel=userOwnChannel,
+            userIsSubscribedToChannel=isSubscribed
+        )
+
+        return jsonify({"videos": channelVideos})
+    except ServiceException as e:
+        #TODO: Logging
+        return jsonify({"videos": []})
+    except Exception as e:
+        #TODO: Logging
+        return jsonify({"videos": []})

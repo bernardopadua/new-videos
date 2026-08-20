@@ -417,6 +417,20 @@ int main(int regv, char** regc){
         int dotPost = fileName.find_last_of('.');
         std::string ext = fileName.substr(dotPost);
         std::string newFilePath = MEDIA_SERVER_BASE_PATH.string()+"channels/" + channelId + "/" + typeImage + "_" + channelId + ext;
+        std::string newPath = MEDIA_SERVER_BASE_PATH.string()+"channels/" + channelId + "/";
+        
+        for (auto& i : std::filesystem::directory_iterator(newPath)){
+            if (i.is_regular_file() && i.path().filename().string().rfind("cover_"+channelId+".", 0) == 0){
+                try {
+                    std::filesystem::remove(i.path());
+                } catch (const std::exception &e) {
+                    res.status = 500;
+                    res.set_content("{\"error\":\"Failed to remove thumbnail file.\"}", "application/json");
+                    return;
+                }
+            }
+        }
+
         std::filesystem::rename(
             MEDIA_SERVER_TEMP_PATH.string()+fileName, 
             newFilePath

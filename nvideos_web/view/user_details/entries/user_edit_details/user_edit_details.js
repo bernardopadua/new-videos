@@ -1,7 +1,7 @@
 import AvatarUploadMediaServer from './user_avatar_upload_media_server';
 
 class UserRegistrationValidator {
-    constructor() { 
+    constructor() {
         this._userName = document.getElementById("userName");
         this._userSurname = document.getElementById("userSurname");
         this._userEmail = document.getElementById("userEmail");
@@ -38,7 +38,7 @@ class UserRegistrationValidator {
     validateAllFields() {
         this._alert.classList.add("hidden");
         this._resetBulletAlert();
-        
+
         const userNameValidated = this._validateUserName();
         const userSurnameValidated = this._validateUserSurname();
         const userEmailValidated = this._validateUserEmail();
@@ -61,7 +61,7 @@ class UserRegistrationValidator {
             passwordValidation = (
                 userPasswordValidated &&
                 confirmPasswordValidated &&
-                spacesInPasswordValidated                 
+                spacesInPasswordValidated
             );
         }
 
@@ -139,7 +139,7 @@ class UserRegistrationValidator {
         }
         return true;
     }
-    
+
     _validateConfirmPassword() {
         const confirmPassword = this._confirmPassword.value;
         const userPassword = this._userPassword.value;
@@ -167,7 +167,7 @@ formUserEditDetails.addEventListener("submit", (event) => {
     ) {
         document.getElementById("avatar-upload-alert-error").classList.add("hidden");
         document.getElementById("avatar-upload-alert").classList.remove("hidden");
-        
+
         avatarMediUploadServer.doUploadAvatar().then((r) => {
             if (!r) {
                 document.getElementById("avatar-upload-alert-error").classList.remove("hidden");

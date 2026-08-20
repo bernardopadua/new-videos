@@ -4,14 +4,17 @@ from flask import (
     request as flaskRequest, redirect, session
 )
 
-# DB 
-from nvideos_web.db.redis import nredis
-
 # SERVICE
 from nvideos_web.services.base.error import ServiceException
 from nvideos_web.services.subscriber.service import SubscriberService
 from nvideos_web.services.user.service import UserService
+from nvideos_web.services.channel.service import ChannelService
+from nvideos_web.services.usercache.service import UserCacheService
+
+# ERRORs
 from nvideos_web.services.user.error import UserServiceUserHasInvalidEmail
+
+# DECORATORS
 from nvideos_web.view.endpoint_decorators import loginRequired
 
 homeBp = Blueprint(
@@ -33,23 +36,24 @@ def login():
         userPassword = flaskRequest.form.get("userPassword")
     
         if not userEmail or not userPassword:
-            return render_template("home/login.html", error="Email e senha são obrigatórios.")
+            return render_template("home/login.html", error="Email and password are required.")
         
         try:
             uSrv = UserService()
             if (usu := uSrv.userLogin(userEmail, userPassword)) is None:
-                return render_template("home/login.html", error="Email ou senha incorretos.")
+                return render_template("home/login.html", error="Email or password incorrect.")
+
+            ch = ChannelService(userId=usu.userId)
+            channel = ch.doIAlreadyHaveChannel()
+
+            if channel:
+                uSrv.setUserChannel(channel.channelId)
 
             ss = SubscriberService(userId=usu.userId)
             chs = ss.selectChannelsUserIsSubscribed()
 
-            if chs is not None:
-                from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
-                import json
-                _ = nredis.client.set(
-                    USER_SUBSCRIBED_CHANNELS_KEY.format(userId=usu.userId),
-                    json.dumps(chs)
-                )
+            uc = UserCacheService(userId=usu.userId)
+            uc.setLogin(channels=chs)
             
             if (nextPath := session.pop("next", None)) is not None:
                 return redirect(nextPath)
@@ -57,7 +61,7 @@ def login():
             return redirect("/")                
         except ServiceException as e:
             return render_template("base/error.html", error=str(e))
-        except Exception:
+        except Exception as e:
             return render_template("base/error.html")
             
     templateRender = render_template("home/login.html")
@@ -66,8 +70,22 @@ def login():
 @homeBp.route("/logout")
 @loginRequired
 def logout():
-    from flask import session, redirect
-    session.clear()
+    try:
+        userId: int | None = session.get("userId")
+        if userId is None:
+            raise ServiceException("We runned into an exception on server side, contact support.")
+
+        uc = UserCacheService(userId=userId)
+        uc.clearCache()
+        
+        session.clear()
+    except ServiceException as e:
+        #TODO: Logging:
+        return render_template("base/error.html", error=str(e))
+    except Exception as e:
+        #TODO: Logging:
+        return render_template("base/error.html")
+
     return redirect("/")
 
 @homeBp.route("/register", methods=["GET", "POST"])

@@ -8,12 +8,16 @@ from flask import (
 from nvideos_web.db.redis import nredis
 
 # DECORATORS
-from nvideos_web.services.base.error import ServiceException
-from nvideos_web.services.channel.service import ChannelService
 from nvideos_web.view.endpoint_decorators import loginRequired
 
+# TYPING
+from typing import cast
+
 # SERVICE
+from nvideos_web.services.base.error import ServiceException
+from nvideos_web.services.channel.service import ChannelService
 from nvideos_web.services.subscriber.service import SubscriberService
+from nvideos_web.services.usercache.service import UserCacheService
 
 # TEMPLATE GLOBAL
 from nvideos_web.view.template_context import getChannelSubscriberDescription
@@ -59,6 +63,7 @@ def is_subscribed_channel(channel_id: int):
 @subscriberBp.route("/channel/<int:channel_id>/subscribe", methods=["POST"])
 @loginRequired
 def subscribe_channel(channel_id: int):
+    import json
     from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
     
     sSrv: SubscriberService = SubscriberService(userId=session.get("userId"))
@@ -68,7 +73,12 @@ def subscribe_channel(channel_id: int):
         if not cSrv.checkIdExists(channel_id).getCheckIdExists():
             return jsonify({"isSubscribed": False})
 
-        sSrv.checkSubscribedAndSubscribe(channel_id)
+        userSubscribed = sSrv.checkSubscribedAndSubscribe(channel_id)
+
+        if (userSubscribed is None or 
+            not userSubscribed.subscriber.subscriberIsActive):
+            #TODO: Logging
+            return jsonify({"isSubscribed": False})
 
         channel = cSrv.selectChannelById(channel_id)
         channelsSubscribed = nredis.client.get(USER_SUBSCRIBED_CHANNELS_KEY.format(userId=sSrv.currentUser))
@@ -84,22 +94,38 @@ def subscribe_channel(channel_id: int):
                 "channelName": channel.channelName
             }]
         else:
-            import json
             if not isinstance(channelsSubscribed, (str, bytes)):
                 #TODO: LOG: Logging
                 raise Exception("Result from redis is not JSON string/bytes.")
 
-            channelsSubscribed = json.loads(channelsSubscribed)
-            
-            if not isinstance(channelsSubscribed, list):
+            channelsLoaded = json.loads(channelsSubscribed)
+            if not isinstance(channelsLoaded, list):
                 #TODO: LOG: Logging
                 raise Exception("Result from redis is not a list.")
+            
+            channelsSubscribed = cast(list[dict[str, str | int]], channelsLoaded) #pywright
+            
+            #If I already have this channel
+            if not any([
+                True for i in channelsSubscribed 
+                if i.get("channelId", 0) == channel.channelId
+            ]):
+                channelsSubscribed.append({
+                    "channelId": channel.channelId,
+                    "channelAvatarUrl": channel.channelAvatarUrl,
+                    "channelName": channel.channelName
+                })
 
-            channelsSubscribed.append({
-                "channelId": channel.channelId,
-                "channelAvatarUrl": channel.channelAvatarUrl,
-                "channelName": channel.channelName
-            })        
+        #I'm just assuming
+        redisIsSet = nredis.client.set(
+            USER_SUBSCRIBED_CHANNELS_KEY.format(userId=sSrv.currentUser),
+            json.dumps(channelsSubscribed)
+        )
+
+        #I would comment the lines below, but I will keep this to avoid deleting commented code.
+        if not redisIsSet:
+            #TODO: Logging
+            pass      
 
         return jsonify({"isSubscribed": True})
     except ServiceException as e:
@@ -110,14 +136,16 @@ def subscribe_channel(channel_id: int):
 @subscriberBp.route("/channel/<int:channel_id>/unsubscribe", methods=["POST"])
 @loginRequired
 def unsubscribe_channel(channel_id: int):
-    sSrv: SubscriberService = SubscriberService(userId=session.get("userId"))
-    cSrv: ChannelService = ChannelService(userId=session.get("userId"))
+    sSrv = SubscriberService(userId=session.get("userId"))
+    cSrv = ChannelService(userId=session.get("userId"))
+    cU = UserCacheService(userId=session.get("userId"))
 
     try:
         if not cSrv.checkIdExists(channel_id).getCheckIdExists():
             return jsonify({"isSubscribed": False})
 
         isUnsubscribed = sSrv.checkSubscribedAndUnsubscribe(channel_id)
+        cU.unsetUserSubscribedChannels()
 
         return jsonify({"isUnsubscribed": isUnsubscribed})
     except ServiceException as e:

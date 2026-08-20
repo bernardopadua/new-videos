@@ -14,7 +14,6 @@ from nvideos_web.services.comment.service import CommentService
 
 # ENTITY
 from nvideos_web.core.entity.video import Video
-from nvideos_web.core.entity.channel import Channel, ChannelTotalSubscribers
 
 # DECORATOR
 from nvideos_web.view.endpoint_decorators import loginRequired, channelRequired, authKeyNeeded

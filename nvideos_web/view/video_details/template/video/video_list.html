@@ -1,6 +1,6 @@
 {% extends "base/base.html" %}
 
-{% block title %}Meus Vídeos - nVideos{% endblock %}
+{% block title %}My Videos - nVideos{% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-20">
@@ -8,11 +8,11 @@
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-10">
         <div>
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Meus Vídeos</h1>
-            <p class="text-sm text-gray-400 mt-2">Gerencie seus uploads, visualize o status de processamento e edite os detalhes dos seus vídeos.</p>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">My Videos</h1>
+            <p class="text-sm text-gray-400 mt-2">Manage your uploads, view processing status, and edit your video details.</p>
         </div>
         <a href="{{ url_for('video_details.video_detail_create') }}" class="px-5 py-2.5 text-sm font-semibold text-white bg-brand hover:bg-[#772ce8] rounded-xl transition duration-200 shadow-lg shadow-brand/20 flex items-center gap-2">
-            <span>📤</span> Upload Novo Vídeo
+            <span>📤</span> Upload New Video
         </a>
     </div>
 
@@ -31,10 +31,10 @@
         <!-- EMPTY STATE -->
         <div class="flex flex-col items-center justify-center text-center py-20 px-4 rounded-3xl bg-surface/40 border border-white/5 backdrop-blur-md">
             <span class="text-6xl mb-6 select-none opacity-80">📽️</span>
-            <h2 class="text-xl font-bold text-white mb-2">Nenhum vídeo encontrado</h2>
-            <p class="text-sm text-gray-400 max-w-md mb-8 leading-relaxed">Você ainda não realizou o upload de nenhum vídeo. Compartilhe seus momentos agora mesmo!</p>
+            <h2 class="text-xl font-bold text-white mb-2">No videos found</h2>
+            <p class="text-sm text-gray-400 max-w-md mb-8 leading-relaxed">You haven't uploaded any videos yet. Share your moments now!</p>
             <a href="{{ url_for('video_details.video_detail_create') }}" class="px-6 py-3 text-sm font-semibold text-white bg-brand hover:bg-[#772ce8] rounded-xl transition duration-200 shadow-lg shadow-brand/20 flex items-center gap-2">
-                <span>📤</span> Começar Upload
+                <span>📤</span> Start Upload
             </a>
         </div>
     {% endif %}

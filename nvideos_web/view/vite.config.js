@@ -8,7 +8,10 @@ const cleanSomeDirs = () => ({
     name: 'clean-some-dirs',
     buildStart: () => {
         const dirs = [
-            'base/static/dist'
+            'base/static/dist',
+            'channel_details/static/dist',
+            'video_details/static/dist',
+            'user_details/static/dist',
         ];
         dirs.forEach((dir) => {
             fs.readdir(dir, (err, files) => {
@@ -28,9 +31,9 @@ export default defineConfig({
     ],
     build: {
         sourcemap: true,
-        outDir: '.',
+        outDir: '.', //I know you can't be root dir. But I'm experimenting. Hold on.
         emptyOutDir: false,
-            rollupOptions: {
+        rollupOptions: {
             plugins: [
                 process.env.NODE_ENV === "production" ? obfuscator({
                     include: [
@@ -44,20 +47,21 @@ export default defineConfig({
             input: {
                 //Base
                 'base/main': './base/css/main.css',
-                
+                'base/base_entry/bs': './base/entries/base_entry.js',
+
                 //Home
                 'home/avatar_entry': './home/entries/avatar_entry.jsx',
                 'home/user_register_form_validation/ufrv': './home/entries/user_registration/user_register_form_validation.js',
                 'home/user_login/login': './home/entries/user_login/user_login.js',
                 'home/home_videos_entry/hve': './home/entries/home_videos_entry.jsx',
-                
+
                 //UserDetails
                 'user_details/avatar_upload_user_details/ausd': './user_details/entries/avatar_upload_user_details.jsx',
                 'user_details/user_edit_details/ued': './user_details/entries/user_edit_details/user_edit_details.js',
 
                 //ChannelDetails
                 'channel_details/channel_editcreate_details/ced': './channel_details/entries/channel_editcreate_details_entry.jsx',
-                'channel_details/channel_image_upload_editcreate/ciec': './channel_details/entries/channel_image_upload_editcreate.js',
+                'channel_details/channel_detail/cde': './channel_details/entries/channel_detail_entry.jsx',
 
                 //VideoDetails
                 'video_details/video_details_entry/vde': './video_details/entries/video_details_entry.jsx',
@@ -81,7 +85,7 @@ export default defineConfig({
                 },
                 assetFileNames: (chunkInfo) => {
                     const [module, name] = chunkInfo.name.split('/');
-                    
+
                     return `${module}/static/dist/${name}`;
                 }
             }

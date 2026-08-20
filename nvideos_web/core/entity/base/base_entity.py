@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # BUILT-IN
-from datetime import datetime
+from datetime import datetime, date
 from dataclasses import dataclass, field, fields
 
 # TYPING
@@ -256,13 +256,18 @@ class BaseModelData:
         data: dict[str, object] = {}
         for i in fields(self):
             attr = getattr(self, i.name)
-            if attr is not None and attr != "" and attr != 0:
-                data[i.name] = attr
+            if attr is not None and attr:
+                if isinstance(attr, date):
+                    data[i.name] = attr.isoformat()
+                else:
+                    data[i.name] = attr
         return data
     
     @classmethod
-    def row(cls, rowResult: dict[int, object]) -> Self:
-        return rowResult[id(cls)]
+    def row(cls, rowResult: dict[int, BaseModelData]) -> Self:
+        if not isinstance(rowResult[id(cls)], cls):
+            raise TypeError("The result is not instance of class.")
+        return cast(Self, rowResult[id(cls)]) #hate pywright/strict, love pywright
 
 @dataclass
 class BaseInput:

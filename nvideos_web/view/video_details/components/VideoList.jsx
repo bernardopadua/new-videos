@@ -46,7 +46,7 @@ function VideoCard({ video }) {
                 : 
                     (<div className="w-full h-full flex flex-col items-center justify-center text-gray-600 gap-2">
                         <span className="text-4xl">🎬</span>
-                        <span className="text-xs font-medium">Sem miniatura</span>
+                        <span className="text-xs font-medium">No thumbnail</span>
                     </div>)
                 }
                 {video?.videoTimeDuration ? (
@@ -60,17 +60,17 @@ function VideoCard({ video }) {
                         videoStatus === "processed" ?
                             (<span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 backdrop-blur-sm shadow-sm">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                                Processado
+                                Processed
                             </span>)
                         : videoStatus == "processing" ?
                             (<span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 backdrop-blur-sm shadow-sm animate-pulse">
                                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                                Processando...
+                                Processing...
                             </span>)
                         :
                             (<span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 backdrop-blur-sm shadow-sm">
                                 <span className="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
-                                Erro
+                                Error
                             </span>)
                         : null
                     }
@@ -101,17 +101,17 @@ function VideoCard({ video }) {
                         <a href={ROUTES.videoEdit(video.videoKey)}
                             className="px-3.5 py-1.5 text-xs font-semibold text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition duration-200"
                         >
-                            Editar
+                            Edit
                         </a>
                         {video?.videoStatus && video?.videoStatus === 'processed' ?
                             (<a href={ROUTES.videoDetail(video.videoKey)}
                                 className="px-3.5 py-1.5 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg transition duration-200"
                             >
-                                Assistir
+                                Watch
                             </a>)
                         :
-                            (<button disabled className="px-3.5 py-1.5 text-xs font-semibold text-gray-600 bg-white/5 border border-white/5 rounded-lg cursor-not-allowed" title="Aguarde o processamento concluir para assistir">
-                                Assistir
+                            (<button disabled className="px-3.5 py-1.5 text-xs font-semibold text-gray-600 bg-white/5 border border-white/5 rounded-lg cursor-not-allowed" title="Wait for processing to complete to watch">
+                                Watch
                             </button>)
                         }
                     </div>

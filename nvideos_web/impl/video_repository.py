@@ -6,7 +6,7 @@ from psycopg import Connection
 from psycopg.cursor import Cursor
 
 # REPOSITORY
-from nvideos_web.core.entity.base.constants import VideoPermissions
+from nvideos_web.core.entity.base.constants import VideoPermissions, VideoStatus
 from nvideos_web.core.entity.subscriber import SubscriberMetadata
 from nvideos_web.core.repository.video import VideoRepository
 
@@ -27,7 +27,7 @@ from nvideos_web.impl.base_repository import PgRepositoryBase
 from nvideos_web.impl.error.video import VideoIsNone
 
 # SQL BUILDER
-from nvideos_web.impl.base.sql_builder import NvSql
+from nvideos_web.impl.base.sql_builder import NvSql, ParamPgMapObject
 
 class PgVideoRepository(PgRepositoryBase, VideoRepository):
     @override
@@ -121,63 +121,132 @@ class PgVideoRepository(PgRepositoryBase, VideoRepository):
 
     @override
     def selectLimitVideosByChannelId(self, limit: int, 
-        channelId: int, *, offset: int = 0, 
+        channelId: int, *, offset: int = 0,
+        filterByStatus: str = "",
+        videoPermissions: list[str] | None = None,
         conn: Connection | None = None
     ) -> list[Video]:
         vm: type[VideoMetadata] = VideoMetadata
         paramChannelId, channelIdParam = NvSql.createParam("channel_id", channelId)
+
+        paramFilterStatus: ParamPgMapObject | None = None
+        paramVideoPermissions: ParamPgMapObject | None = None
+
+        filterStatus = ""
+        filterVideoPermission = ""
+
+        if filterByStatus:
+            filterStatus, paramFilterStatus = NvSql.createParam("filter_by_status", filterByStatus)
+            filterStatus = f" and {VideoMetadata.videoStatus.field} = {filterStatus} "
+
+        if videoPermissions:
+            videoPermissionParam, paramVideoPermissions = NvSql.createParam("video_permissions", videoPermissions)
+            filterVideoPermission = f" and {VideoMetadata.videoPermission.field} = ANY({videoPermissionParam}) "
+
         allFields, allFieldsOrder = NvSql.selectOder(
             vm.videoId, vm.videoTitle, vm.videoDescription, vm.videoKey,
             vm.videoStatus, vm.videoThumbUrl, vm.videoViewCount, 
-            vm.videoTimeDuration, vm.videoTags
+            vm.videoTimeDuration, vm.videoTags, vm.createdAt
         )
 
         stmt: str = NvSql.formatStmt(
             f"""
             select {allFields} from {vm.tableName()} 
             where {vm.channelId.field} = {paramChannelId}
+              and {vm.videoIsActive.field} = true
+            {filterStatus}
+            {filterVideoPermission}
             order by {vm.createdAt.field} desc
             limit {limit} offset {offset};
             """
         )
+
+        params = channelIdParam
+        if paramFilterStatus is not None:
+            params = NvSql.concatParams(params, paramFilterStatus)
+        if paramVideoPermissions is not None:
+            params = NvSql.concatParams(params, paramVideoPermissions)
+
         if conn is None:
             with self._db.getConn() as conn:
                 cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))            
-                r = cur.execute(stmt, params=channelIdParam)
+                r = cur.execute(stmt, params=params)
                 return [ VideoMetadata.row(row) for row in r.fetchall() ]
         else:
             cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
-            r = cur.execute(stmt, params=channelIdParam)
+            r = cur.execute(stmt, params=params)
             return [ VideoMetadata.row(row) for row in r.fetchall() ]
 
     @override
     def selectCountAllVideoByChannelId(self, 
         channelId: int, *,
+        filterByStatus: str = "",
+        videoPermissions: list[str] | None = None,
         conn: Connection | None = None
     ) -> int: 
+        cm = ChannelMetadata
         paramChannelId, channelIdParam = NvSql.createParam("channel_id", channelId)
+        paramFilterStatus: ParamPgMapObject | None = None
+        paramVideoPermissions: ParamPgMapObject | None = None
+        
+        filterStatus: str = ''
+        filterVideoPermission: str = ''
+
+        if videoPermissions:
+            videoPermissionParam, paramVideoPermissions = NvSql.createParam("video_permissions", videoPermissions)
+            filterVideoPermission = f" and {VideoMetadata.videoPermission.field} = ANY({videoPermissionParam}) "
+
+        if filterByStatus:
+            filterStatus, paramFilterStatus = NvSql.createParam("filter_by_status", filterByStatus)
+            filterStatus = f" and {VideoMetadata.videoStatus.getWithPrefix()} = {filterStatus} "
+
         stmt: str = NvSql.formatStmt(
             f"""
-            select count(1) from {VideoMetadata.tableName()} 
-            where {VideoMetadata.channelId.field} = {paramChannelId};
+            select count(1) from {VideoMetadata.tableNamePrefix()}, {cm.tableNamePrefix()}
+            where {VideoMetadata.channelId.getWithPrefix()} = {paramChannelId}
+              and {VideoMetadata.channelId.getWithPrefix()} = {cm.channelId.getWithPrefix()}
+              and {cm.channelIsActive.getWithPrefix()} = true
+              and {VideoMetadata.videoIsActive.getWithPrefix()} = true
+              {filterStatus}
+              {filterVideoPermission};
             """
         )
 
+        params = channelIdParam
+        if paramFilterStatus is not None:
+            params = NvSql.concatParams(params, paramFilterStatus)
+        if paramVideoPermissions is not None:
+            params = NvSql.concatParams(params, paramVideoPermissions)
+
         if conn is None:
             with self._db.getConn() as conn:
-                r = conn.execute(stmt, params=channelIdParam)
+                r = conn.execute(stmt, params=params)
                 result = r.fetchone()
                 return result[0] if result else 0
         else:
-            r = conn.execute(stmt, params=channelIdParam)
+            r = conn.execute(stmt, params=params)
             result = r.fetchone()
             return result[0] if result else 0
 
     @override
-    def selectLimitCountVideoByChannelId(self, *, limit: int, channelId: int, offset: int = 0) -> tuple[list[Video], int]:
+    def selectLimitCountVideoByChannelId(self, *, 
+        filterByStatus: str = "", 
+        videoPermissions: list[str] | None = None,
+        limit: int, channelId: int, offset: int = 0
+    ) -> tuple[list[Video], int]:
         with self._db.getConn() as conn:
-            resultCount = self.selectCountAllVideoByChannelId(channelId=channelId, conn=conn)
-            resultVideos = self.selectLimitVideosByChannelId(limit=limit, channelId=channelId, offset=offset, conn=conn)
+            resultCount = self.selectCountAllVideoByChannelId(
+                channelId, 
+                filterByStatus=filterByStatus,
+                videoPermissions=videoPermissions, 
+                conn=conn
+            )
+            resultVideos = self.selectLimitVideosByChannelId(
+                limit, channelId,
+                filterByStatus=filterByStatus,
+                videoPermissions=videoPermissions,
+                offset=offset, conn=conn
+            )
             return resultVideos, resultCount
 
     @override
