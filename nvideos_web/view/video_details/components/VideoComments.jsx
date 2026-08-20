@@ -2,34 +2,34 @@ import { useState, useRef, memo } from "react";
 import { ROUTES } from "../../base/entries/constants/routes";
 
 const getUserInitials = (name) => {
+    if (!name) return "U";
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
 };
 
+const formatCommentDate = (date) => {
+    if(!date) return '';
+    const commentDate = new Date(date);
+    
+    return commentDate.getDate()
+        + '/' + (commentDate.getMonth() + 1)
+        + '/' + commentDate.getFullYear();
+};
+
 const CommentItem = memo(function CommentItem({ comment, initialData, setTotalComments }) {
-    const [comments, setComments] = useState(null);
+    const [comments, setComments] = useState([]);
     const [isReplying, setIsReplying] = useState(false);
+    const [totalComments, setTotalRecomments] = useState(comment?.totalRecomments || 0);
     const replyInputRef = useRef(null);
-    const loadMoreDiv = useRef(null);
     
     const userAuthor = comment?.userName;
     const userAvatarUrl = comment?.userAvatarUrl;
     const userComment = comment?.commentDescription;
-    const totalComments = comment?.totalRecomments;
-
-    const formatCommentDate = () => {
-        const commentDate = new Date(comment?.createdAt);
-        
-        return commentDate.getDate()
-            + '/' + (commentDate.getMonth() + 1)
-            + '/' + commentDate.getFullYear();
-    };
 
     const loadReplies = () => {
         fetch(ROUTES.loadReplies(comment?.commentId))
             .then((r) => r.json())
             .then((d) => {
                 setComments(d);
-                loadMoreDiv.current.classList.add('hidden');
             });
     };
 
@@ -49,6 +49,7 @@ const CommentItem = memo(function CommentItem({ comment, initialData, setTotalCo
                 if (d && d?.comments) {
                     setComments((prev) => [...d.comments, ...(prev || [])]);
                     setIsReplying(false);
+                    setTotalRecomments((prev) => prev + 1);
                     setTotalComments((prev) => prev + 1);
                 }
             });
@@ -58,7 +59,7 @@ const CommentItem = memo(function CommentItem({ comment, initialData, setTotalCo
     const avatarBg = isChild ? "bg-emerald-600 border border-emerald-400/30" : "bg-indigo-600 border border-indigo-400/30";
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
             {/* Comment Card */}
             <div className="p-6 rounded-2xl bg-white/[0.04] border border-white/5 hover:border-white/10 transition flex items-start gap-4 shadow-sm">
                 <div className={`w-11 h-11 rounded-full ${avatarBg} flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-sm`}>
@@ -70,7 +71,7 @@ const CommentItem = memo(function CommentItem({ comment, initialData, setTotalCo
                 <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3 text-xs">
                         <span className="font-bold text-white text-sm">{userAuthor}</span>
-                        <span className="text-gray-400 text-xs">{formatCommentDate()}</span>
+                        <span className="text-gray-400 text-xs">{formatCommentDate(comment?.createdAt)}</span>
                     </div>
                     <p className="text-sm text-gray-200 leading-relaxed">
                         {userComment}
@@ -127,24 +128,23 @@ const CommentItem = memo(function CommentItem({ comment, initialData, setTotalCo
             {totalComments > 0 && (
                 <div className="ml-6 sm:ml-8 pl-6 sm:pl-8 border-l-2 border-white/10 space-y-4">
                     {/*Load Replies Button*/}
-                    <div ref={loadMoreDiv} className="flex items-center h-8">
-                        <button className="flex items-center gap-2 text-xs font-semibold text-brand hover:text-brand/80 transition py-1.5 px-3.5 rounded-xl bg-brand/5 border border-brand/10 hover:bg-brand/10"
-                            onClick={loadReplies}
-                        >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                            <span>View {totalComments} replies</span>
-                        </button>
-                    </div>
-
-                    {comments ?
-                        comments.map((reply) => {
-                            return (
-                                <CommentItem key={reply?.commentId} comment={reply} initialData={initialData} />
-                            );
-                        }) : null
+                    {totalComments && comments && totalComments > comments.length ?
+                        <div className="flex items-center h-8">
+                            <button className="flex items-center gap-2 text-xs font-semibold text-brand hover:text-brand/80 transition py-1.5 px-3.5 rounded-xl bg-brand/5 border border-brand/10 hover:bg-brand/10"
+                                onClick={loadReplies}
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                </svg>
+                                <span>View {totalComments} replies</span>
+                            </button>
+                        </div>
+                    : null
                     }
+
+                    {comments.map((reply) => (
+                        <CommentItem key={reply?.commentId} comment={reply} initialData={initialData} setTotalComments={setTotalComments} />
+                    ))}
                 </div>
             )}
         </div>
@@ -152,7 +152,7 @@ const CommentItem = memo(function CommentItem({ comment, initialData, setTotalCo
 });
 
 export default function VideoComments({ initialComments, initialData }) {
-    const [comments, setComments] = useState(initialComments?.comments);
+    const [comments, setComments] = useState(initialComments?.comments || []);
     const [totalComments, setTotalComments] = useState(initialComments?.totalComments)
     const commentInput = useRef(null);
     
@@ -173,7 +173,7 @@ export default function VideoComments({ initialComments, initialData }) {
             .then((r) => r.json())
             .then((d) => {
                 if (d && d?.comments) {
-                    setComments((prev) => [...d.comments, ...prev]);
+                    setComments((prev) => [...d.comments, ...(prev || [])]);
                     commentInput.current.value = "";
                     setTotalComments((prev) => prev + 1);
                 }

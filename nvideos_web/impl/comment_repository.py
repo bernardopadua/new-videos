@@ -50,8 +50,8 @@ class PgCommentRepository(PgRepositoryBase, CommentRepository):
                 ) as "totalRecomments"
              from {cm.tableNamePrefix()}, {vm.tableNamePrefix()}, {us.tableNamePrefix()}
             where {vm.videoKey.getWithPrefix()} = {videoKeySqlParam}
-              and {vm.userId.getWithPrefix()} = {us.userId.getWithPrefix()}
-              and {vm.videoId.getWithPrefix()} = {cm.videoId.getWithPrefix()}
+              and {cm.videoId.getWithPrefix()} = {vm.videoId.getWithPrefix()}
+              and {cm.userId.getWithPrefix()} = {us.userId.getWithPrefix()}
               and {cm.commentCommentId.getWithPrefix()} is null
               order by {cm.createdAt.getWithPrefix()} desc;
             """
