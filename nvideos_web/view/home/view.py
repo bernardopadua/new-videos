@@ -4,14 +4,12 @@ from flask import (
     request as flaskRequest, redirect, session
 )
 
-# DB 
-from nvideos_web.db.redis import nredis
-
 # SERVICE
 from nvideos_web.services.base.error import ServiceException
 from nvideos_web.services.subscriber.service import SubscriberService
 from nvideos_web.services.user.service import UserService
 from nvideos_web.services.channel.service import ChannelService
+from nvideos_web.services.usercache.service import UserCacheService
 
 # ERRORs
 from nvideos_web.services.user.error import UserServiceUserHasInvalidEmail
@@ -54,13 +52,8 @@ def login():
             ss = SubscriberService(userId=usu.userId)
             chs = ss.selectChannelsUserIsSubscribed()
 
-            if chs is not None:
-                from nvideos_web.db.redis_constants import USER_SUBSCRIBED_CHANNELS_KEY
-                import json
-                _ = nredis.client.set(
-                    USER_SUBSCRIBED_CHANNELS_KEY.format(userId=usu.userId),
-                    json.dumps(chs)
-                )
+            uc = UserCacheService(userId=usu.userId)
+            uc.setLogin(channels=chs)
             
             if (nextPath := session.pop("next", None)) is not None:
                 return redirect(nextPath)
@@ -77,8 +70,22 @@ def login():
 @homeBp.route("/logout")
 @loginRequired
 def logout():
-    from flask import session, redirect
-    session.clear()
+    try:
+        userId: int | None = session.get("userId")
+        if userId is None:
+            raise ServiceException("We runned into an exception on server side, contact support.")
+
+        uc = UserCacheService(userId=userId)
+        uc.clearCache()
+        
+        session.clear()
+    except ServiceException as e:
+        #TODO: Logging:
+        return render_template("base/error.html", error=str(e))
+    except Exception as e:
+        #TODO: Logging:
+        return render_template("base/error.html")
+
     return redirect("/")
 
 @homeBp.route("/register", methods=["GET", "POST"])
