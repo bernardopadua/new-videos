@@ -14,7 +14,8 @@ from nvideos_web.services.user.error import (
     UserServiceUserDontMatchPassword, UserServiceUserNameTooShort,
     UserServiceUserHasInvalidPassword, UserServiceUserHasInvalidEmail,
     UserServiceDateIsInvalid, UserServiceUserHasInvalidPermission,
-    UserServiceFailedToMoveTempAvatarToMedia, UserServiceUserHasInvalidBirthDate
+    UserServiceFailedToMoveTempAvatarToMedia, UserServiceUserHasInvalidBirthDate,
+    UserServiceIncorrectUserEmailOrPassword
 )
 
 # ENTITY
@@ -52,7 +53,7 @@ class UserService(BaseService[UserInput]):
     def selectByUserName(self, userName: str) -> User:
         return self._usuRep.selectByUserName(userName)
     
-    def selectByUserEmail(self, userEmail: str) -> User:
+    def selectByUserEmail(self, userEmail: str) -> User | None:
         return self._usuRep.selectByUserEmail(userEmail)
     
     def selectByUserId(self, userId: int | None = None) -> User:
@@ -179,7 +180,7 @@ class UserService(BaseService[UserInput]):
         audiData = self.fillAuditData().getAuditData()
 
         try:
-            if not self.checkIdExists(userId=userId).getCheckIdExists():
+            if not self.checkIdExists(idRegistry=userId).getCheckIdExists():
                 raise UserServiceUserDoesntExists("The user you trying to update doesn't exists")
 
             return self._usuRep.delete(userId=userId, auditData=audiData)
@@ -278,13 +279,16 @@ class UserService(BaseService[UserInput]):
             raise UserServiceFailedToMoveTempAvatarToMedia("The media server couldn't move the temp avatar to media.")
 
     def userLogin(self, email: str, password: str) -> User | None:
-        userData: User = self.selectByUserEmail(email)
+        userData = self.selectByUserEmail(email)
+
+        if not userData:
+            raise UserServiceIncorrectUserEmailOrPassword("User or password is wrong.")
 
         if PasswordHasher().hashPassword(password) == userData.userPassword:
             self.fillUserSession(userData)
 
             return userData
-        
+
         return None
 
     def setUserChannel(self, channelId: int):

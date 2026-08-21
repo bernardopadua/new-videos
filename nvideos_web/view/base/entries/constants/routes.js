@@ -1,7 +1,8 @@
 export const ROUTES = {
     //Home
     videosHome: (page, filter) => `/video/home/list/${filter}/${page}`,
-    
+    videoUploadFile: (UUid) => `${import.meta.env.VITE_URL_MEDIA_SERVER}/video/upload/${UUid}`,
+
     //Channel
     channelVideoList: (channelId, page) => `/channel/videos/list/${channelId}/${page}`,
     //MediaServer

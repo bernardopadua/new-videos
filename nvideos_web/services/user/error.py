@@ -8,6 +8,12 @@ class UserServiceUserDoesntExists(ServiceException):
     """When trying to do something that needs user and he wasn't informed."""
     pass
 
+class UserServiceIncorrectUserEmailOrPassword(ServiceException):
+    """Incorrect user email or password."""
+    pass
+
+## INPUT
+
 class UserServiceUserDontMatchPassword(ServiceException):
     """When the informed password doesn't match the user's password."""
     pass

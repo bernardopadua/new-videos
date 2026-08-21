@@ -84,7 +84,10 @@
                     class="w-full bg-[#121212] border border-white/10 px-4 py-2.5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition duration-200 text-sm">
             </div>
 
-            <!-- TERMS -->
+            
+            {# TERMS #}
+            {# I don't have any terms. But I'm keeping it for visual reference. #}
+            {% if False %}
             <div class="flex items-center">
                 <input id="terms" name="terms" type="checkbox" required
                     class="h-4 w-4 rounded bg-[#121212] border-white/20 text-brand focus:ring-brand focus:ring-offset-bg-dark">
@@ -93,6 +96,7 @@
                     <a href="#" class="text-brand hover:underline font-medium">Privacy Policy</a>.
                 </label>
             </div>
+            {% endif %}
 
             <!-- AVATAR UPLOAD ALERT -->
             <div id="avatar-upload-alert" class="hidden flex items-center gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-brand shadow-lg" role="status">

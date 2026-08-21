@@ -50,7 +50,7 @@ def channel_home():
         if channel is None:
             return redirect(url_for("channel_details.channel_create"))
 
-        return render_template("channel/channel_detail.html", channel=channel)
+        return redirect(url_for("channel_details.channel_detail", channel_id=channel.channelId))
     except ServiceException as e:
         return render_template("base/error.html", error=str(e))
     except Exception as e:

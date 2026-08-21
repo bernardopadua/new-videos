@@ -164,20 +164,21 @@ class PgUserRepository(PgRepositoryBase, UserRepository):
             return UserMetadata.row(result)
 
     @override
-    def selectByUserEmail(self, userEmail: str) -> User:
+    def selectByUserEmail(self, userEmail: str) -> User | None:
         userEmail, userEmailParam = NvSql.createParam("userEmail_value", userEmail)
         stmt = NvSql.formatStmt(
-            "select * from {table_name} where {userEmail_field} = {userEmail_value};",
-            table_name=UserMetadata.tableName(),
-            userEmail_field=UserMetadata.userEmail.field,
-            userEmail_value=userEmail
+            f"""select * 
+            from {UserMetadata.tableName()} 
+            where {UserMetadata.userEmail.field} = {userEmail} 
+              and {UserMetadata.userIsActive.field} = true;
+            """
         )
         _, allFieldsOrder = NvSql.selectOder(UserMetadata.all)
         with self._db.getConn() as conn:
             cur = conn.cursor(row_factory=ModelRowFactory(allFieldsOrder))
             _ = cur.execute(stmt, params=userEmailParam)
             result = cur.fetchone()
-            return UserMetadata.row(result)
+            return UserMetadata.row(result) if result else None
 
     @override
     def selectByUserId(self, userId: int | None) -> User:

@@ -24,7 +24,7 @@ class UserRepository(ABC):
     def selectByUserName(self, userName: str) -> User:
         ...
     @abstractmethod
-    def selectByUserEmail(self, userEmail: str) -> User:
+    def selectByUserEmail(self, userEmail: str) -> User | None:
         ...
     @abstractmethod
     def selectByUserId(self, userId: int) -> User:

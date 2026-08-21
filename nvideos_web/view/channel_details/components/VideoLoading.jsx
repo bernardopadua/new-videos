@@ -4,7 +4,7 @@ import { formatDuration, formatViews, formatDatetimeToString } from '../../base/
 import { ROUTES } from "../../base/entries/constants/routes";
 
 export default function VideoLoading({ channelDetails }){
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
     const [videos, setVideos ] = useState([]);
     
     const divLoadingPoint = useRef(null);

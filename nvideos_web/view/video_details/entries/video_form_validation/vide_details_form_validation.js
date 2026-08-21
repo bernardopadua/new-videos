@@ -34,20 +34,17 @@ export default class VideoUploadFormValidation {
         const _validateVideoTitle = this._validateVideoTitle();
         const _validateVideoDescription = this._validateVideoDescription();
         const _validateVideoTags = this._validateVideoTags();
-        const _validateThumbAndVideoFile = this._validateThumbAndVideoFile();
-        let __allFieldsValid = (
+        let _validateThumbAndVideoFile = true;
+        const __allFieldsValid = (
             _validateVideoTitle && _validateVideoDescription &&
-            _validateVideoTags && _validateThumbAndVideoFile
+            _validateVideoTags
         );
 
-        if (!isCreating) {
-            __allFieldsValid = (
-                _validateVideoTitle && _validateVideoDescription &&
-                _validateVideoTags
-            );
+        if (isCreating) {
+            _validateThumbAndVideoFile = this._validateThumbAndVideoFile();
         }
 
-        if (__allFieldsValid) {
+        if (__allFieldsValid && _validateThumbAndVideoFile) {
             return true;
         }
         return false;

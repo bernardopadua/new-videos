@@ -1,6 +1,6 @@
 {% extends "base/base.html" %}
 
-{% block title %}Edit Video - nVideos{% endblock %}
+{% block title %}nVideos{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-20">
@@ -11,7 +11,13 @@
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-10">
         <div>
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Edit Video Details</h1>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                {% if isCreating %}
+                Create Video
+                {% else %}
+                Edit Video Details
+                {% endif %}
+            </h1>
             <p class="text-sm text-gray-400 mt-2">Manage video settings, thumbnail, tags, and visibility permissions.</p>
         </div>
         {% if not isCreating %}

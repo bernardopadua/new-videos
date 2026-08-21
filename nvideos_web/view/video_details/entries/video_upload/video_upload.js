@@ -1,4 +1,4 @@
-import { ssrModuleExportsKey } from "vite/module-runner";
+import { ROUTES } from '../../../base/entries/constants/routes';
 
 export default class VideoUploadService {
     constructor() {
@@ -56,8 +56,10 @@ export default class VideoUploadService {
         const formData = new FormData();
         formData.append("file", this._videoFile.files[0]);
 
-        const urlToUpload = import.meta.env.VITE_URL_MEDIA_SERVER + "/video/upload/"+this._videoUUID;
-        const response = await fetch(urlToUpload, {
+        //This is not the best way to upload videos, but it will do it for now.
+        //I will implement a simple chunk file upload after the project is complete.
+        const response = await fetch(
+            ROUTES.videoUploadFile(this._videoUUID), {
             method: "POST",
             body: formData
         });

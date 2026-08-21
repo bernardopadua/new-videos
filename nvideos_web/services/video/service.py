@@ -197,8 +197,7 @@ class VideoService(BaseService[VideoInput]):
             raise VideoServiceVideoPermissionIsInvalid("Video permission is invalid.")
 
     def checkVideoProcessingStatus(self, videoKey: str) -> str:
-        redis: Redis = Redis.from_url(app.config["REDIS_ADDRESS"])
-        percentReturn: bytes = cast(bytes, redis.get(f"video:processing:{videoKey}"))
+        percentReturn: bytes = cast(bytes, nredis.client.get(f"video:processing:{videoKey}"))
         return percentReturn.decode("utf-8") if percentReturn else ""
 
     def finishedVideoProcessing(self, videoKey: str, timeDuration: int):

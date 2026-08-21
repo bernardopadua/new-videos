@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <stdexcept>
 #include <unistd.h>
 #include <threads.h>
 #include <wait.h>
@@ -22,7 +23,7 @@ const std::filesystem::path MEDIA_SERVER_BASE_PATH = "/usr/media_server/";
 
 const std::string API_AUTH_KEY = "7X9m-Q2vP-8K1z-L4nR-5W8c-J3tF-0B9x-P2vM";
 
-double get_video_time_duration(std::string videoKey, std::string videoFile){
+double getVideoTimeDuration(std::string videoKey, std::string videoFile, sw::redis::Redis& redis){
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
     
     int fds[2];
@@ -83,14 +84,14 @@ double get_video_time_duration(std::string videoKey, std::string videoFile){
     return totalVideoTime;
 }
 
-void process_video_file(std::string videoKey, std::string videoFile, sw::redis::Redis& redis) {
+void processVideoFile(std::string videoKey, std::string videoFile, sw::redis::Redis& redis) {
     std::string videoFilePath = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
     if (!std::filesystem::exists(videoFilePath)){
         std::cerr << "ERROR: Video file does not exist: " << videoFilePath << std::endl;
         return;
     }
     
-    double totalDuration = get_video_time_duration(videoKey, videoFile);
+    double totalDuration = getVideoTimeDuration(videoKey, videoFile, redis);
 
     if (totalDuration == 0.0){
         std::cerr << "ERROR ON GET VIDEO TIME DURATION" << std::endl;
@@ -115,7 +116,6 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
         close(fds[1]);
         close(fds[0]);
 
-
         std::string inputVideoFile = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + videoFile;
         std::string outputVideoFile = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + "playlist.m3u8";
         std::string outputVideoPlaylist = MEDIA_SERVER_BASE_PATH.string() + "videos/" + videoKey + "/" + "playlist%d.ts";
@@ -123,8 +123,7 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
         const char *args[] = {
             "ffmpeg",
             "-i", inputVideoFile.c_str(),
-            "-vf",
-            "scale=-2:720",
+            "-vf", "scale=-2:720",
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-crf", "26",
@@ -162,10 +161,15 @@ void process_video_file(std::string videoKey, std::string videoFile, sw::redis::
     while (fgets(c, sizeof(c), f)){
         std::string cc(c);
         if (cc.find("out_time_ms=") != std::string::npos){
-            double currentTime = std::stod(cc.substr(
-                cc.find_last_of("=") + 1,
-                cc.size() - cc.find_last_of("=")
-            ));
+            double currentTime = 0.0;
+            try {
+                currentTime = std::stod(cc.substr(
+                    cc.find_last_of("=") + 1,
+                    cc.size() - cc.find_last_of("=")
+                ));
+            } catch(std::invalid_argument& e){
+                continue;
+            }
             int currentPercent = round(((currentTime/1000000.0) / totalDuration) * 100);
             redis.set("video:processing:" + videoKey, std::to_string(currentPercent), std::chrono::seconds(60));
 
@@ -211,7 +215,7 @@ int main(int argc, char *argv[]) {
             std::cout << j["videoKey"] << j["videoFilename"] << std::endl;
             
             std::thread t(
-                process_video_file, 
+                processVideoFile, 
                 j["videoKey"].get<std::string>(), 
                 j["videoFilename"].get<std::string>(),
                 std::ref(redis)
